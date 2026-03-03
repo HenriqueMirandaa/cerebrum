@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Bem‑vindo</title>
+	<style>
+		body { font-family: Arial, sans-serif; background:#f6f9fc; color:#222; margin:0; padding:0; }
+		.container{ max-width:640px; margin:28px auto; background:#fff; border-radius:8px; padding:24px; box-shadow:0 6px 18px rgba(0,0,0,0.06); }
+		.header{ text-align:center; }
+		.brand{ font-weight:700; color:#0f172a; font-size:20px; }
+		.hero{ margin:18px 0; font-size:16px; line-height:1.5; color:#334155; }
+		.btn{ display:inline-block; background:#0ea5a3; color:#fff; padding:12px 18px; border-radius:6px; text-decoration:none; margin-top:12px; }
+		.footer{ margin-top:22px; color:#94a3b8; font-size:13px; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="header">
+			<div class="brand">Nome da Plataforma</div>
+		</div>
+		<div class="hero">
+			<h2>Bem‑vindo(a), {{name}}!</h2>
+			<p>Obrigado por se cadastrar na <strong>Nome da Plataforma</strong>. Estamos felizes em tê‑lo(a) por aqui.</p>
+			<p>Com sua conta você poderá gerenciar matérias, organizar seu cronograma e usar o assistente inteligente para otimizar seus estudos.</p>
+			<a class="btn" href="{{appUrl}}">Acessar a plataforma</a>
+			<p class="footer">Se você não reconheceu este cadastro, desconsidere este e‑mail.</p>
+		</div>
+	</div>
+</body>
+</html>

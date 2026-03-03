@@ -1,0 +1,34 @@
+{
+  "name": "cerebrum-backend",
+  "version": "1.0.0",
+  "description": "Backend para plataforma Cerebrum",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "worker": "node worker/indexer.js",
+    "py-service": "python py_service/app.py",
+    "migrate:ai": "node scripts/create_ai_tables.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-mysql-session": "^2.1.7",
+    "express-session": "^1.17.3",
+    "express-validator": "^6.15.0",
+    "helmet": "^7.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.0",
+    "node-fetch": "^2.6.7",
+    "pdf-parse": "^1.1.1",
+    "mammoth": "^1.4.21",
+    "multer": "^1.4.4",
+    "nodemailer": "^7.0.12"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}

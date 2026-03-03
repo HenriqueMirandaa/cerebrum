@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cerebrum — Plataforma de Estudos</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/uiverse.css">
+    <link rel="stylesheet" href="css/components/visual-refresh.css">
+    <!-- Background canvas styles -->
+    <style>
+        /* background canvas full-bleed atrás da área de autenticação */
+        #login-bg-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+            background: radial-gradient(ellipse at 10% 10%, rgba(124,58,237,0.06), transparent 6%),
+                        radial-gradient(ellipse at 90% 90%, rgba(168,85,247,0.06), transparent 8%),
+                        #05010a; /* deeper base */
+        }
+
+        /* remove any decorative/top highlight that may appear above the card */
+        .auth-card::before, .auth-card::after { display:none !important; }
+
+        /* colocar o conteúdo interativo acima do background e centralizado */
+        .auth-container { position: relative; z-index: 2; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:28px; box-sizing:border-box; }
+
+        /* painel principal - dark, distribuído e com profundidade */
+        .auth-card {
+            width: 100%;
+            max-width: 980px;
+            border-radius: 14px;
+            padding: 24px;
+            box-sizing: border-box;
+            color: #e6eef8;
+            background: linear-gradient(180deg, rgba(12,8,22,0.92), rgba(6,4,15,0.9));
+            border: 1px solid rgba(124,58,237,0.04);
+            box-shadow: 0 18px 50px rgba(6,4,12,0.7), 0 6px 28px rgba(124,58,237,0.04);
+            backdrop-filter: blur(6px);
+            display: grid;
+            gap: 18px;
+            align-items: start;
+            /* single-column layout so aside appears under forms (not to the right) */
+            grid-template-columns: 1fr;
+        }
+
+        /* header / branding (use Poppins for title for a refined look) */
+        .auth-header { display:flex; gap:14px; align-items:center; padding:2px 6px; }
+        .branding .logo-icon.large { width:54px; height:54px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; background: linear-gradient(180deg,#2b076e,#471a9f); color:#fff; box-shadow: 0 6px 18px rgba(124,58,237,0.12); }
+        .brand-text .auth-title { margin:0; font-size:1.4rem; color:#fff; font-family: 'Poppins', Inter, system-ui, sans-serif; }
+        .brand-text .auth-subtitle { margin:0; color:#b9c4da; font-size:0.95rem; font-family: Inter, system-ui, sans-serif; }
+
+        /* tabs */
+        .auth-tabs { display:flex; gap:8px; padding:8px; align-items:center; background: rgba(8,4,12,0.75); /* dark pill */
+            border-radius: 12px;
+            border: 1px solid rgba(124,58,237,0.06); }
+        .tab-btn { padding:8px 12px; border-radius:8px; color: #bfa1ff; /* muted purple for inactive */
+            background: transparent;
+            border: 1px solid transparent;
+            font-weight: 600; }
+        .tab-btn.active { background: rgba(124,58,237,0.12); /* subtle purple highlight */
+            color: #c084fc;                     /* prominent purple text */
+            border-color: rgba(124,58,237,0.14); }
+
+        /* forms area spacing */
+        .auth-form { margin-top:6px; padding: 8px 2px; }
+        .form-actions { margin-top:12px; display:flex; gap:8px; }
+
+        /* ensure label groups keep normal flow */
+        .form-group {
+            position: relative;         /* positioning context */
+            margin-bottom: 14px;
+            padding-left: 0;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            letter-spacing: .04em;
+            color: #9aa3bf;
+            text-transform: uppercase;
+            font-family: Inter, system-ui, sans-serif;
+        }
+
+        /* INPUT GROUP: shift the black rectangle right and reduce its width so icons are fully visible */
+        .input-group {
+            position: relative;                         /* create positioning context for icon */
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #000;
+            border: 1px solid rgba(124,58,237,0.08);
+            padding: 10px 12px;
+            border-radius: 10px;
+            transition: box-shadow .18s ease, border-color .18s ease, transform .06s ease;
+            margin-left: 56px;                           /* reserve space for the icon on the left */
+            width: calc(100% - 56px);                   /* make rectangle narrower so the icon is not cut */
+            box-sizing: border-box;
+        }
+
+        /* ICON: absolute inside input-group but shifted left (outside the black rectangle) */
+        .input-group > .input-icon,
+        .input-icon {
+            position: absolute;
+            left: -56px;           /* matches the reserved space so icon aligns fully visible */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 44px;
+            height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: transparent;
+            color: #c084fc;
+            z-index: 6;
+            pointer-events: none;
+            font-size: 1.05rem;
+        }
+
+        /* inputs: purple text on black rectangle (ensure specificity) */
+        .form-input,
+        input.form-input,
+        select.form-input,
+        .form-select,
+        input[type="email"],
+        input[type="password"],
+        input[type="text"] {
+            color: #c084fc;
+            background: transparent;
+            border: none;
+            outline: none;
+            padding: 6px 4px;
+            font-family: Inter, system-ui, sans-serif;
+        }
+
+        /* placeholder color */
+        .form-input::placeholder,
+        input::placeholder,
+        select::placeholder {
+            color: #b9a3ff;
+            opacity: 0.85;
+        }
+
+        .input-group:focus-within {
+            box-shadow: 0 10px 28px rgba(124,58,237,0.16), 0 0 0 6px rgba(124,58,237,0.08);
+            border-color: rgba(124,58,237,0.6);
+            transform: translateY(-1px);
+        }
+
+        .password-toggle { background: transparent; border: none; padding: 6px; color: #c8b6ff; cursor: pointer; border-radius: 6px; }
+        .password-toggle:hover { background: rgba(255,255,255,0.02); }
+
+        .auth-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: linear-gradient(90deg, #7c3aed, #6d28d9);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 700;
+            box-shadow: 0 8px 24px rgba(99,39,255,0.09);
+            font-family: 'Poppins', Inter, system-ui, sans-serif;
+        }
+
+        /* aside info moved below forms: refined typography and spacing */
+        .auth-info {
+            margin-top: 8px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
+            border-radius: 10px;
+            padding: 16px 14px;
+            border: 1px solid rgba(255,255,255,0.02);
+            color: #dbe6ff;
+            font-size: 0.95rem;
+            display:flex;
+            flex-direction:column;
+            gap:10px;
+            align-self:stretch;
+            font-family: 'Poppins', Inter, system-ui, sans-serif;
+        }
+        .auth-info .info-item { display:flex; gap:10px; align-items:center; color:#cbd5e1; }
+        .auth-info .info-item i { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; background: rgba(124,58,237,0.06); border-radius:8px; color:#e4d9ff; flex: 0 0 34px; }
+
+        /* ensure interactive elements are above canvas */
+        button, input, select { position: relative; z-index: 3; }
+
+        /* responsive tweaks */
+        @media (max-width: 640px) {
+            .auth-card { padding: 18px; border-radius: 12px; }
+            .branding .logo-icon.large { width:46px; height:46px; }
+            .auth-info { display:flex; } /* keep visible on mobile (now it's below forms) */
+        }
+    </style>
+</head>
+<body class="auth-body">
+    <!-- animated background canvas -->
+    <canvas id="login-bg-canvas" aria-hidden="true"></canvas>
+
+    <div class="auth-container">
+        <div class="auth-card" role="region" aria-label="Área de autenticação">
+            <!-- Branding: logo + mascot -->
+            <header class="auth-header" aria-hidden="false">
+                <div class="branding">
+                    <div class="logo-wrap">
+                        <div class="logo-icon large" aria-hidden="true"><i class="fas fa-brain"></i></div>
+                    </div>
+                    <div class="brand-text">
+                        <h1 class="auth-title" data-i18n="brand.title">Cerebrum</h1>
+                        <p class="auth-subtitle" data-i18n="brand.subtitle">Sua plataforma inteligente de estudos</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Tabs Login/Cadastro (accessible) -->
+            <nav class="auth-tabs" role="tablist" aria-label="Login e cadastro">
+                <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true" aria-controls="loginForm" data-i18n="tab.login">Entrar</button>
+                <button class="tab-btn" data-tab="register" role="tab" aria-selected="false" aria-controls="registerForm" data-i18n="tab.register">Cadastrar</button>
+            </nav>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm" class="auth-form active" novalidate aria-live="polite">
+                <div class="form-group">
+                    <label for="loginEmail" class="form-label" data-i18n="label.email">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required aria-required="true" aria-describedby="loginEmailHelp">
+                    </div>
+                    <div id="loginEmailHelp" class="field-help" aria-hidden="true"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="loginPassword" class="form-label" data-i18n="label.password">Senha</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha" data-i18n-attr="placeholder" data-i18n="placeholder.password" required aria-required="true" aria-describedby="loginPasswordHelp">
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                    </div>
+                    <div id="loginPasswordHelp" class="field-help" aria-hidden="true"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="auth-btn" id="loginBtn" aria-live="polite">
+                        <span class="btn-text" data-i18n="btn.login">Entrar</span>
+                        <span class="btn-loading hidden" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+
+                <div id="loginMessage" class="auth-message" role="status" aria-live="polite"></div>
+            </form>
+
+            <!-- Formulário de Cadastro (preservado para compatibilidade) -->
+            <form id="registerForm" class="auth-form" novalidate aria-hidden="true">
+                <div class="form-group">
+                    <label for="registerName" class="form-label" data-i18n="label.name">Nome Completo</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+                        <input type="text" id="registerName" class="form-input" placeholder="Seu nome completo" data-i18n-attr="placeholder" data-i18n="placeholder.name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail" class="form-label" data-i18n="label.email">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="registerEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword" class="form-label" data-i18n="label.password">Senha</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="registerPassword" class="form-input" placeholder="Mínimo 6 caracteres" data-i18n-attr="placeholder" data-i18n="placeholder.password" required>
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="auth-btn" id="registerBtn">
+                        <span class="btn-text" data-i18n="btn.create">Criar Conta</span>
+                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                </div>
+
+                <div id="registerMessage" class="auth-message" role="status" aria-live="polite"></div>
+            </form>
+
+            <!-- INFO: moved below forms so it no longer overlaps labels -->
+            <aside class="auth-info" aria-hidden="true">
+                <div class="info-item"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>Organize seus estudos</span></div>
+                <div class="info-item"><i class="fas fa-chart-line" aria-hidden="true"></i><span>Acompanhe seu progresso</span></div>
+                <div class="info-item"><i class="fas fa-robot" aria-hidden="true"></i><span>Assistente IA integrado</span></div>
+            </aside>
+
+        </div>
+    </div>
+
+    <!-- Base configuration -->
+    <script>
+        // Configure base URL and API origin for development
+        window.BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? `${window.location.protocol}//${window.location.host}/pap2326`
+            : '';
+        // If not provided, in dev point API to local Node backend on :3001
+        if (!window.API_ORIGIN) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                window.API_ORIGIN = `${window.location.protocol}//${window.location.hostname}:3001`;
+            }
+        }
+
+        // Ensure BASE_PATH when served under a subpath (XAMPP Apache serve at /pap2326)
+        // This makes routing and navigation stable when the frontend is not at root '/'
+        if (typeof window.BASE_PATH === 'undefined') {
+            // adjust this value if your project folder is different
+            window.BASE_PATH = '/pap2326';
+        }
+
+        // If the page is opened via file://, show a clear banner explaining how to run via HTTP
+        (function checkFileProtocol() {
+            if (window.location.protocol === 'file:') {
+                try {
+                    const banner = document.createElement('div');
+                    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fffbeb;color:#92400e;padding:12px 16px;z-index:9999;border-bottom:1px solid #fef3c7;font-family:Inter,system-ui,sans-serif;';
+                    banner.innerHTML = '<strong>Atenção:</strong> você abriu este arquivo localmente (file://). Para que módulos e requisições funcionem corretamente, sirva o projeto via HTTP (ex: http://localhost/pap2326/). Abra o XAMPP/Apache ou execute um servidor estático (ex: <code>npx http-server -p 8080</code>).';
+                    document.addEventListener('DOMContentLoaded', function () { document.body.prepend(banner); });
+                } catch (e) { /* ignore in very old browsers */ }
+            }
+        })();
+    </script>
+    
+    <!-- lightweight particle network script (keeps performance in mind) -->
+    <script>
+    (function(){
+      const canvas = document.getElementById('login-bg-canvas');
+      if (!canvas || !canvas.getContext) return;
+      const ctx = canvas.getContext('2d');
+      let dpr = Math.max(1, window.devicePixelRatio || 1);
+      let width = 0, height = 0;
+      const config = {
+        count: 72,
+        maxLinkDist: 145,
+        speed: 0.34,
+        followRadius: 260,
+        followForce: 0.018,
+        colors: ['#8b5cf6','#7c3aed','#6d28d9','#a78bfa'],
+      };
+      const particles = [];
+      const mouse = { x: -9999, y: -9999 };
+      const smoothMouse = { x: -9999, y: -9999 };
+
+      function resize() {
+        dpr = Math.max(1, window.devicePixelRatio || 1);
+        width = Math.floor(window.innerWidth);
+        height = Math.floor(window.innerHeight);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+      }
+
+      function rand(min,max){ return Math.random()*(max-min)+min; }
+
+      function initParticles(){
+        particles.length = 0;
+        for(let i=0;i<config.count;i++){
+          particles.push({
+            x: rand(0,width),
+            y: rand(0,height),
+            vx: rand(-config.speed, config.speed),
+            vy: rand(-config.speed, config.speed),
+            baseVx: rand(-config.speed, config.speed),
+            baseVy: rand(-config.speed, config.speed),
+            r: rand(1.2,2.8),
+            glow: rand(2.8, 4.6),
+            follow: Math.random() < 0.34,
+            c: config.colors[i % config.colors.length]
+          });
+        }
+      }
+
+      function step(){
+        smoothMouse.x += (mouse.x - smoothMouse.x) * 0.16;
+        smoothMouse.y += (mouse.y - smoothMouse.y) * 0.16;
+        ctx.clearRect(0,0,width,height);
+        // draw links
+        for(let i=0;i<particles.length;i++){
+          const a = particles[i];
+          for(let j=i+1;j<particles.length;j++){
+            const b = particles[j];
+            const dx = a.x-b.x, dy = a.y-b.y;
+            const dist = Math.hypot(dx,dy);
+            if (dist < config.maxLinkDist){
+              const alpha = 0.08 * (1 - dist / config.maxLinkDist);
+              ctx.strokeStyle = a.c;
+              ctx.globalAlpha = alpha;
+              ctx.lineWidth = 0.8;
+              ctx.beginPath();
+              ctx.moveTo(a.x,a.y);
+              ctx.lineTo(b.x,b.y);
+              ctx.stroke();
+            }
+          }
+        }
+        ctx.globalAlpha = 1;
+        // draw particles
+        for(const p of particles){
+          ctx.beginPath();
+          const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * (p.glow || 4));
+          g.addColorStop(0, p.c);
+          g.addColorStop(0.6, p.c + '33');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.arc(p.x, p.y, p.r * (p.follow ? 3.2 : 2.5), 0, Math.PI*2);
+          ctx.fill();
+        }
+        // move
+        for(const p of particles){
+          const dxm = smoothMouse.x - p.x;
+          const dym = smoothMouse.y - p.y;
+          const d2 = dxm * dxm + dym * dym;
+          const radius2 = config.followRadius * config.followRadius;
+          if (d2 < radius2) {
+            const pull = (1 - d2 / radius2) * (p.follow ? 1.9 : 1.0);
+            p.vx += dxm * config.followForce * pull;
+            p.vy += dym * config.followForce * pull;
+          } else {
+            p.vx += p.baseVx * 0.015;
+            p.vy += p.baseVy * 0.015;
+          }
+
+          p.vx *= 0.96;
+          p.vy *= 0.96;
+          p.vx = Math.max(-1.35, Math.min(1.35, p.vx));
+          p.vy = Math.max(-1.35, Math.min(1.35, p.vy));
+
+          p.x += p.vx;
+          p.y += p.vy;
+          // gentle wrap-around
+          if (p.x < -20) p.x = width + 20;
+          if (p.x > width + 20) p.x = -20;
+          if (p.y < -20) p.y = height + 20;
+          if (p.y > height + 20) p.y = -20;
+        }
+        requestAnimationFrame(step);
+      }
+
+      function start(){
+        resize();
+        initParticles();
+        step();
+      }
+
+      window.addEventListener('pointermove', (e) => {
+        mouse.x = e.clientX;
+        mouse.y = e.clientY;
+      });
+
+      window.addEventListener('pointerleave', () => {
+        mouse.x = -9999;
+        mouse.y = -9999;
+      });
+
+      window.addEventListener('resize', () => {
+        // throttle resize events
+        clearTimeout(window.__loginBgResize);
+        window.__loginBgResize = setTimeout(()=>{ resize(); initParticles(); }, 120);
+      });
+
+      // start when DOM ready
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+      } else {
+        start();
+      }
+    })();
+    </script>
+
+    <!-- Application scripts -->
+    <script src="js/i18n.js"></script>
+    <script type="module" src="js/auth.js?v=4"></script>
+</body>
+</html>
+
+
+

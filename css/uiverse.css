@@ -1,0 +1,303 @@
+/* Uiverse-inspired extras for Cerebrum
+   Small set of utility classes and component polish inspired by Uiverse.
+*/
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  color: white;
+  box-shadow: 0 10px 25px rgba(99,102,241,0.18), 0 6px 12px rgba(16,24,40,0.06);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  z-index: 9999;
+}
+.fab:hover { transform: translateY(-6px) scale(1.03); box-shadow: 0 18px 36px rgba(99,102,241,0.22); }
+
+/* Hero card for dashboard top */
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  border-radius: 16px;
+  /* use the same dark surface color as the background */
+  background: var(--card-bg, #05010a);
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 6px 20px rgba(16,24,40,0.04);
+}
+.hero .title { font-size: 1.25rem; font-weight: 700; }
+.hero .subtitle { color: var(--gray-600); }
+
+/* Highlight animation for greeting title and subtitle */
+.hero .title, .hero .subtitle {
+  position: relative;
+  z-index: 2;
+  background: transparent !important; /* override dark surface applied elsewhere */
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+.hero .title::before, .hero .subtitle::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) scaleX(0);
+  transform-origin: left;
+  width: 100%;
+  height: 70%;
+  border-radius: 10px;
+  z-index: -1;
+  /* stronger, more saturated purple highlight */
+  background: linear-gradient(90deg, rgba(124,58,237,0.36) 0%, rgba(99,102,241,0.18) 50%, rgba(124,58,237,0.36) 100%);
+  box-shadow: 0 10px 28px rgba(124,58,237,0.12);
+  mix-blend-mode: screen;
+  opacity: 1;
+  animation: highlightSlide 3.2s ease-in-out infinite;
+}
+
+@keyframes highlightSlide {
+  0% { transform: translateY(-50%) scaleX(0); opacity: 0; }
+  10% { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  70% { transform: translateY(-50%) scaleX(1); opacity: 1; }
+  100% { transform: translateY(-50%) scaleX(0); opacity: 0; }
+}
+
+/* Card list with image/icon badges */
+.card-badge { display:inline-flex; align-items:center; justify-content:center; width:48px; height:48px; border-radius:12px; color:white; font-weight:700; margin-right:12px; box-shadow: var(--shadow-sm);} 
+
+/* Accent outline helpers */
+.outline-accent { box-shadow: 0 0 0 2px rgba(99,102,241,0.06), 0 6px 18px rgba(99,102,241,0.06); }
+
+/* Subtle glass flairs (uiverse-like) */
+.glass-accent { background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.35)); border: 1px solid rgba(255,255,255,0.5); }
+
+/* New button variant "uiverse" */
+.btn-uiverse {
+  background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+  color: var(--primary);
+  border: 1px solid rgba(99,102,241,0.12);
+  padding: 10px 18px;
+  border-radius: 12px;
+  display: inline-flex; align-items:center; gap:10px; cursor:pointer; transition: all 0.18s ease;
+}
+.btn-uiverse:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(99,102,241,0.12); }
+
+/* Tiny badges */
+.badge-soft { padding:4px 8px; border-radius:999px; font-size:0.75rem; background: rgba(99,102,241,0.08); color:var(--primary); border:1px solid rgba(99,102,241,0.06); }
+
+/* Rounded table / list rows */
+.list-row { display:flex; align-items:center; justify-content:space-between; padding:12px; border-radius:12px; background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.9)); border:1px solid rgba(241,245,249,0.8); transition: all 0.18s ease; }
+.list-row + .list-row { margin-top:8px; }
+.list-row:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+
+/* Form accent helper */
+.label-muted { font-size:0.85rem; color:var(--gray-500); }
+
+/* Small responsive tweaks */
+@media (max-width: 768px) {
+  .hero { flex-direction: column; align-items: flex-start; }
+  .fab { right: 16px; bottom: 16px; }
+}
+
+/* Dark theme adjustments when root has .dark */
+.dark body, .dark :root {
+  --bg: #0b1220;
+  --card-bg: #071022;
+  --text: #e6eef8;
+  --muted: #9aa8bf;
+}
+.dark .hero { background: var(--card-bg, #05010a); border-color: rgba(255,255,255,0.03); }
+.dark .card, .dark .card p, .dark .card .title { background: var(--card-bg); color: var(--text); }
+.dark .list-row { background: rgba(255,255,255,0.02); border-color: rgba(255,255,255,0.03); }
+.dark .badge-soft { background: rgba(99,102,241,0.12); color: #dbeafe; }
+.dark .btn-uiverse { color: #dbeafe; border-color: rgba(99,102,241,0.16); }
+.dark .progress-bar { background: rgba(255,255,255,0.04); }
+.dark .progress-fill { box-shadow: none; }
+.dark .toast { background: rgba(255,255,255,0.03); color: var(--text); border: 1px solid rgba(255,255,255,0.04); }
+
+/* Modal base styles used by the dashboard modal (keeps markup clean) */
+.modal-overlay {
+  position: fixed;
+  left: 0; top: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 10000;
+}
+.modal-card {
+  width: min(720px, 96%);
+  background: var(--card-bg, #fff);
+  padding: 18px;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(2,6,23,0.18);
+  color: inherit;
+}
+.modal-card .label-muted { display:block; margin-bottom:6px; color:var(--gray-500); }
+.modal-card .form-input { background: var(--card-bg, #fff); border: 1px solid rgba(0,0,0,0.06); }
+.modal-card .btn-primary { padding: 10px 14px; border-radius: 10px; }
+
+/* Modal entrance/exit animations */
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes popOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(12px) scale(0.96); }
+}
+
+/* Play entrance animations when modal becomes visible (removing .hidden) */
+/* Increased durations so animations are clearly perceptible to users */
+.modal-overlay { animation: overlayFadeIn 600ms ease forwards; }
+.modal-container, .modal-card { animation: popIn 600ms cubic-bezier(0.16,0.84,0.24,1) forwards; transform-origin: center; }
+
+/* When closing, add .closing to run exit animation */
+.modal.closing .modal-overlay { animation: overlayFadeOut 520ms ease forwards; }
+.modal.closing .modal-container, .modal.closing .modal-card { animation: popOut 520ms ease forwards; }
+
+/* Ensure react-enhance controls are readable in both light and dark modes */
+#react-enhance-root { --rea-text: #0b1220; --rea-bg: rgba(15,23,42,0.06); --rea-border: rgba(2,6,23,0.06); }
+#react-enhance-root * { color: var(--rea-text) !important; }
+#react-enhance-root input { color: var(--rea-text) !important; background: transparent !important; border: none !important; }
+#react-enhance-root .p-2, #react-enhance-root .rounded-md { background: var(--rea-bg) !important; border: 1px solid var(--rea-border) !important; }
+
+/* Dark mode overrides for the enhancement controls */
+.dark #react-enhance-root { --rea-text: #e6eef8; --rea-bg: rgba(255,255,255,0.04); --rea-border: rgba(255,255,255,0.04); }
+.dark #react-enhance-root input { color: var(--rea-text) !important; }
+
+/* Make sure the small accent picker buttons remain visible */
+#react-enhance-root .w-8.h-8, #react-enhance-root .w-8, #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(2,6,23,0.12); border: 1px solid rgba(0,0,0,0.08); }
+.dark #react-enhance-root .w-8.h-8, .dark #react-enhance-root .w-8, .dark #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(124,58,237,0.12); border: 1px solid rgba(255,255,255,0.04); }
+
+/* Cronograma specific overrides: ensure calendar uses the dark surface colors
+   even when the particle canvas is hidden. Targets internal grid cells and
+   any utility classes that would otherwise produce light backgrounds. */
+.cronograma-root {
+  background: transparent;
+  color: var(--text);
+}
+.cronograma-root .grid, .cronograma-root #calendarGrid {
+  background: transparent;
+}
+.cronograma-root .border {
+  background: var(--card-bg);
+  border-color: rgba(255,255,255,0.04);
+  color: var(--text);
+}
+.cronograma-root .bg-gray-50 { background: var(--card-bg) !important; }
+.cronograma-root .text-gray-500, .cronograma-root .text-gray-400 { color: rgba(255,255,255,0.56) !important; }
+.cronograma-root .btn-primary, .cronograma-root .btn-secondary { color: var(--text); }
+.cronograma-root .modal-overlay { background: rgba(0,0,0,0.6); }
+.cronograma-root .modal-card, .cronograma-root .modal-container { background: var(--card-bg); color: var(--text); }
+.cronograma-root .form-input, .cronograma-root .form-select, .cronograma-root textarea { background: var(--card-bg); color: var(--text); border: 1px solid rgba(255,255,255,0.04); }
+
+/* Ensure event tiles use the darker surface with clear text */
+.cronograma-root [data-event-id] { background: transparent; }
+
+/* Global Ribbon overrides: make small label/ribbon elements black background and purple text
+   This targets common badge/ribbon classes used across the UI and select controls.
+   We use !important to ensure these visuals apply across the platform as requested. */
+.ribbon, .ribbon-label, .ribbon-badge,
+.badge, .badge-soft, .nav-badge, .card-badge {
+  background: #000 !important;
+  color: var(--primary) !important;
+  border-color: rgba(124,58,237,0.12) !important;
+}
+
+/* Ensure form selects and native option lists match the ribbon look */
+.form-select, select.form-select {
+  background: #000 !important;
+  color: var(--primary) !important;
+  border-color: rgba(124,58,237,0.18) !important;
+  box-shadow: none !important;
+}
+.form-select option, select.form-select option,
+select option {
+  background: #000 !important;
+  color: var(--primary) !important;
+}
+
+/* Small pills and badge visuals used inside cards */
+.card .badge-soft, .card .card-badge { background: #000 !important; color: var(--primary) !important; }
+
+/* Completed subject visuals */
+.completed-subject {
+  border: 2px solid rgba(16,185,129,0.95) !important;
+  box-shadow: 0 16px 40px rgba(16,185,129,0.14) !important;
+  outline: 4px solid rgba(16,185,129,0.06) !important;
+}
+.completion-banner {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Ribbon / Badge Animations - subtle but visible life for ribbons */
+@keyframes ribbonPulse {
+  0% { transform: translateY(0) scale(1); box-shadow: 0 6px 20px rgba(124,58,237,0.08); }
+  40% { transform: translateY(-6px) scale(1.02); box-shadow: 0 18px 48px rgba(124,58,237,0.18); }
+  60% { transform: translateY(-3px) scale(1.01); box-shadow: 0 12px 36px rgba(124,58,237,0.14); }
+  100% { transform: translateY(0) scale(1); box-shadow: 0 6px 20px rgba(124,58,237,0.08); }
+}
+
+@keyframes ribbonShimmer {
+  0% { background-position: -200% 0; opacity: 0.25; }
+  50% { background-position: 0% 0; opacity: 0.7; }
+  100% { background-position: 200% 0; opacity: 0.25; }
+}
+
+/* Apply animations to the platform ribbons/badges */
+.ribbon, .ribbon-label, .ribbon-badge,
+.badge, .badge-soft, .nav-badge, .card-badge {
+  position: relative;
+  overflow: hidden;
+  will-change: transform, box-shadow, opacity;
+  animation: ribbonPulse 3.2s cubic-bezier(.2,.9,.3,1) infinite;
+}
+
+/* stronger shimmer overlay for richer visual effect */
+.ribbon::before, .badge-soft::before, .nav-badge::before, .card-badge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(124,58,237,0.12) 0%, rgba(255,255,255,0.06) 50%, rgba(124,58,237,0.12) 100%);
+  background-size: 300% 100%;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: 0.9;
+  transform: translateX(-100%);
+  animation: ribbonShimmer 4.2s linear infinite;
+}
+
+/* Slightly stronger emphasis for nav badges (keeps them readable) */
+.nav-badge { animation-duration: 2.6s; }
+
+/* Keep animations respectful of reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .ribbon, .ribbon-label, .ribbon-badge, .badge, .badge-soft, .nav-badge, .card-badge,
+  .ribbon::before, .badge-soft::before, .nav-badge::before, .card-badge::before {
+    animation: none !important;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+

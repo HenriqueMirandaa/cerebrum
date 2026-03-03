@@ -1,0 +1,16 @@
+.env.local
+.env
+.env.*.local
+dist
+dist-ssr
+*.local
+node_modules
+*.log
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.env.production
+.env.development

@@ -1,0 +1,6 @@
+flask>=2.2.0
+sentence-transformers>=2.2.2
+numpy>=1.23.0
+faiss-cpu>=1.7.3
+llama-cpp-python>=0.1.52
+gunicorn>=20.1.0

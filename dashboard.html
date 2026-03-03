@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cerebrum — Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/components/sidebar.css">
+    <link rel="stylesheet" href="css/components/cards.css">
+    <link rel="stylesheet" href="css/components/chat.css">
+    <link rel="stylesheet" href="css/components/startup-theme.css">
+    <link rel="stylesheet" href="css/uiverse.css">
+    <link rel="stylesheet" href="css/components/visual-refresh.css">
+    <!-- Tailwind (dev-only) - provides utility classes for the progressive enhancement script -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Tipografia: Inter como base, Poppins para títulos e elementos de destaque */
+      :root {
+        --font-ui: 'Manrope', 'Space Grotesk', sans-serif;
+        --font-head: 'Space Grotesk', 'Manrope', sans-serif;
+        --font-sub: 'Manrope', sans-serif;
+        --font-num: 'Space Grotesk', sans-serif;
+      }
+
+      body {
+        font-family: var(--font-ui);
+        color: rgba(255,255,255,0.92);
+        -webkit-font-smoothing:antialiased;
+        -moz-osx-font-smoothing:grayscale;
+      }
+
+      /* Aplica Poppins em elementos de destaque */
+      .logo-text,
+      .logo-subtitle,
+      .app-title,
+      .app-subtitle,
+      .nav-item span,
+      .user-name,
+      .logo-text {
+        font-family: var(--font-head);
+      }
+
+      /* Ajustes de peso/tamanho para hierarquia */
+      .logo-text, .app-title { font-weight: 700; font-size: 1.15rem; }
+      .logo-subtitle, .app-subtitle, .nav-item span { font-weight: 500; }
+      .user-name { font-weight: 600; }
+
+      /* Pequena melhoria de legibilidade nos itens de navegação */
+      .nav-item { font-family: var(--font-head); letter-spacing: 0.01em; }
+
+      /* Garantir inputs e componentes herdarem Inter para leitura */
+      input, textarea, select, button { font-family: var(--font-ui); }
+
+      /* Section main titles (H2/H3 main headings) */
+      .section-title {
+        font-family: var(--font-head) !important;
+        font-weight: 700;
+        font-size: 1.125rem;
+        letter-spacing: -0.01em;
+        color: #fff;
+      }
+
+      /* Subtitles / supporting text */
+      .section-subtitle, .subtitle {
+        font-family: var(--font-sub) !important;
+        font-weight: 400;
+        color: rgba(255,255,255,0.78);
+        font-size: 0.95rem;
+      }
+
+      /* Numeric values / KPIs */
+      .stat-value, .kpi {
+        font-family: var(--font-num) !important;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+
+      /* Ensure nav and UI keep harmony */
+      .nav-item, .nav-item span, .logo-text, .app-title {
+        font-family: var(--font-head);
+      }
+
+      /* Minor responsive tweaks */
+      @media (max-width: 640px) {
+        .section-title { font-size: 1rem; }
+        .stat-value { font-size: 1rem; }
+      }
+    </style>
+</head>
+<body class="flex min-h-screen startup-ui">
+    <!-- Full-viewport background canvas (Three.js) -->
+    <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <!-- Sidebar -->
+    <aside class="sidebar flex flex-col">
+        <div class="p-6 border-b">
+            <div class="flex items-center gap-3">
+                <div class="logo-icon">
+                    <i class="fas fa-brain text-xl"></i>
+                </div>
+                <div>
+                    <div class="logo-text">Cerebrum</div>
+                    <div class="logo-subtitle" id="userWelcome">Carregando...</div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex-1 p-4">
+            <ul class="space-y-2">
+                <li>
+                    <a href="#inicio" class="nav-item active" data-view="inicio">
+                        <i class="fas fa-home mr-3"></i>
+                        <span>Início</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#minhas-materias" class="nav-item" data-view="minhas-materias">
+                        <i class="fas fa-book mr-3"></i>
+                        <span>Minhas Disciplinas</span>
+                    </a>
+                </li>
+                <!-- 'Adicionar Disciplinas' removed from sidebar navigation (use Minhas Disciplinas or FAB to add) -->
+                <li>
+                    <a href="#cronograma" class="nav-item" data-view="cronograma">
+                        <i class="fas fa-calendar-alt mr-3"></i>
+                        <span>Meu Cronograma</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#assistente" class="nav-item" data-view="assistente">
+                        <i class="fas fa-robot mr-3"></i>
+                        <span>Assistente IA</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#estatisticas" class="nav-item" data-view="estatisticas">
+                        <i class="fas fa-chart-bar mr-3"></i>
+                        <span>Estatísticas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#ferramentas" class="nav-item" data-view="ferramentas">
+                        <i class="fas fa-toolbox mr-3"></i>
+                        <span>Ferramentas</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="p-4 border-t">
+            <div class="text-xs text-gray-500 mb-3">
+                    <div class="flex items-center gap-2 mb-2">
+                    <div class="status-dot"></div>
+                    <span id="userInfo">Utilizador: Carregando...</span>
+                </div>
+                <button id="logoutBtn" class="btn-secondary w-full text-sm py-2">
+                    <i class="fas fa-sign-out-alt mr-2"></i>
+                    Sair
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden">
+        <!-- Header -->
+        <header class="glass border-b p-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="app-title">Cerebrum</h1>
+                    <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div style="min-width:260px;">
+                        <div style="position:relative">
+                            <input id="globalSearch" class="form-input" placeholder="Buscar disciplinas..." style="width:260px;padding-right:38px;" />
+                            <i class="fas fa-search" style="position:absolute;right:10px;top:10px;color:var(--gray-400)"></i>
+                        </div>
+                    </div>
+                    <!-- Tema fixo: modo escuro (botão de alternar tema removido) -->
+                    <div class="user-info">
+                        <i class="fas fa-user-circle text-gray-400"></i>
+                        <span class="user-name" id="headerUserName">Carregando...</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="flex-1 overflow-auto p-6">
+            <div id="view" class="max-w-6xl mx-auto">
+                <div class="text-center py-12">
+                    <i class="fas fa-spinner fa-spin text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-gray-500">Carregando...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- debug removed -->
+
+    <!-- JavaScript (use module entrypoint for the app) -->
+    <script src="js/utils/ui.js"></script>
+    <!-- React (UMD) and our small React confirm widget (used for logout confirm) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="js/react-confirm-widget.js"></script>
+    <script src="js/react-enhance.js"></script>
+    <script src="js/react-hours-prompt.js"></script>
+    <!-- Three.js loader: tenta múltiplos CDNs e, se falharem, carrega localmente; se nada disponível, three-particles ativará fallback 2D -->
+    <script>
+        (function(){
+            // lista de fontes CDN preferenciais
+            const urls = [
+                'https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js',
+                'https://cdn.jsdelivr.net/npm/three@0.152.0/build/three.min.js',
+                'https://unpkg.com/three@0.152.0/build/three.min.js'
+            ];
+            function loadNext(i){
+                if (i>=urls.length){
+                    // tente carregar uma cópia local se existir
+                    const local = '/pap2326/js/libs/three.min.js';
+                    const s = document.createElement('script'); s.src = local; s.async = false;
+                    s.onload = function(){ console.log('Three.js carregado localmente:', local); loadThreeParticles(); };
+                    s.onerror = function(){ console.warn('Three.js não encontrado em CDNs nem local; usando fallback 2D'); loadThreeParticles(); };
+                    document.head.appendChild(s);
+                    return;
+                }
+                const s = document.createElement('script'); s.src = urls[i]; s.async = false;
+                s.onload = function(){ console.log('Three.js carregado de:', urls[i]); loadThreeParticles(); };
+                s.onerror = function(){ console.warn('Falha ao carregar', urls[i]); loadNext(i+1); };
+                document.head.appendChild(s);
+            }
+            function loadThreeParticles(){
+                const s = document.createElement('script'); s.src = 'js/three-particles.js?v=20251204.1'; s.defer = true; document.head.appendChild(s);
+            }
+            loadNext(0);
+        })();
+    </script>
+    <script type="module" src="js/dashboard.js?v=20251220.1"></script>
+    <script src="js/i18n.js"></script>
+    <!-- debug wiring removed -->
+
+    <!-- Floating action button (adds matéria) -->
+    <button class="fab" id="fabAdd" title="Adicionar Disciplina"><i class="fas fa-plus"></i></button>
+
+    <script>
+        // Small UI wiring: search (enter => minhas matérias), theme toggle and FAB
+        document.addEventListener('DOMContentLoaded', function(){
+            // Forçar modo escuro sempre
+            try { document.documentElement.classList.add('dark'); } catch (e) { /* ignore */ }
+            const search = document.getElementById('globalSearch');
+            if (search) {
+                search.addEventListener('input', function(e){
+                    try { if (window.dashboard && typeof window.dashboard.applySearch === 'function') window.dashboard.applySearch(e.target.value); } catch (err) { /* ignore */ }
+                });
+                search.addEventListener('keydown', function(e){ if (e.key === 'Enter') { try { window.dashboard.showView('minhas-materias'); } catch (err) { console.warn('dashboard not ready', err); } } });
+            }
+
+            // Tema fixo: não há botão de alternância (modo escuro sempre ativo)
+
+            const fab = document.getElementById('fabAdd');
+            if (fab) {
+                fab.addEventListener('click', function(){
+                    try { if (window.dashboard && typeof window.dashboard.openAddModal === 'function') window.dashboard.openAddModal(); else window.dashboard.showView('adicionar-materias'); } catch (err) { console.warn('dashboard not ready', err); }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

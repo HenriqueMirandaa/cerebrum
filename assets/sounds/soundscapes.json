@@ -1,0 +1,17 @@
+{
+  "rain": {
+    "file": "rain_loop.mp3",
+    "displayName": "Chuva",
+    "loop": true
+  },
+  "cafe": {
+    "file": "cafe_loop.mp3",
+    "displayName": "Café",
+    "loop": true
+  },
+  "brown": {
+    "file": "brown_noise_loop.mp3",
+    "displayName": "Ruído Marrom",
+    "loop": true
+  }
+}
