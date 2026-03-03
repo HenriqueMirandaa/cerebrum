@@ -161,9 +161,20 @@ app.get('/api/user/progress', require('./middleware/auth'), async (req, res) => 
     }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-    res.json({ message: 'API Cerebrum funcionando!', timestamp: new Date().toISOString() });
+// Health check (includes lightweight DB probe for production diagnostics)
+app.get('/api/health', async (req, res) => {
+    const payload = { message: 'API Cerebrum funcionando!', timestamp: new Date().toISOString(), db: { ok: false } };
+    try {
+        await pool.execute('SELECT 1');
+        payload.db = { ok: true };
+    } catch (error) {
+        payload.db = {
+            ok: false,
+            code: error && error.code ? error.code : 'DB_ERROR',
+            message: error && error.message ? String(error.message) : 'unknown',
+        };
+    }
+    res.json(payload);
 });
 
 // Debug endpoint to inspect session and cookies (development only)
