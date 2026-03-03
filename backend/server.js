@@ -39,6 +39,11 @@ function normalizeOrigin(value) {
     return String(value).trim().replace(/\/+$/, '');
 }
 
+function isVercelPreviewOrigin(origin) {
+    const o = normalizeOrigin(origin);
+    return /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(o);
+}
+
 function isAllowedOrigin(origin, allowedOrigin) {
     const originNormalized = normalizeOrigin(origin);
     const allowedNormalized = normalizeOrigin(allowedOrigin);
@@ -61,13 +66,16 @@ const allowedOrigins = (process.env.CORS_ALLOWED || process.env.FRONTEND_ORIGIN 
     .split(',')
     .map((s) => normalizeOrigin(s))
     .filter(Boolean);
+const allowVercelPreviews = process.env.ALLOW_VERCEL_PREVIEWS !== 'false';
 if (allowedOrigins.length > 0) {
     app.use(cors({ origin: function(origin, cb) {
         // allow non-browser requests or same-origin with no Origin header
         if (!origin) return cb(null, true);
+        if (allowVercelPreviews && isVercelPreviewOrigin(origin)) return cb(null, true);
         if (allowedOrigins.some((allowed) => isAllowedOrigin(origin, allowed))) return cb(null, true);
         console.warn('[CORS] blocked origin', origin);
-        return cb(new Error('Not allowed by CORS'));
+        // Return false instead of throwing so blocked CORS doesn't become HTTP 500.
+        return cb(null, false);
     }, credentials: true }));
 } else {
     // development fallback: reflect origin (use carefully)
