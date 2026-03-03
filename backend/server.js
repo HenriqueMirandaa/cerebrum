@@ -6,7 +6,9 @@ const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 require('dotenv').config();
 
-const pool = require('./config/database');
+const poolModule = require('./config/database');
+const pool = poolModule;
+const dbConfig = poolModule.dbConfig || {};
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const materiaRoutes = require('./routes/materias');
@@ -15,8 +17,12 @@ const aiRoutes = require('./routes/offline_ai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const requiredEnv = ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET', 'SESSION_SECRET'];
-const missingRequired = requiredEnv.filter((key) => !process.env[key]);
+const missingRequired = [];
+if (!dbConfig.host) missingRequired.push('DB_HOST/MYSQLHOST');
+if (!dbConfig.user) missingRequired.push('DB_USER/MYSQLUSER');
+if (!dbConfig.database) missingRequired.push('DB_NAME/MYSQLDATABASE');
+if (!process.env.JWT_SECRET) missingRequired.push('JWT_SECRET');
+if (!process.env.SESSION_SECRET) missingRequired.push('SESSION_SECRET');
 if (missingRequired.length > 0) {
     const msg = `[config] Missing required env vars: ${missingRequired.join(', ')}`;
     if (process.env.NODE_ENV === 'production') {
@@ -72,11 +78,11 @@ app.use(cookieParser());
 
 // Session store in MySQL
 const sessionStore = new MySQLStore({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
+    host: dbConfig.host,
+    port: dbConfig.port || 3306,
+    user: dbConfig.user,
+    password: dbConfig.password,
+    database: dbConfig.database,
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: process.env.DB_SSL_STRICT === 'true' } : undefined
 });
 
