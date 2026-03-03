@@ -15,6 +15,15 @@ const aiRoutes = require('./routes/offline_ai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const requiredEnv = ['DB_HOST', 'DB_USER', 'DB_NAME', 'JWT_SECRET', 'SESSION_SECRET'];
+const missingRequired = requiredEnv.filter((key) => !process.env[key]);
+if (missingRequired.length > 0) {
+    const msg = `[config] Missing required env vars: ${missingRequired.join(', ')}`;
+    if (process.env.NODE_ENV === 'production') {
+        throw new Error(msg);
+    }
+    console.warn(msg);
+}
 
 // Security + parsing
 app.use(helmet());
@@ -41,7 +50,8 @@ const sessionStore = new MySQLStore({
     port: process.env.DB_PORT || 3306,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME
+    database: process.env.DB_NAME,
+    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: process.env.DB_SSL_STRICT === 'true' } : undefined
 });
 
 // Trust proxy when behind a reverse proxy (needed for secure cookies when using TLS offload)
@@ -52,7 +62,7 @@ if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
 const isProduction = process.env.NODE_ENV === 'production';
 const forceSecure = process.env.FORCE_SECURE === 'true';
 const secureCookie = isProduction || forceSecure;
-const cookieSameSite = secureCookie ? 'none' : (process.env.COOKIE_SAME_SITE || 'lax');
+const cookieSameSite = process.env.COOKIE_SAME_SITE || (secureCookie ? 'none' : 'lax');
 const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
 
 app.use(session({
@@ -154,7 +164,7 @@ app.listen(PORT, () => {
     console.log(`🌐 CORS origin: reflected dynamically (dev mode)`);
     console.log('🧭 Session cookie settings:', {
         key: process.env.SESSION_KEY || 'cerebrum_sid',
-        sameSite: 'lax',
-        secure: false
+        sameSite: cookieSameSite,
+        secure: secureCookie
     });
 });

@@ -9,6 +9,7 @@ node_modules
 .DS_Store
 .vscode
 .idea
+backups/
 *.swp
 *.swo
 *~

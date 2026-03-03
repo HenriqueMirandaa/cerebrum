@@ -308,22 +308,27 @@
 
     <!-- Base configuration -->
     <script>
-        // Configure base URL and API origin for development
-        window.BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? `${window.location.protocol}//${window.location.host}/pap2326`
-            : '';
-        // If not provided, in dev point API to local Node backend on :3001
-        if (!window.API_ORIGIN) {
-            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                window.API_ORIGIN = `${window.location.protocol}//${window.location.hostname}:3001`;
+        function detectBasePath() {
+            const p = window.location.pathname || '/';
+            if (p === '/' || p === '') return '/';
+            if (p.endsWith('.html')) {
+                const idx = p.lastIndexOf('/');
+                return idx > 0 ? p.slice(0, idx) : '/';
             }
+            return p;
         }
 
-        // Ensure BASE_PATH when served under a subpath (XAMPP Apache serve at /pap2326)
-        // This makes routing and navigation stable when the frontend is not at root '/'
+        // Configure base path automatically so it works in XAMPP subfolders and root domains.
         if (typeof window.BASE_PATH === 'undefined') {
-            // adjust this value if your project folder is different
-            window.BASE_PATH = '/pap2326';
+            window.BASE_PATH = detectBasePath();
+        }
+
+        // Configure BASE_URL from detected base path.
+        window.BASE_URL = `${window.location.protocol}//${window.location.host}${window.BASE_PATH === '/' ? '' : window.BASE_PATH}`;
+
+        // If not provided, in local development point API to local Node backend on :3001.
+        if (!window.API_ORIGIN && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+            window.API_ORIGIN = `${window.location.protocol}//${window.location.hostname}:3001`;
         }
 
         // If the page is opened via file://, show a clear banner explaining how to run via HTTP

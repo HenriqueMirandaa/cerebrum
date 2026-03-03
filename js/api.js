@@ -4,9 +4,13 @@ import { showToast, generateSchedule, calculateStats } from './utils/helpers.js'
 // Unified API service (singleton)
 function createApiService() {
     const baseUrl = window.BASE_URL || '';
+    const viteApiOrigin = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_ORIGIN)
+        ? String(import.meta.env.VITE_API_ORIGIN).trim()
+        : '';
     // Prefer explicit API origin when provided (window.API_ORIGIN).
     // In local development, default to Node backend on port 3001.
     const backendOrigin = (window.API_ORIGIN && String(window.API_ORIGIN).trim()) ||
+        viteApiOrigin ||
         ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? `${window.location.protocol}//${window.location.hostname}:3001`
             : baseUrl || '');

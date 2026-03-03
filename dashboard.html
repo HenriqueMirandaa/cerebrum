@@ -221,7 +221,7 @@
             function loadNext(i){
                 if (i>=urls.length){
                     // tente carregar uma cópia local se existir
-                    const local = '/pap2326/js/libs/three.min.js';
+                    const local = 'js/libs/three.min.js';
                     const s = document.createElement('script'); s.src = local; s.async = false;
                     s.onload = function(){ console.log('Three.js carregado localmente:', local); loadThreeParticles(); };
                     s.onerror = function(){ console.warn('Three.js não encontrado em CDNs nem local; usando fallback 2D'); loadThreeParticles(); };

@@ -4,9 +4,9 @@ const options = {
   port: 3001,
   path: '/api/subjects/minhas',
   method: 'GET',
-  headers: {
-    'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiaWF0IjoxNzcwODI3MjIyLCJleHAiOjE3NzE0MzIwMjJ9.YnDr0VCE6A7K9uW0-72YnJA7rjFiyTUmTyCxq8Dw7aM'
-  }
+  headers: process.env.TEST_AUTH_TOKEN
+    ? { Authorization: `Bearer ${process.env.TEST_AUTH_TOKEN}` }
+    : {}
 };
 
 const req = http.request(options, res => {
