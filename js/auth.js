@@ -1,4 +1,5 @@
 // auth.js - Script de autenticação integrado com backend real
+import './i18n.js';
 import api from './api.js';
 
 // Aguarda o DOM carregar completamente

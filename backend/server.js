@@ -28,12 +28,38 @@ if (missingRequired.length > 0) {
 // Security + parsing
 app.use(helmet());
 // CORS: prefer explicit allowed origins via env (comma-separated). If none provided, reflect origin (dev).
-const allowedOrigins = (process.env.CORS_ALLOWED || process.env.FRONTEND_ORIGIN || process.env.SITE_URL || '').split(',').map(s => s.trim()).filter(Boolean);
+function normalizeOrigin(value) {
+    if (!value) return '';
+    return String(value).trim().replace(/\/+$/, '');
+}
+
+function isAllowedOrigin(origin, allowedOrigin) {
+    const originNormalized = normalizeOrigin(origin);
+    const allowedNormalized = normalizeOrigin(allowedOrigin);
+    if (!originNormalized || !allowedNormalized) return false;
+    if (originNormalized === allowedNormalized) return true;
+
+    // Support wildcard patterns such as https://*.vercel.app
+    if (allowedNormalized.includes('*')) {
+        const escaped = allowedNormalized
+            .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+            .replace(/\*/g, '.*');
+        const regex = new RegExp(`^${escaped}$`);
+        return regex.test(originNormalized);
+    }
+
+    return false;
+}
+
+const allowedOrigins = (process.env.CORS_ALLOWED || process.env.FRONTEND_ORIGIN || process.env.SITE_URL || '')
+    .split(',')
+    .map((s) => normalizeOrigin(s))
+    .filter(Boolean);
 if (allowedOrigins.length > 0) {
     app.use(cors({ origin: function(origin, cb) {
         // allow non-browser requests or same-origin with no Origin header
         if (!origin) return cb(null, true);
-        if (allowedOrigins.includes(origin)) return cb(null, true);
+        if (allowedOrigins.some((allowed) => isAllowedOrigin(origin, allowed))) return cb(null, true);
         console.warn('[CORS] blocked origin', origin);
         return cb(new Error('Not allowed by CORS'));
     }, credentials: true }));
