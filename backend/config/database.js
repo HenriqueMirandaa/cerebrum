@@ -19,11 +19,12 @@ function parseDbUrl(dbUrl) {
 
 const urlConfig = parseDbUrl(process.env.DATABASE_URL || process.env.MYSQL_URL || process.env.MYSQL_PUBLIC_URL);
 const dbConfig = {
-    host: process.env.DB_HOST || process.env.MYSQLHOST || (urlConfig && urlConfig.host),
-    port: Number(process.env.DB_PORT || process.env.MYSQLPORT || (urlConfig && urlConfig.port) || 3306),
-    user: process.env.DB_USER || process.env.MYSQLUSER || (urlConfig && urlConfig.user),
-    password: process.env.DB_PASSWORD || process.env.MYSQLPASSWORD || (urlConfig && urlConfig.password),
-    database: process.env.DB_NAME || process.env.MYSQLDATABASE || (urlConfig && urlConfig.database),
+    // Prefer URL-based credentials when available (Railway standard), then fallback to explicit vars.
+    host: (urlConfig && urlConfig.host) || process.env.DB_HOST || process.env.MYSQLHOST,
+    port: Number((urlConfig && urlConfig.port) || process.env.DB_PORT || process.env.MYSQLPORT || 3306),
+    user: (urlConfig && urlConfig.user) || process.env.DB_USER || process.env.MYSQLUSER,
+    password: (urlConfig && urlConfig.password) || process.env.DB_PASSWORD || process.env.MYSQLPASSWORD,
+    database: (urlConfig && urlConfig.database) || process.env.DB_NAME || process.env.MYSQLDATABASE,
     ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: process.env.DB_SSL_STRICT === 'true' } : undefined,
 };
 
