@@ -7,10 +7,12 @@ function createApiService() {
     const viteApiOrigin = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_ORIGIN)
         ? String(import.meta.env.VITE_API_ORIGIN).trim()
         : '';
+    const runningOnVercel = /\.vercel\.app$/i.test(window.location.hostname);
     // Prefer explicit API origin when provided (window.API_ORIGIN).
+    // In Vercel environments, prefer same-origin (/api) to avoid CORS on preview domains.
     // In local development, default to Node backend on port 3001.
     const backendOrigin = (window.API_ORIGIN && String(window.API_ORIGIN).trim()) ||
-        viteApiOrigin ||
+        (!runningOnVercel ? viteApiOrigin : '') ||
         ((window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
             ? `${window.location.protocol}//${window.location.hostname}:3001`
             : baseUrl || '');
