@@ -84,16 +84,6 @@ if (allowedOrigins.length > 0) {
 app.use(express.json());
 app.use(cookieParser());
 
-// Session store in MySQL
-const sessionStore = new MySQLStore({
-    host: dbConfig.host,
-    port: dbConfig.port || 3306,
-    user: dbConfig.user,
-    password: dbConfig.password,
-    database: dbConfig.database,
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: process.env.DB_SSL_STRICT === 'true' } : undefined
-});
-
 // Trust proxy when behind a reverse proxy (needed for secure cookies when using TLS offload)
 if (process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true') {
     app.set('trust proxy', 1);
@@ -104,23 +94,61 @@ const forceSecure = process.env.FORCE_SECURE === 'true';
 const secureCookie = isProduction || forceSecure;
 const cookieSameSite = process.env.COOKIE_SAME_SITE || (secureCookie ? 'none' : 'lax');
 const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+const sessionEnabled = process.env.SESSION_ENABLED !== 'false';
+let sessionMiddleware = null;
 
-app.use(session({
-    key: process.env.SESSION_KEY || 'cerebrum_sid',
-    secret: process.env.SESSION_SECRET || 'please_change_me',
-    store: sessionStore,
-    resave: false,
-    saveUninitialized: false,
-    rolling: true, // refresh cookie expiry on activity
-    cookie: {
-        maxAge: 24 * 60 * 60 * 1000,
-        httpOnly: true,
-        sameSite: cookieSameSite,
-        secure: secureCookie,
-        path: '/',
-        domain: cookieDomain
+if (sessionEnabled) {
+    try {
+        const sessionStore = new MySQLStore({
+            host: dbConfig.host,
+            port: dbConfig.port || 3306,
+            user: dbConfig.user,
+            password: dbConfig.password,
+            database: dbConfig.database,
+            ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: process.env.DB_SSL_STRICT === 'true' } : undefined
+        });
+
+        if (sessionStore && typeof sessionStore.on === 'function') {
+            sessionStore.on('error', (error) => {
+                console.error('[session-store] error:', error);
+            });
+        }
+
+        sessionMiddleware = session({
+            key: process.env.SESSION_KEY || 'cerebrum_sid',
+            secret: process.env.SESSION_SECRET || 'please_change_me',
+            store: sessionStore,
+            resave: false,
+            saveUninitialized: false,
+            rolling: true, // refresh cookie expiry on activity
+            cookie: {
+                maxAge: 24 * 60 * 60 * 1000,
+                httpOnly: true,
+                sameSite: cookieSameSite,
+                secure: secureCookie,
+                path: '/',
+                domain: cookieDomain
+            }
+        });
+    } catch (error) {
+        console.error('[session] initialization failed; continuing with JWT-only auth:', error);
+        sessionMiddleware = null;
     }
-}));
+}
+
+if (sessionMiddleware) {
+    app.use((req, res, next) => {
+        sessionMiddleware(req, res, (error) => {
+            if (error) {
+                console.error('[session] middleware error; continuing with JWT-only auth:', error);
+                req.session = null;
+            }
+            next();
+        });
+    });
+} else {
+    console.warn('[session] disabled or unavailable; API running with JWT-only auth');
+}
 
 // Mount routers to match requested endpoints
 // Auth endpoints: /api/register, /api/login, /api/profile -> implemented in routes/auth.js
@@ -200,6 +228,9 @@ app.get('/api/debug/session', (req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
+    if (err && err.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'JSON invalido no corpo da requisicao.' });
+    }
     console.error(err.stack);
     res.status(500).json({ error: 'Algo deu errado!' });
 });
@@ -213,9 +244,10 @@ app.listen(PORT, () => {
     console.log(`📊 Banco: ${process.env.DB_NAME}`);
     console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
     console.log(`🌐 CORS origin: reflected dynamically (dev mode)`);
-    console.log('🧭 Session cookie settings:', {
+    console.log('🧭 Session settings:', sessionMiddleware ? {
+        enabled: true,
         key: process.env.SESSION_KEY || 'cerebrum_sid',
         sameSite: cookieSameSite,
         secure: secureCookie
-    });
+    } : { enabled: false, mode: 'jwt-only' });
 });
