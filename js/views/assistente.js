@@ -62,7 +62,7 @@ function renderAssistantLayout() {
                         <button data-action="analyze" class="btn w-full">Analisar Progresso</button>
                         <button data-action="suggest" class="btn w-full">Sugestoes de Estudo</button>
                         <button data-action="quiz" class="btn w-full">Gerar Quiz Rapido</button>
-                        <button data-action="add-subject" class="btn w-full">Adicionar Materia</button>
+                        <button data-action="add-subject" class="btn w-full">Adicionar Disciplina</button>
                         <button data-action="help" class="btn w-full">Mostrar Comandos</button>
                         <button type="button" class="btn w-full" id="showCapabilitiesBtn">Ver Capacidades da IA</button>
                     </div>

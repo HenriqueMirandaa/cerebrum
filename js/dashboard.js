@@ -147,14 +147,14 @@ class Dashboard {
 
     updateUserInfo() {
         const userObj = this.user || {};
-        const displayName = userObj.name || userObj.nome || 'Usuário';
+        const displayName = userObj.name || userObj.nome || 'Utilizador';
         const username = userObj.username || userObj.email || '';
 
         const elWelcome = document.getElementById('userWelcome');
         if (elWelcome) elWelcome.textContent = `Olá, ${displayName}`;
 
         const elUserInfo = document.getElementById('userInfo');
-        if (elUserInfo) elUserInfo.textContent = `Usuário: ${username}`;
+        if (elUserInfo) elUserInfo.textContent = `Utilizador: ${username}`;
 
         const elHeaderName = document.getElementById('headerUserName');
         if (elHeaderName) elHeaderName.textContent = displayName;
@@ -225,7 +225,7 @@ class Dashboard {
 
         const stats = this.calculateStats();
 
-        const displayName = (this.user && (this.user.name || this.user.nome)) || 'Usuário';
+        const displayName = (this.user && (this.user.name || this.user.nome)) || 'Utilizador';
         document.getElementById('view').innerHTML = `
             <div class="mb-6 hero card">
                 <div class="hero-main">
@@ -236,8 +236,8 @@ class Dashboard {
                     </div>
                 </div>
                 <div class="hero-actions">
-                    <button class="btn-uiverse" onclick="dashboard.showView('adicionar-materias')"><i class="fas fa-plus"></i> Adicionar Matéria</button>
-                    <button class="btn-primary" onclick="dashboard.showView('minhas-materias')">Minhas Matérias</button>
+                    <button class="btn-uiverse" onclick="dashboard.showView('adicionar-materias')"><i class="fas fa-plus"></i> Adicionar Disciplina</button>
+                    <button class="btn-primary" onclick="dashboard.showView('minhas-materias')">Minhas Disciplinas</button>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -1086,30 +1086,30 @@ class Dashboard {
                 await api.request('/subjects/sugerir', { method: 'POST', body: JSON.stringify(payload) });
             }
 
-            this.showSuccess('Matéria adicionada');
+            this.showSuccess('Disciplina adicionada');
             await this.loadMateriasData();
             this.showView('minhas-materias');
         } catch (error) {
             console.error('adicionarMateria failed', error);
-            this.showError('Erro ao adicionar matéria');
+            this.showError('Erro ao adicionar disciplina');
         }
     }
 
     async removerMateria(subjectId) {
         try {
-            const ok = await (window.SiteUI && window.SiteUI.confirm ? window.SiteUI.confirm('Deseja remover esta matéria do seu plano?') : Promise.resolve(confirm('Deseja remover esta matéria do seu plano?')));
+            const ok = await (window.SiteUI && window.SiteUI.confirm ? window.SiteUI.confirm('Deseja remover esta disciplina do seu plano?') : Promise.resolve(confirm('Deseja remover esta disciplina do seu plano?')));
             if (!ok) return;
         } catch (e) {
-            if (!confirm('Deseja remover esta matéria do seu plano?')) return;
+            if (!confirm('Deseja remover esta disciplina do seu plano?')) return;
         }
         try {
             await api.removerMateria(subjectId);
             // Reload and re-render the Minhas Matérias view so the UI reflects the deletion immediately.
             // showView('minhas-materias') will call renderMinhasMaterias which loads fresh data.
             await this.showView('minhas-materias');
-            this.showSuccess('Matéria removida');
+            this.showSuccess('Disciplina removida');
         } catch (error) {
-            this.showError('Erro ao remover matéria');
+            this.showError('Erro ao remover disciplina');
         }
     }
     
@@ -1214,12 +1214,12 @@ class Dashboard {
             card.className = 'modal-card';
             card.innerHTML = `
                 <div class="add-materia-modal-header">
-                    <h3 class="add-materia-modal-title">Adicionar Matéria</h3>
+                    <h3 class="add-materia-modal-title">Adicionar Disciplina</h3>
                     <button id="add-materia-cancel" class="btn-secondary">Cancelar</button>
                 </div>
                 <div class="add-materia-form-grid">
                     <div>
-                        <label class="label-muted">Escolher matéria disponível</label>
+                        <label class="label-muted">Escolher disciplina disponível</label>
                             <select id="add-select-existing" class="form-input">
                             <option value="">-- Nenhuma (criar nova) --</option>
                             ${(this.materiasDisponiveis || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
@@ -1230,8 +1230,8 @@ class Dashboard {
                         <input type="date" id="add-exam-date" class="form-input" min="${todayISO()}" />
                     </div>
                     <div class="add-materia-form-grid-full">
-                        <label class="label-muted">Ou criar matéria nova - Nome</label>
-                        <input id="add-new-name" class="form-input" placeholder="Nome da matéria" />
+                        <label class="label-muted">Ou criar disciplina nova - Nome</label>
+                        <input id="add-new-name" class="form-input" placeholder="Nome da disciplina" />
                     </div>
                     <div>
                         <label class="label-muted">Horas totais (opcional)</label>
@@ -1299,9 +1299,9 @@ class Dashboard {
                         await api.request('/subjects/sugerir', { method: 'POST', body: JSON.stringify(payload) });
                         // reload lists
                         await this.loadMateriasData();
-                        this.showSuccess('Matéria criada e adicionada');
+                        this.showSuccess('Disciplina criada e adicionada');
                     } else {
-                        this.showError('Informe um nome ou escolha uma matéria existente');
+                        this.showError('Informe um nome ou escolha uma disciplina existente');
                         return;
                     }
 
@@ -1310,7 +1310,7 @@ class Dashboard {
                     this.showView('minhas-materias');
                 } catch (err) {
                     console.error('add-materia failed', err);
-                    this.showError('Erro ao adicionar matéria');
+                    this.showError('Erro ao adicionar disciplina');
                 }
             });
         } catch (err) { console.warn('openAddModal failed', err); }

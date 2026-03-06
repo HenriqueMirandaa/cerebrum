@@ -116,17 +116,17 @@ async function renderHome() {
                 
                 <div class="stat-card">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-semibold text-gray-700">Matérias Ativas</h3>
+                        <h3 class="font-semibold text-gray-700">Disciplinas Ativas</h3>
                         <i class="fas fa-book text-purple-500"></i>
                     </div>
                     <div class="text-3xl font-bold mb-2">${materias.length}</div>
-                    <div class="text-sm text-gray-500">matérias em andamento</div>
+                    <div class="text-sm text-gray-500">disciplinas em andamento</div>
                 </div>
             </div>
 
             ${materias.length > 0 ? `
                 <div class="mb-8">
-                    <h3 class="text-xl font-bold mb-4">Suas Matérias</h3>
+                    <h3 class="text-xl font-bold mb-4">Suas Disciplinas</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         ${materias.map(materia => `
                             <div class="p-4 bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -149,10 +149,10 @@ async function renderHome() {
                     <div class="text-gray-400 mb-4">
                         <i class="fas fa-books text-4xl"></i>
                     </div>
-                    <h3 class="text-xl font-semibold mb-2">Nenhuma matéria ainda</h3>
-                    <p class="text-gray-600 mb-4">Comece adicionando suas matérias de estudo</p>
+                    <h3 class="text-xl font-semibold mb-2">Nenhuma disciplina ainda</h3>
+                    <p class="text-gray-600 mb-4">Comece adicionando suas disciplinas de estudo</p>
                     <button onclick="window.router.navigate('/adicionar')" class="btn btn-primary">
-                        Adicionar Matéria
+                        Adicionar Disciplina
                     </button>
                 </div>
             `}
