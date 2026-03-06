@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/svg+xml" href="assets/brand/cerebrum-favicon.svg">
-    <link rel="shortcut icon" href="assets/brand/cerebrum-favicon.svg">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
     <title>Cerebrum — Dashboard</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
@@ -15,7 +14,6 @@
     <link rel="stylesheet" href="css/components/startup-theme.css">
     <link rel="stylesheet" href="css/uiverse.css">
     <link rel="stylesheet" href="css/components/visual-refresh.css">
-    <link rel="stylesheet" href="css/components/responsive-dashboard.css">
     <!-- Tailwind (dev-only) - provides utility classes for the progressive enhancement script -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -98,9 +96,6 @@
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
     <!-- Sidebar -->
     <aside class="sidebar flex flex-col">
-        <button type="button" class="mobile-sidebar-close mobile-only" id="mobileSidebarClose" aria-label="Fechar menu">
-            <i class="fas fa-times"></i>
-        </button>
         <div class="p-6 border-b">
             <div class="flex items-center gap-3">
                 <div class="logo-icon">
@@ -168,26 +163,22 @@
             </div>
         </div>
     </aside>
-    <button type="button" class="dashboard-sidebar-overlay" id="sidebarOverlay" aria-label="Fechar menu lateral"></button>
 
     <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
         <header class="glass border-b p-4">
-            <div class="dashboard-header">
-                <div class="dashboard-header-left">
-                    <button type="button" class="mobile-menu-btn mobile-only" id="mobileMenuBtn" aria-label="Abrir menu">
-                        <i class="fas fa-bars"></i>
-                    </button>
-                    <div>
-                        <h1 class="app-title">Cerebrum</h1>
-                        <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
-                    </div>
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="app-title">Cerebrum</h1>
+                    <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
                 </div>
-                <div class="dashboard-header-right">
-                    <div class="dashboard-search-wrap">
-                        <input id="globalSearch" class="form-input dashboard-search-input" placeholder="Buscar disciplinas..." />
-                        <i class="fas fa-search dashboard-search-icon" aria-hidden="true"></i>
+                <div class="flex items-center gap-4">
+                    <div style="min-width:260px;">
+                        <div style="position:relative">
+                            <input id="globalSearch" class="form-input" placeholder="Buscar disciplinas..." style="width:260px;padding-right:38px;" />
+                            <i class="fas fa-search" style="position:absolute;right:10px;top:10px;color:var(--gray-400)"></i>
+                        </div>
                     </div>
                     <!-- Tema fixo: modo escuro (botão de alternar tema removido) -->
                     <div class="user-info">
@@ -270,32 +261,6 @@
             }
 
             // Tema fixo: não há botão de alternância (modo escuro sempre ativo)
-
-            const menuBtn = document.getElementById('mobileMenuBtn');
-            const closeBtn = document.getElementById('mobileSidebarClose');
-            const sidebarOverlay = document.getElementById('sidebarOverlay');
-            const navItems = document.querySelectorAll('.sidebar .nav-item');
-            const isMobileLayout = () => window.matchMedia('(max-width: 1024px)').matches;
-            const openSidebar = () => {
-                if (!isMobileLayout()) return;
-                document.body.classList.add('sidebar-open');
-            };
-            const closeSidebar = () => document.body.classList.remove('sidebar-open');
-
-            if (menuBtn) menuBtn.addEventListener('click', openSidebar);
-            if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
-            if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
-            navItems.forEach((item) => {
-                item.addEventListener('click', function () {
-                    if (isMobileLayout()) closeSidebar();
-                });
-            });
-            window.addEventListener('keydown', function (event) {
-                if (event.key === 'Escape') closeSidebar();
-            });
-            window.addEventListener('resize', function () {
-                if (!isMobileLayout()) closeSidebar();
-            });
 
             const fab = document.getElementById('fabAdd');
             if (fab) {
