@@ -5,6 +5,33 @@ const pool = require('../config/database');
 // (exam_date, total_hours) into `activity_logs.meta` as JSON entries with type='subject_meta'.
 // This keeps compatibility with existing databases while allowing per-user metadata storage.
 
+function toMySqlDateTime(input) {
+    const candidate = input ? new Date(input) : new Date();
+    const date = Number.isNaN(candidate.getTime()) ? new Date() : candidate;
+    return date.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+function parseHoursIncrement(input) {
+    if (typeof input === 'number' && Number.isFinite(input)) return input;
+    if (typeof input === 'string') {
+        const trimmed = input.trim();
+        if (!trimmed) return 0;
+
+        // Accept "HH:MM" as an alternative input format.
+        if (trimmed.includes(':')) {
+            const [hRaw, mRaw] = trimmed.split(':');
+            const h = Number.parseInt(hRaw, 10) || 0;
+            const m = Number.parseInt(mRaw, 10) || 0;
+            return h + (Math.max(0, Math.min(59, m)) / 60);
+        }
+
+        const normalized = trimmed.replace(',', '.');
+        const n = Number(normalized);
+        if (Number.isFinite(n)) return n;
+    }
+    return 0;
+}
+
 const materiaController = {
     // Admin: Gerenciar disciplinas
     async getAllMaterias(req, res) {
@@ -209,25 +236,37 @@ const materiaController = {
     async atualizarProgresso(req, res) {
         try {
             const { subject_id, hours_increment, last_studied } = req.body;
+            const subjectId = Number.parseInt(subject_id, 10);
+            if (!Number.isInteger(subjectId) || subjectId <= 0) {
+                return res.status(400).json({ error: 'subject_id inválido.' });
+            }
+
+            const increment = parseHoursIncrement(hours_increment);
+            const lastStudiedMySql = toMySqlDateTime(last_studied);
+
             // Increment hours_studied
-            await pool.execute(
+            const [updateResult] = await pool.execute(
                 'UPDATE user_progress SET hours_studied = hours_studied + ?, last_studied = ? WHERE user_id = ? AND subject_id = ?',
-                [hours_increment || 0, last_studied || new Date(), req.user.id, subject_id]
+                [increment, lastStudiedMySql, req.user.id, subjectId]
             );
+            if (!updateResult || !updateResult.affectedRows) {
+                return res.status(404).json({ error: 'Matéria não encontrada para este utilizador.' });
+            }
+
             // After increment, recompute progress if total_hours is present in metadata
             try {
                 const [[metaRow]] = await pool.execute(
                     `SELECT meta FROM activity_logs WHERE user_id = ? AND type = 'subject_meta' AND JSON_EXTRACT(meta, '$.subject_id') = ? ORDER BY created_at DESC LIMIT 1`,
-                    [req.user.id, subject_id]
+                    [req.user.id, subjectId]
                 );
                 if (metaRow && metaRow.meta) {
                     const parsed = typeof metaRow.meta === 'string' ? JSON.parse(metaRow.meta) : metaRow.meta;
                     const totalHours = parsed.total_hours ? Number(parsed.total_hours) : null;
                     if (totalHours && totalHours > 0) {
-                        const [[upRow]] = await pool.execute('SELECT hours_studied FROM user_progress WHERE user_id = ? AND subject_id = ?', [req.user.id, subject_id]);
+                        const [[upRow]] = await pool.execute('SELECT hours_studied FROM user_progress WHERE user_id = ? AND subject_id = ?', [req.user.id, subjectId]);
                         const hoursStudied = upRow ? Number(upRow.hours_studied || 0) : 0;
                         const progress = Math.min(100, Math.round((hoursStudied / totalHours) * 100));
-                        await pool.execute('UPDATE user_progress SET progress = ? WHERE user_id = ? AND subject_id = ?', [progress, req.user.id, subject_id]);
+                        await pool.execute('UPDATE user_progress SET progress = ? WHERE user_id = ? AND subject_id = ?', [progress, req.user.id, subjectId]);
                     }
                 }
             } catch (e) {
