@@ -237,7 +237,6 @@ class Dashboard {
                 </div>
                 <div class="hero-actions">
                     <button class="btn-uiverse" onclick="dashboard.showView('adicionar-materias')"><i class="fas fa-plus"></i> Adicionar Disciplina</button>
-                    <button class="btn-primary" onclick="dashboard.showView('minhas-materias')">Minhas Disciplinas</button>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
