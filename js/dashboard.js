@@ -228,14 +228,14 @@ class Dashboard {
         const displayName = (this.user && (this.user.name || this.user.nome)) || 'Usuário';
         document.getElementById('view').innerHTML = `
             <div class="mb-6 hero card">
-                <div style="display:flex;align-items:center;">
+                <div class="hero-main">
                     <div class="card-badge" style="background:linear-gradient(135deg,var(--primary),var(--secondary));">${(displayName||'U').slice(0,1)}</div>
                     <div>
                         <div class="title section-title">Olá, ${displayName}</div>
                         <div class="subtitle section-subtitle">Continue sua jornada de aprendizado com o Cerebrum</div>
                     </div>
                 </div>
-                <div style="margin-left:auto;display:flex;align-items:center;gap:12px;">
+                <div class="hero-actions">
                     <button class="btn-uiverse" onclick="dashboard.showView('adicionar-materias')"><i class="fas fa-plus"></i> Adicionar Matéria</button>
                     <button class="btn-primary" onclick="dashboard.showView('minhas-materias')">Minhas Matérias</button>
                 </div>
@@ -366,7 +366,7 @@ class Dashboard {
                                 <div class="progress-fill" style="width: ${materia.progresso}%"></div>
                             </div>
                         </div>
-                        <div class="flex justify-between items-center text-sm text-gray-600 mb-4">
+                        <div class="dashboard-subject-meta text-sm text-gray-600 mb-4">
                             <div>
                                 <i class="fas fa-clock mr-1"></i>
                                 ${formatHours(materia.horas_estudadas)} estudadas
@@ -650,6 +650,21 @@ class Dashboard {
 
             let soundManifestCache = null;
             let soundBaseCache = null;
+            const defaultSoundEntries = [
+                { key: 'rain', file: 'rain_loop.mp3', displayName: 'Chuva' },
+                { key: 'cafe', file: 'cafe_loop.mp3', displayName: 'Café' },
+                { key: 'brown', file: 'brown_noise_loop.mp3', displayName: 'Ruído Marrom' }
+            ];
+            const normalizeManifestEntries = (manifest) => {
+                if (!manifest || typeof manifest !== 'object') return [];
+                return Object.entries(manifest)
+                    .map(([key, cfg]) => ({
+                        key: String(key || '').trim(),
+                        file: cfg && cfg.file ? String(cfg.file).trim() : '',
+                        displayName: cfg && cfg.displayName ? String(cfg.displayName).trim() : ''
+                    }))
+                    .filter((entry) => entry.key && entry.file);
+            };
             const loadSoundManifest = async () => {
                 if (soundManifestCache && soundBaseCache !== null) {
                     return { manifest: soundManifestCache, base: soundBaseCache };
@@ -675,26 +690,46 @@ class Dashboard {
                 return { manifest: null, base: '' };
             };
 
+            const getCurrentSoundEntries = async () => {
+                const { manifest } = await loadSoundManifest();
+                const entries = normalizeManifestEntries(manifest);
+                return entries.length > 0 ? entries : defaultSoundEntries;
+            };
+
+            const hydrateSoundSelect = async () => {
+                const previous = soundSelect.value || 'none';
+                const entries = await getCurrentSoundEntries();
+                const options = ['<option value="none">Nenhum</option>']
+                    .concat(entries.map((entry) => `<option value="${entry.key}">${entry.displayName || entry.key}</option>`));
+                soundSelect.innerHTML = options.join('');
+                const hasPrevious = entries.some((entry) => entry.key === previous);
+                soundSelect.value = hasPrevious ? previous : 'none';
+            };
             const resolveSoundFileUrl = async (type) => {
                 if (!type || type === 'none') return null;
                 const { manifest, base } = await loadSoundManifest();
-                const file = manifest && manifest[type] && manifest[type].file ? manifest[type].file : null;
-                if (file) return joinPath(base, `assets/sounds/${file}`);
+                const entries = normalizeManifestEntries(manifest);
+                const fileFromManifest = entries.find((entry) => entry.key === type)?.file || null;
+                if (fileFromManifest) return joinPath(base, 'assets/sounds/' + fileFromManifest);
 
-                // fallback direto para nomes padrão se o manifesto não carregar
-                const fallbackFiles = {
-                    rain: 'rain_loop.mp3',
-                    cafe: 'cafe_loop.mp3',
-                    brown: 'brown_noise_loop.mp3'
-                };
-                const fallbackFile = fallbackFiles[type];
+                const fallbackFile = defaultSoundEntries.find((entry) => entry.key === type)?.file || null;
                 if (!fallbackFile) return null;
+                if (base) return joinPath(base, 'assets/sounds/' + fallbackFile);
                 const bases = buildSoundBaseCandidates();
-                return joinPath(bases[0] || '', `assets/sounds/${fallbackFile}`);
+                for (const candidate of bases) {
+                    const probeUrl = joinPath(candidate, 'assets/sounds/' + fallbackFile);
+                    try {
+                        const resp = await fetch(probeUrl, { method: 'HEAD' });
+                        if (resp.ok) return probeUrl;
+                    } catch (e) {
+                        // ignore and keep trying next candidate
+                    }
+                }
+                return joinPath('', 'assets/sounds/' + fallbackFile);
             };
 
             // Preload do manifesto para manter play acionado pelo clique sem atraso de rede
-            loadSoundManifest().catch(() => {});
+            loadSoundManifest().then(() => hydrateSoundSelect()).catch(() => hydrateSoundSelect());
 
             const openFocusOverlay = () => {
                 // create overlay
@@ -1137,7 +1172,7 @@ class Dashboard {
                             <div class="progress-fill" style="width: ${materia.progresso}%"></div>
                         </div>
                     </div>
-                    <div class="flex justify-between items-center text-sm text-gray-600 mb-4">
+                    <div class="dashboard-subject-meta text-sm text-gray-600 mb-4">
                         <div>
                             <i class="fas fa-clock mr-1"></i>
                             ${formatHours(materia.horas_estudadas)} estudadas
@@ -1178,36 +1213,36 @@ class Dashboard {
             const card = document.createElement('div');
             card.className = 'modal-card';
             card.innerHTML = `
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                    <h3 style="margin:0;font-size:1.125rem;font-weight:700;">Adicionar Matéria</h3>
+                <div class="add-materia-modal-header">
+                    <h3 class="add-materia-modal-title">Adicionar Matéria</h3>
                     <button id="add-materia-cancel" class="btn-secondary">Cancelar</button>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="add-materia-form-grid">
                     <div>
                         <label class="label-muted">Escolher matéria disponível</label>
-                            <select id="add-select-existing" class="form-input" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;">
+                            <select id="add-select-existing" class="form-input">
                             <option value="">-- Nenhuma (criar nova) --</option>
                             ${(this.materiasDisponiveis || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
                         </select>
                     </div>
                     <div>
                         <label class="label-muted">Data do exame (opcional)</label>
-                        <input type="date" id="add-exam-date" class="form-input" min="${todayISO()}" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+                        <input type="date" id="add-exam-date" class="form-input" min="${todayISO()}" />
                     </div>
-                    <div style="grid-column: 1 / -1;">
+                    <div class="add-materia-form-grid-full">
                         <label class="label-muted">Ou criar matéria nova - Nome</label>
-                        <input id="add-new-name" class="form-input" placeholder="Nome da matéria" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+                        <input id="add-new-name" class="form-input" placeholder="Nome da matéria" />
                     </div>
                     <div>
                         <label class="label-muted">Horas totais (opcional)</label>
-                        <input id="add-total-hours" type="number" min="0" class="form-input" style="width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;" />
+                        <input id="add-total-hours" type="number" min="0" class="form-input" />
                     </div>
                     <div>
                         <label class="label-muted">Cor (opcional)</label>
-                        <input id="add-color" type="color" value="#6366f1" style="width:100%;padding:6px;border-radius:8px;border:1px solid #ddd;" />
+                        <input id="add-color" type="color" value="#6366f1" class="form-input" />
                     </div>
                 </div>
-                <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;">
+                <div class="add-materia-modal-actions">
                     <button id="add-materia-submit" class="btn-primary">Adicionar</button>
                 </div>
             `;
@@ -1309,3 +1344,5 @@ class Dashboard {
 }
 
 window.dashboard = new Dashboard();
+
+
