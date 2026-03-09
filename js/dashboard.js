@@ -6,6 +6,94 @@ import renderAssistenteView from './views/assistente.js';
 import { startConfetti } from './confetti.js'; // <-- novo import
 import { setRegionLoading, showToast as showUiToast } from './services/ui-service.js';
 
+const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const FERRAMENTAS_TAB_KEY = 'cerebrum_ferramentas_active_tab';
+const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
+
+function escapeHtml(value) {
+    return String(value || '').replace(/[&<>"]/g, (char) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;'
+    }[char]));
+}
+
+function getStoredGeneratedQuizzes() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(GENERATED_QUIZ_STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.warn('[Dashboard] failed to parse generated quizzes', error);
+        return [];
+    }
+}
+
+function getFerramentasActiveTab() {
+    const tab = localStorage.getItem(FERRAMENTAS_TAB_KEY);
+    return tab === 'quizzes' ? 'quizzes' : 'focus';
+}
+
+function setFerramentasActiveTab(tab) {
+    localStorage.setItem(FERRAMENTAS_TAB_KEY, tab === 'quizzes' ? 'quizzes' : 'focus');
+}
+
+function formatQuizCreatedAt(isoDate) {
+    if (!isoDate) return 'Agora';
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return 'Agora';
+    return date.toLocaleString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function renderQuizLibrary(quizzes) {
+    if (!quizzes.length) {
+        return `
+            <div class="card p-6">
+                <h3 class="text-xl font-semibold mb-3">Quizzes Gerados pela IA</h3>
+                <p class="text-gray-500">Ainda nao existem quizzes nesta biblioteca.</p>
+                <p class="text-sm text-gray-400 mt-2">Peca no assistente algo como: "Gere um quiz de 5 perguntas de Historia sobre a Revolucao Industrial".</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="space-y-4">
+            ${quizzes.map((quiz) => `
+                <article class="card p-6">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold">${escapeHtml(quiz.title || `Quiz de ${quiz.subject || 'Estudos Gerais'}`)}</h3>
+                            <p class="text-sm text-gray-500 mt-1">${escapeHtml(quiz.subject || 'Geral')} - ${escapeHtml(quiz.topic || 'Revisao geral')} - ${quiz.questionCount || (quiz.questions || []).length || 0} perguntas</p>
+                        </div>
+                        <div class="text-sm text-gray-400">Criado em ${formatQuizCreatedAt(quiz.createdAt)}</div>
+                    </div>
+                    <div class="space-y-4">
+                        ${(quiz.questions || []).map((question, index) => `
+                            <section class="rounded-xl border border-white/10 bg-slate-950/30 p-4">
+                                <div class="font-medium mb-3">${index + 1}. ${escapeHtml(question.prompt)}</div>
+                                <div class="space-y-2">
+                                    ${(question.options || []).map((option, optionIndex) => `
+                                        <div class="rounded-lg border border-white/10 px-3 py-2 text-sm ${optionIndex === question.answerIndex ? 'bg-emerald-500/10 text-emerald-200 border-emerald-400/30' : 'text-gray-300'}">
+                                            ${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}
+                                        </div>
+                                    `).join('')}
+                                </div>
+                                <p class="text-xs text-gray-400 mt-3">${escapeHtml(question.explanation || 'Revise o conceito principal e tente justificar a alternativa correta com suas palavras.')}</p>
+                            </section>
+                        `).join('')}
+                    </div>
+                </article>
+            `).join('')}
+        </div>
+    `;
+}
+
 class Dashboard {
     constructor() {
         this.currentView = 'inicio';
@@ -143,6 +231,21 @@ class Dashboard {
                 window.location.href = 'index.html';
             });
         }
+
+        window.addEventListener(QUIZ_CREATED_EVENT, (event) => {
+            const quiz = event.detail && event.detail.quiz ? event.detail.quiz : null;
+            setFerramentasActiveTab('quizzes');
+            this._showToast(
+                quiz
+                    ? `Quiz criado: ${quiz.subject || 'Geral'} - ${quiz.topic || 'Revisao geral'}`
+                    : 'Quiz criado com sucesso.',
+                'success',
+                4200
+            );
+            if (this.currentView === 'ferramentas') {
+                this.renderFerramentas().catch((error) => console.warn('Failed to refresh ferramentas after quiz creation', error));
+            }
+        });
     }
 
     updateUserInfo() {
@@ -266,66 +369,6 @@ class Dashboard {
                     </div>
                     <div class="text-3xl font-bold mb-2 stat-value">${formatHours(stats.horasEstudadas)}</div>
                     <div class="text-sm text-gray-500 section-subtitle">total dedicado</div>
-                </div>
-            </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="card p-6">
-                    <h3 class="text-xl font-semibold mb-4 section-title">Disciplinas em Andamento</h3>
-                    <div class="space-y-4">
-                        ${this.minhasDisciplinas.slice(0, 3).map(materia => `
-                            <div class="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition">
-                                <div class="flex items-center">
-                                    <div class="w-10 h-10 rounded-lg flex items-center justify-center text-white mr-3" style="background: ${materia.cor}">
-                                        <i class="${materia.icone}"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium">${materia.nome}</div>
-                                        <div class="text-sm text-gray-500">${materia.progresso}% concluído</div>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="font-bold text-lg stat-value">${formatHours(materia.horas_estudadas)}</div>
-                                    <div class="text-xs text-gray-500 section-subtitle">estudadas</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                        ${this.minhasDisciplinas.length === 0 ? `
-                            <div class="text-center py-4 text-gray-500">
-                                <i class="fas fa-book text-2xl mb-2 opacity-30"></i>
-                                <p>Nenhuma disciplina cadastrada</p>
-                                <a href="#" onclick="dashboard.showView('adicionar-materias')" class="text-blue-600 hover:text-blue-800 text-sm">Adicionar sua primeira disciplina</a>
-                            </div>
-                        ` : ''}
-                    </div>
-                    ${this.minhasDisciplinas.length > 0 ? `
-                        <a href="#minhas-materias" class="block mt-4 text-center text-blue-600 font-medium hover:text-blue-800 transition section-subtitle">
-                            Ver todas as disciplinas
-                        </a>
-                    ` : ''}
-                </div>
-                <div class="card p-6">
-                    <h3 class="text-xl font-semibold mb-4 section-title">Próximas Metas</h3>
-                    <div class="space-y-4">
-                        ${this.minhasDisciplinas.filter(m => m.progresso < 100).slice(0, 3).map(materia => `
-                            <div class="flex items-center justify-between p-3 border rounded-lg">
-                                <div>
-                                    <div class="font-medium">${materia.nome}</div>
-                                    <div class="text-sm text-gray-500">Alcançar 100%</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="font-bold text-lg stat-value">${100 - materia.progresso}%</div>
-                                    <div class="text-xs text-gray-500 section-subtitle">restante</div>
-                                </div>
-                            </div>
-                        `).join('')}
-                        ${this.minhasDisciplinas.filter(m => m.progresso < 100).length === 0 ? `
-                            <div class="text-center py-4 text-gray-500">
-                                <i class="fas fa-flag-checkered text-2xl mb-2 opacity-30"></i>
-                                <p>Todas as disciplinas concluídas!</p>
-                                <p class="text-sm mt-2">🎉 Parabéns pelo progresso!</p>
-                            </div>
-                        ` : ''}
-                    </div>
                 </div>
             </div>
         `;
@@ -531,56 +574,94 @@ class Dashboard {
     }
 
     async renderFerramentas() {
+        const activeTab = getFerramentasActiveTab();
+        const quizzes = getStoredGeneratedQuizzes();
         document.getElementById('view').innerHTML = `
             <div class="mb-8">
                 <h2 class="text-3xl font-bold mb-2 section-title">Ferramentas de Estudo</h2>
-                <p class="text-gray-600">Recursos para tornar suas sessões mais produtivas.</p>
+                <p class="text-gray-600">Recursos para tornar suas sessoes mais produtivas.</p>
             </div>
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div class="card p-6">
-                    <h3 class="text-xl font-semibold mb-4">Modo Foco Imersivo</h3>
-                    <p class="text-gray-500 mb-4">Tela limpa, temporizador Pomodoro e sons ambientes opcionais.</p>
-                    <div class="space-y-3">
-                        <div class="grid grid-cols-2 gap-3">
-                            <label class="label-muted">Foco (min)</label>
-                            <input id="focus-minutes" type="number" min="1" value="25" class="form-input" />
-                            <label class="label-muted">Pausa (min)</label>
-                            <input id="break-minutes" type="number" min="1" value="5" class="form-input" />
-                        </div>
-
-                        <div>
-                            <label class="label-muted">Soundscape</label>
-                            <select id="soundscape-select" class="form-input">
-                                <option value="none">Nenhum</option>
-                                <option value="rain">Chuva</option>
-                                <option value="cafe">Café</option>
-                                <option value="brown">Ruído Marrom</option>
-                            </select>
-                        </div>
-
-                        <div class="flex items-center gap-3">
-                            <label class="label-muted">Volume</label>
-                            <input id="sound-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
-                        </div>
-
-                        <div class="flex gap-3 mt-4">
-                            <button id="enter-focus-btn" class="btn-primary">Entrar no Modo Foco</button>
-                            <button id="open-pomodoro-btn" class="btn-secondary">Abrir Temporizador</button>
+            <div class="flex flex-wrap gap-3 mb-6">
+                <button id="ferramentas-tab-focus" class="${activeTab === 'focus' ? 'btn-primary' : 'btn-secondary'}">Modo Foco</button>
+                <button id="ferramentas-tab-quizzes" class="${activeTab === 'quizzes' ? 'btn-primary' : 'btn-secondary'}">Quizzes</button>
+            </div>
+            <section id="ferramentas-panel-focus" class="${activeTab === 'focus' ? '' : 'hidden'}">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="card p-6">
+                        <h3 class="text-xl font-semibold mb-4">Modo Foco Imersivo</h3>
+                        <p class="text-gray-500 mb-4">Tela limpa, temporizador Pomodoro e sons ambientes opcionais.</p>
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="label-muted">Foco (min)</label>
+                                <input id="focus-minutes" type="number" min="1" value="25" class="form-input" />
+                                <label class="label-muted">Pausa (min)</label>
+                                <input id="break-minutes" type="number" min="1" value="5" class="form-input" />
+                            </div>
+                            <div>
+                                <label class="label-muted">Soundscape</label>
+                                <select id="soundscape-select" class="form-input">
+                                    <option value="none">Nenhum</option>
+                                    <option value="rain">Chuva</option>
+                                    <option value="cafe">Cafe</option>
+                                    <option value="brown">Ruido Marrom</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <label class="label-muted">Volume</label>
+                                <input id="sound-volume" type="range" min="0" max="1" step="0.01" value="0.5" />
+                            </div>
+                            <div class="flex gap-3 mt-4">
+                                <button id="enter-focus-btn" class="btn-primary">Entrar no Modo Foco</button>
+                                <button id="open-pomodoro-btn" class="btn-secondary">Abrir Temporizador</button>
+                            </div>
                         </div>
                     </div>
+                    <div class="card p-6">
+                        <h3 class="text-xl font-semibold mb-4">Ajuda rapida</h3>
+                        <p class="text-gray-500">O Modo Foco abre uma sobreposicao em tela cheia que remove distracoes. Voce pode usar o temporizador Pomodoro padrao ou personalizar os minutos. Os soundscapes sao carregados dos arquivos locais do projeto.</p>
+                        <ul class="mt-4 text-sm text-gray-400 list-disc list-inside">
+                            <li>Comece no modo foco e use as pausas para descansar a vista.</li>
+                            <li>Experimente diferentes ambientes sonoros para manter o foco.</li>
+                            <li>O overlay e reversivel a qualquer momento.</li>
+                        </ul>
+                    </div>
                 </div>
-
-                <div class="card p-6">
-                    <h3 class="text-xl font-semibold mb-4">Ajuda rápida</h3>
-                    <p class="text-gray-500">O Modo Foco abre uma sobreposição em tela cheia que remove distrações. Você pode usar o temporizador Pomodoro padrão ou personalizar os minutos. Os soundscapes são carregados dos arquivos locais do projeto.</p>
-                    <ul class="mt-4 text-sm text-gray-400 list-disc list-inside">
-                        <li>Comece no modo foco e use as pausas para descansar a vista.</li>
-                        <li>Experimente diferentes ambientes sonoros para manter o foco.</li>
-                        <li>O overlay é reversível a qualquer momento.</li>
-                    </ul>
+            </section>
+            <section id="ferramentas-panel-quizzes" class="${activeTab === 'quizzes' ? '' : 'hidden'}">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-2xl font-semibold">Biblioteca de Quizzes</h3>
+                        <p class="text-sm text-gray-500">Os quizzes criados pela IA aparecem aqui automaticamente.</p>
+                    </div>
+                    ${quizzes.length ? '<button id="clear-generated-quizzes-btn" class="btn-secondary">Limpar Quizzes</button>' : ''}
                 </div>
-            </div>
+                ${renderQuizLibrary(quizzes)}
+            </section>
         `;
+        const focusPanel = document.getElementById('ferramentas-panel-focus');
+        const quizzesPanel = document.getElementById('ferramentas-panel-quizzes');
+        const focusTabBtn = document.getElementById('ferramentas-tab-focus');
+        const quizzesTabBtn = document.getElementById('ferramentas-tab-quizzes');
+        const applyFerramentasTabState = (tab) => {
+            const safeTab = tab === 'quizzes' ? 'quizzes' : 'focus';
+            setFerramentasActiveTab(safeTab);
+            if (focusPanel) focusPanel.classList.toggle('hidden', safeTab !== 'focus');
+            if (quizzesPanel) quizzesPanel.classList.toggle('hidden', safeTab !== 'quizzes');
+            if (focusTabBtn) focusTabBtn.className = safeTab === 'focus' ? 'btn-primary' : 'btn-secondary';
+            if (quizzesTabBtn) quizzesTabBtn.className = safeTab === 'quizzes' ? 'btn-primary' : 'btn-secondary';
+        };
+        if (focusTabBtn) focusTabBtn.addEventListener('click', () => applyFerramentasTabState('focus'));
+        if (quizzesTabBtn) quizzesTabBtn.addEventListener('click', () => applyFerramentasTabState('quizzes'));
+
+        const clearQuizzesBtn = document.getElementById('clear-generated-quizzes-btn');
+        if (clearQuizzesBtn) {
+            clearQuizzesBtn.addEventListener('click', () => {
+                localStorage.removeItem(GENERATED_QUIZ_STORAGE_KEY);
+                setFerramentasActiveTab('quizzes');
+                this._showToast('Biblioteca de quizzes limpa.', 'info');
+                this.renderFerramentas().catch((error) => console.warn('Failed to rerender ferramentas after clearing quizzes', error));
+            });
+        }
 
         // Wire up focus mode handlers
         try {
@@ -588,6 +669,7 @@ class Dashboard {
             const openPomBtn = document.getElementById('open-pomodoro-btn');
             const soundSelect = document.getElementById('soundscape-select');
             const vol = document.getElementById('sound-volume');
+            if (!enterBtn || !openPomBtn || !soundSelect || !vol) return;
 
             const createNoise = (ctx, type) => {
                 if (!ctx) return null;
@@ -651,8 +733,8 @@ class Dashboard {
             let soundBaseCache = null;
             const defaultSoundEntries = [
                 { key: 'rain', file: 'rain_loop.mp3', displayName: 'Chuva' },
-                { key: 'cafe', file: 'cafe_loop.mp3', displayName: 'Café' },
-                { key: 'brown', file: 'brown_noise_loop.mp3', displayName: 'Ruído Marrom' }
+                { key: 'cafe', file: 'cafe_loop.mp3', displayName: 'Cafe' },
+                { key: 'brown', file: 'brown_noise_loop.mp3', displayName: 'Ruido Marrom' }
             ];
             const normalizeManifestEntries = (manifest) => {
                 if (!manifest || typeof manifest !== 'object') return [];

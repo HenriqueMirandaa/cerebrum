@@ -10,6 +10,230 @@ const chatState = {
     lastSubjectId: null
 };
 
+const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
+
+function getStoredGeneratedQuizzes() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(GENERATED_QUIZ_STORAGE_KEY) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.warn('Falha ao ler quizzes gerados', error);
+        return [];
+    }
+}
+
+function persistGeneratedQuiz(quiz) {
+    const current = getStoredGeneratedQuizzes();
+    current.unshift(quiz);
+    localStorage.setItem(GENERATED_QUIZ_STORAGE_KEY, JSON.stringify(current.slice(0, 20)));
+}
+
+function emitGeneratedQuizCreated(quiz) {
+    try {
+        window.dispatchEvent(new CustomEvent(QUIZ_CREATED_EVENT, { detail: { quiz } }));
+    } catch (error) {
+        console.warn('Falha ao emitir evento de quiz criado', error);
+    }
+}
+
+function cleanupTopicPart(value) {
+    return String(value || '')
+        .replace(/[?.!,:;]+$/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function extractQuizRequest(rawText, subjects = []) {
+    const raw = String(rawText || '').trim();
+    const normalized = normalizeText(raw);
+
+    const countMatch = normalized.match(/(\d+)\s+perguntas?/);
+    const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 5)));
+
+    let topic = '';
+    const topicMatch = raw.match(/\bsobre\s+(.+)$/i);
+    if (topicMatch) topic = cleanupTopicPart(topicMatch[1]);
+
+    let subject = '';
+    const subjectMatch = raw.match(/\bquiz(?:\s+de\s+\d+\s+perguntas?)?\s+de\s+(.+?)(?=\s+sobre\s+|$)/i);
+    if (subjectMatch) subject = cleanupTopicPart(subjectMatch[1]);
+
+    const mentioned = findMentionedSubject(raw, subjects);
+    if (mentioned) {
+        subject = mentioned.name;
+    } else if (!subject) {
+        subject = extractSubjectName(raw) || 'Estudos Gerais';
+    }
+
+    if (!topic) {
+        topic = mentioned?.name || subject || 'revisao geral';
+    }
+
+    return {
+        questionCount,
+        subject: cleanupTopicPart(subject || 'Estudos Gerais'),
+        topic: cleanupTopicPart(topic || 'revisao geral')
+    };
+}
+
+function buildHistoryQuizTemplates(topic) {
+    return [
+        {
+            prompt: `Qual alternativa melhor resume o que foi ${topic}?`,
+            options: [
+                `Um processo de transformacoes economicas, sociais e tecnologicas que alterou a producao e o trabalho.`,
+                'Um acordo diplomatico voltado apenas para a divisao territorial da Europa.',
+                'Uma crise exclusivamente agricola, sem impacto na industria.',
+                'Um movimento artistico focado apenas em literatura.'
+            ],
+            answerIndex: 0,
+            explanation: `A forma mais segura de definir ${topic} e destacar suas mudancas tecnicas, economicas e sociais.`
+        },
+        {
+            prompt: `No contexto de ${topic}, qual fator costuma ser apontado como impulsionador inicial?`,
+            options: [
+                'A combinacao entre inovacao tecnica, capital e ampliacao da producao.',
+                'A proibicao completa do comercio internacional.',
+                'O abandono total das cidades em favor do campo.',
+                'A extincao imediata do trabalho assalariado.'
+            ],
+            answerIndex: 0,
+            explanation: 'Os processos historicos ligados a industrializacao avancam quando tecnologia, investimento e demanda se combinam.'
+        },
+        {
+            prompt: `Qual foi um efeito social frequente associado a ${topic}?`,
+            options: [
+                'Urbanizacao acelerada e reorganizacao das relacoes de trabalho.',
+                'Fim de qualquer desigualdade entre grupos sociais.',
+                'Desaparecimento das fabricas e retorno ao artesanato como unica forma de producao.',
+                'Reducao completa do uso de maquinas.'
+            ],
+            answerIndex: 0,
+            explanation: 'Mudancas produtivas costumam reconfigurar cidades, jornadas e formas de contratacao.'
+        },
+        {
+            prompt: `Ao estudar ${topic}, que tipo de evidencia historica ajuda a analisar suas transformacoes?`,
+            options: [
+                'Dados de producao, relatos de trabalhadores, leis e inovacoes tecnicas.',
+                'Apenas lendas sem contexto documental.',
+                'Somente mapas climaticos, sem relacao com economia.',
+                'Exclusivamente obras de ficcao sem fonte historica.'
+            ],
+            answerIndex: 0,
+            explanation: 'Fontes economicas, sociais e tecnologicas permitem compreender o processo historico de forma mais completa.'
+        },
+        {
+            prompt: `Por que ${topic} continua relevante nas aulas de Historia?`,
+            options: [
+                'Porque ajuda a explicar as bases do mundo urbano-industrial contemporaneo.',
+                'Porque foi um evento sem qualquer efeito duradouro.',
+                'Porque eliminou todos os conflitos sociais do periodo.',
+                'Porque ocorreu da mesma forma em todos os paises e epocas.'
+            ],
+            answerIndex: 0,
+            explanation: 'O tema ajuda a conectar passado, trabalho, tecnologia e desigualdades do presente.'
+        },
+        {
+            prompt: `Qual habilidade de estudo e mais util ao revisar ${topic}?`,
+            options: [
+                'Relacionar causas, mudancas tecnicas e consequencias sociais em cadeia.',
+                'Memorizar uma data isolada e ignorar o contexto.',
+                'Decorar nomes aleatorios sem ligar conceitos.',
+                'Evitar comparar fontes e interpretacoes.'
+            ],
+            answerIndex: 0,
+            explanation: 'Em Historia, compreender conexoes costuma ser mais forte do que decorar fatos soltos.'
+        }
+    ];
+}
+
+function buildGenericQuizTemplates(subject, topic) {
+    return [
+        {
+            prompt: `Qual alternativa melhor descreve a ideia central de ${topic} em ${subject}?`,
+            options: [
+                `A definicao principal de ${topic} e seu papel dentro de ${subject}.`,
+                `Um detalhe secundario que nao se relaciona com ${subject}.`,
+                `Um conceito sem aplicacao pratica ou teorica.`,
+                `Uma excecao que invalida todo o restante do conteudo.`
+            ],
+            answerIndex: 0,
+            explanation: `A revisao deve comecar pela definicao central e pela funcao do tema em ${subject}.`
+        },
+        {
+            prompt: `Ao estudar ${topic}, qual estrategia ajuda mais a consolidar o conteudo?`,
+            options: [
+                'Explicar o tema com suas proprias palavras e resolver perguntas curtas.',
+                'Ler uma vez sem revisar e sem testar a memoria.',
+                'Ignorar exemplos e aplicacoes.',
+                'Trocar o tema por outro assunto nao relacionado.'
+            ],
+            answerIndex: 0,
+            explanation: 'Explicacao ativa e pratica de recuperacao melhoram a fixacao.'
+        },
+        {
+            prompt: `Qual sinal mostra que o utilizador entendeu bem ${topic}?`,
+            options: [
+                `Consegue definir ${topic}, dar um exemplo e diferenciar o tema de conceitos proximos.`,
+                'Repete uma frase decorada sem saber o significado.',
+                'Evita qualquer exemplo concreto.',
+                'Depende sempre do material aberto para responder.'
+            ],
+            answerIndex: 0,
+            explanation: 'Dominio real aparece quando ha definicao, exemplo e comparacao.'
+        },
+        {
+            prompt: `Qual erro de estudo e comum ao revisar ${topic}?`,
+            options: [
+                'Memorizar palavras-chave sem compreender relacoes e aplicacoes.',
+                'Resolver exercicios progressivos com feedback.',
+                'Fazer revisoes espacadas ao longo da semana.',
+                'Anotar duvidas para corrigir depois.'
+            ],
+            answerIndex: 0,
+            explanation: 'Memorizacao isolada costuma falhar quando o tema exige transferencia e interpretacao.'
+        },
+        {
+            prompt: `Se precisasses resumir ${topic} em uma resposta curta, o que nao poderia faltar?`,
+            options: [
+                `Definicao, objetivo do tema e um exemplo relevante em ${subject}.`,
+                'Apenas uma lista de palavras soltas.',
+                'Uma opiniao sem relacao com o conteudo.',
+                'Um detalhe menor apresentado como se fosse tudo.'
+            ],
+            answerIndex: 0,
+            explanation: 'Uma resposta forte combina conceito, funcao e exemplo.'
+        },
+        {
+            prompt: `Qual pergunta de autoavaliacao e boa para testar dominio de ${topic}?`,
+            options: [
+                `Eu consigo explicar ${topic} sem consultar apontamentos e aplicar a ideia num caso simples?`,
+                'Eu reli o titulo e achei familiar?',
+                'Eu vi a materia passar na aula uma vez?',
+                'Eu marquei o texto com sublinhados coloridos?'
+            ],
+            answerIndex: 0,
+            explanation: 'Recordacao ativa e aplicacao simples sao sinais melhores de aprendizagem.'
+        }
+    ];
+}
+
+function buildQuizQuestions(subject, topic, questionCount) {
+    const normalizedSubject = normalizeText(subject);
+    const templates = normalizedSubject.includes('hist')
+        ? buildHistoryQuizTemplates(topic)
+        : buildGenericQuizTemplates(subject, topic);
+
+    return templates.slice(0, questionCount).map((item, index) => ({
+        id: `q_${Date.now()}_${index + 1}`,
+        prompt: item.prompt,
+        options: item.options,
+        answerIndex: item.answerIndex,
+        explanation: item.explanation
+    }));
+}
+
 async function safeGetSubjects() {
     try { return await db.getSubjects(); } catch (e) { return []; }
 }
@@ -436,21 +660,29 @@ const aiLocal = {
         return { message, plan, next: nextInfo };
     },
 
-    // Gera um mini-quiz (1 pergunta) para uma materia prioritaria
     async generateQuiz(targetSubjectName = null) {
         const subjects = await safeGetSubjects();
-        if (!subjects.length) return { question: 'Sem materias para gerar quiz.', choices: [], answer: null };
+        const fallbackSubject = subjects.length
+            ? subjects.sort((a, b) => Number(a.progress || 0) - Number(b.progress || 0))[0]
+            : null;
+        const request = extractQuizRequest(targetSubjectName || fallbackSubject?.name || 'quiz de 5 perguntas', subjects);
+        const questions = buildQuizQuestions(request.subject, request.topic, request.questionCount);
+        const createdAt = new Date().toISOString();
 
-        let target = null;
-        if (targetSubjectName) {
-            target = findMentionedSubject(targetSubjectName, subjects);
-        }
-        if (!target) {
-            target = subjects.sort((a, b) => Number(a.progress || 0) - Number(b.progress || 0))[0];
-        }
+        const quiz = {
+            id: `quiz_${Date.now()}`,
+            title: `Quiz de ${request.subject}`,
+            subject: request.subject,
+            topic: request.topic,
+            questionCount: questions.length,
+            createdAt,
+            source: 'assistant',
+            questions
+        };
 
-        const question = `Explique em 1-2 frases o conceito principal de ${target.name}.`;
-        return { subject: target.name, question, hint: 'Resuma em poucas frases e foque nos pilares do assunto.' };
+        persistGeneratedQuiz(quiz);
+        emitGeneratedQuizCreated(quiz);
+        return quiz;
     },
 
     async getSubjectStatus(subjectNameText) {
@@ -587,7 +819,7 @@ const aiLocal = {
 
         if (includesAny(t, ['quiz', 'pergunta de revisao', 'teste rapido'])) {
             const q = await this.generateQuiz(raw);
-            return `Quiz (${q.subject}): ${q.question}\nDica: ${q.hint}`;
+            return `Criei um quiz de ${q.questionCount} perguntas de ${q.subject} sobre ${q.topic}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
         }
 
         if (includesAny(t, ['cronograma', 'proxima sessao', 'proxima revisao', 'sessoes'])) {
