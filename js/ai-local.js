@@ -225,13 +225,24 @@ function buildQuizQuestions(subject, topic, questionCount) {
         ? buildHistoryQuizTemplates(topic)
         : buildGenericQuizTemplates(subject, topic);
 
-    return templates.slice(0, questionCount).map((item, index) => ({
-        id: `q_${Date.now()}_${index + 1}`,
-        prompt: item.prompt,
-        options: item.options,
-        answerIndex: item.answerIndex,
-        explanation: item.explanation
-    }));
+    return Array.from({ length: questionCount }, (_, index) => {
+        const item = templates[index % templates.length];
+        const cycle = Math.floor(index / templates.length);
+        const promptSuffix = cycle > 0 ? ` (variante ${cycle + 1})` : '';
+        const rotatedAnswerIndex = (item.answerIndex + cycle) % item.options.length;
+        const rotatedOptions = item.options.map((_, optionIndex) => {
+            const sourceIndex = (optionIndex - cycle + item.options.length) % item.options.length;
+            return item.options[sourceIndex];
+        });
+
+        return {
+            id: `q_${Date.now()}_${index + 1}`,
+            prompt: `${item.prompt}${promptSuffix}`,
+            options: rotatedOptions,
+            answerIndex: rotatedAnswerIndex,
+            explanation: item.explanation
+        };
+    });
 }
 
 async function safeGetSubjects() {

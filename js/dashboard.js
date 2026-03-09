@@ -73,21 +73,26 @@ function renderQuizLibrary(quizzes) {
                         </div>
                         <div class="text-sm text-gray-400">Criado em ${formatQuizCreatedAt(quiz.createdAt)}</div>
                     </div>
-                    <div class="space-y-4">
+                    <form class="space-y-4" data-quiz-form data-quiz-id="${escapeHtml(quiz.id || '')}">
                         ${(quiz.questions || []).map((question, index) => `
-                            <section class="rounded-xl border border-white/10 bg-slate-950/30 p-4">
+                            <section class="rounded-xl border border-white/10 bg-slate-950/30 p-4" data-quiz-question data-question-id="${escapeHtml(question.id || '')}" data-correct-index="${question.answerIndex}">
                                 <div class="font-medium mb-3">${index + 1}. ${escapeHtml(question.prompt)}</div>
                                 <div class="space-y-2">
                                     ${(question.options || []).map((option, optionIndex) => `
-                                        <div class="rounded-lg border border-white/10 px-3 py-2 text-sm ${optionIndex === question.answerIndex ? 'bg-emerald-500/10 text-emerald-200 border-emerald-400/30' : 'text-gray-300'}">
-                                            ${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}
-                                        </div>
+                                        <label class="quiz-option-row rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 flex items-start gap-3 cursor-pointer" data-option-row data-option-index="${optionIndex}">
+                                            <input type="radio" name="quiz_${escapeHtml(quiz.id || 'quiz')}_${escapeHtml(question.id || `q_${index}`)}" value="${optionIndex}" class="mt-1" />
+                                            <span>${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}</span>
+                                        </label>
                                     `).join('')}
                                 </div>
-                                <p class="text-xs text-gray-400 mt-3">${escapeHtml(question.explanation || 'Revise o conceito principal e tente justificar a alternativa correta com suas palavras.')}</p>
+                                <p class="quiz-question-feedback text-xs text-gray-400 mt-3 hidden"></p>
                             </section>
                         `).join('')}
-                    </div>
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
+                            <div class="quiz-result-summary text-sm text-gray-400" data-quiz-summary>Selecione uma resposta em cada pergunta e finalize o quiz.</div>
+                            <button type="submit" class="btn-primary" data-quiz-submit>Finalizar Quiz</button>
+                        </div>
+                    </form>
                 </article>
             `).join('')}
         </div>
@@ -662,6 +667,62 @@ class Dashboard {
                 this.renderFerramentas().catch((error) => console.warn('Failed to rerender ferramentas after clearing quizzes', error));
             });
         }
+
+        document.querySelectorAll('[data-quiz-form]').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const questionEls = Array.from(form.querySelectorAll('[data-quiz-question]'));
+                const unanswered = questionEls.filter((questionEl) => !questionEl.querySelector('input[type="radio"]:checked'));
+                if (unanswered.length) {
+                    this._showToast('Responda todas as perguntas antes de finalizar o quiz.', 'info');
+                    return;
+                }
+
+                let correctCount = 0;
+                questionEls.forEach((questionEl) => {
+                    const correctIndex = Number(questionEl.dataset.correctIndex || 0);
+                    const checked = questionEl.querySelector('input[type="radio"]:checked');
+                    const selectedIndex = Number(checked ? checked.value : -1);
+                    const feedbackEl = questionEl.querySelector('.quiz-question-feedback');
+                    const optionRows = Array.from(questionEl.querySelectorAll('[data-option-row]'));
+
+                    optionRows.forEach((row) => {
+                        const optionIndex = Number(row.dataset.optionIndex || -1);
+                        row.classList.remove('bg-emerald-500/10', 'text-emerald-200', 'border-emerald-400/30', 'bg-red-500/10', 'text-red-200', 'border-red-400/30');
+                        if (optionIndex === correctIndex) {
+                            row.classList.add('bg-emerald-500/10', 'text-emerald-200', 'border-emerald-400/30');
+                        } else if (optionIndex === selectedIndex) {
+                            row.classList.add('bg-red-500/10', 'text-red-200', 'border-red-400/30');
+                        }
+                        const input = row.querySelector('input');
+                        if (input) input.disabled = true;
+                    });
+
+                    const isCorrect = selectedIndex === correctIndex;
+                    if (isCorrect) correctCount += 1;
+                    if (feedbackEl) {
+                        feedbackEl.classList.remove('hidden', 'text-gray-400', 'text-emerald-300', 'text-red-300');
+                        feedbackEl.classList.add(isCorrect ? 'text-emerald-300' : 'text-red-300');
+                        feedbackEl.textContent = isCorrect
+                            ? 'Resposta correta.'
+                            : `Resposta incorreta. ${questionEl.querySelector('[data-option-row][data-option-index="' + correctIndex + '"] span')?.textContent || ''}`;
+                    }
+                });
+
+                const summaryEl = form.querySelector('[data-quiz-summary]');
+                if (summaryEl) {
+                    summaryEl.classList.remove('text-gray-400');
+                    summaryEl.classList.add(correctCount === questionEls.length ? 'text-emerald-300' : 'text-gray-200');
+                    summaryEl.textContent = `Resultado final: ${correctCount}/${questionEls.length} respostas corretas.`;
+                }
+
+                const submitBtn = form.querySelector('[data-quiz-submit]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Quiz Finalizado';
+                }
+            });
+        });
 
         // Wire up focus mode handlers
         try {
