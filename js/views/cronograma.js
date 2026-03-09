@@ -78,16 +78,16 @@ async function fetchEvents() {
 
 function renderControls() {
     return `
-        <div class="cronograma-controls mb-4">
+        <div class="flex items-center justify-between mb-4">
             <div>
                 <h2 class="text-2xl font-semibold">Cronograma</h2>
                 <div class="text-sm text-gray-500">Visualize e gerencie seus eventos</div>
                 <div id="calendarPeriodLabel" class="text-sm font-medium text-gray-700 mt-1">${getCurrentPeriodLabel()}</div>
             </div>
-            <div class="cronograma-actions">
+            <div class="flex items-center gap-2">
                 <button id="prevBtn" class="btn-icon" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
                 <button id="nextBtn" class="btn-icon" aria-label="Próximo"><i class="fas fa-chevron-right"></i></button>
-                <select id="viewMode" class="form-select cronograma-mode-select" aria-label="Modo de visualização">
+                <select id="viewMode" class="form-select" aria-label="Modo de visualização">
                     <option value="week">Semanal</option>
                     <option value="month">Mensal</option>
                 </select>
