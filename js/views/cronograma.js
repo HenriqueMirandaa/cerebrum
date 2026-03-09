@@ -78,15 +78,16 @@ async function fetchEvents() {
 
 function renderControls() {
     return `
-        <div class="flex items-center justify-between mb-4">
+        <div class="cronograma-controls mb-4">
             <div>
                 <h2 class="text-2xl font-semibold">Cronograma</h2>
                 <div class="text-sm text-gray-500">Visualize e gerencie seus eventos</div>
+                <div id="calendarPeriodLabel" class="text-sm font-medium text-gray-700 mt-1">${getCurrentPeriodLabel()}</div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="cronograma-actions">
                 <button id="prevBtn" class="btn-icon" aria-label="Anterior"><i class="fas fa-chevron-left"></i></button>
                 <button id="nextBtn" class="btn-icon" aria-label="Próximo"><i class="fas fa-chevron-right"></i></button>
-                <select id="viewMode" class="form-select" aria-label="Modo de visualização">
+                <select id="viewMode" class="form-select cronograma-mode-select" aria-label="Modo de visualização">
                     <option value="week">Semanal</option>
                     <option value="month">Mensal</option>
                 </select>
@@ -94,6 +95,25 @@ function renderControls() {
             </div>
         </div>
     `;
+}
+
+function getCurrentPeriodLabel() {
+    if (viewState.mode === 'month') {
+        return viewState.reference.toLocaleDateString('pt-PT', {
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    const start = startOfWeek(viewState.reference);
+    const end = endOfWeek(viewState.reference);
+    return `${start.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit' })} - ${end.toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+}
+
+function syncPeriodLabel() {
+    const label = document.getElementById('calendarPeriodLabel');
+    if (!label) return;
+    label.textContent = getCurrentPeriodLabel();
 }
 
 function renderGrid() {
@@ -122,7 +142,7 @@ function renderWeekGrid() {
         `;
     }).join('');
 
-    return `<div class="grid grid-cols-7 gap-3">${htmlDays}</div>`;
+    return `<div class="cronograma-grid-wrapper"><div class="grid grid-cols-7 gap-3 cronograma-week-grid">${htmlDays}</div></div>`;
 }
 
 function renderMonthGrid() {
@@ -147,7 +167,7 @@ function renderMonthGrid() {
         `;
     }).join('');
 
-    return `<div class="grid grid-cols-7 gap-2">${html}</div>`;
+    return `<div class="cronograma-grid-wrapper"><div class="grid grid-cols-7 gap-2 cronograma-month-grid">${html}</div></div>`;
 }
 
 function renderEventTile(ev) {
@@ -338,6 +358,7 @@ async function deleteEvent() {
 async function refreshAndRender() {
     await fetchMaterias();
     await fetchEvents();
+    syncPeriodLabel();
     const grid = document.getElementById('calendarGrid');
     // If the user navigated away, the grid may no longer exist — abort safely
     if (!grid) return;
