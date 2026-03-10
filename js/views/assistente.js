@@ -3,7 +3,7 @@ import { createAssistantService } from '../services/assistant-service.js';
 import { setButtonLoading, showToast } from '../services/ui-service.js';
 
 const assistantService = createAssistantService();
-const HISTORY_KEY = 'cerebrum_chat_history';
+const HISTORY_KEY_PREFIX = 'cerebrum_chat_history';
 const MAX_HISTORY_ITEMS = 200;
 const AI_CAPABILITIES = [
     'Conversa natural sobre estudos (sem comandos rigidos).',
@@ -89,6 +89,26 @@ function getInitialState() {
     };
 }
 
+function normalizeHistoryScope(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function getHistoryKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${HISTORY_KEY_PREFIX}:${normalizeHistoryScope(scopedUser) || 'guest'}`;
+}
+
 function setAssistantStatus(text, busy = false) {
     const status = document.getElementById('assistantStatus');
     if (!status) return;
@@ -98,12 +118,12 @@ function setAssistantStatus(text, busy = false) {
 
 function persistMessage(who, text) {
     try {
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        const history = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
         history.push({ who, text, timestamp: new Date().toISOString() });
         if (history.length > MAX_HISTORY_ITEMS) {
             history.splice(0, history.length - MAX_HISTORY_ITEMS);
         }
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+        localStorage.setItem(getHistoryKey(), JSON.stringify(history));
     } catch (error) {
         console.warn('Failed to persist chat history', error);
     }
@@ -111,7 +131,7 @@ function persistMessage(who, text) {
 
 function getHistory() {
     try {
-        const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
+        const history = JSON.parse(localStorage.getItem(getHistoryKey()) || '[]');
         return Array.isArray(history) ? history : [];
     } catch (error) {
         return [];
@@ -165,7 +185,7 @@ function clearPlaceholder() {
 }
 
 function clearChatHistory() {
-    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(getHistoryKey());
     const chatContent = document.getElementById('chatContent');
     if (!chatContent) return;
     chatContent.innerHTML = '';
@@ -246,33 +266,44 @@ async function sendMessage(text, state) {
 async function handleQuickAction(action, button, state) {
     if (state.busy) return;
 
+    state.busy = true;
     setButtonLoading(button, true, 'A processar...');
     setAssistantStatus('A processar acao...', true);
     clearPlaceholder();
     setTypingIndicator(true);
 
-    let result = { ok: false, text: 'Acao nao suportada.' };
-    if (action === 'analyze') result = await assistantService.analyzeProgress();
-    if (action === 'suggest') result = await assistantService.getRecommendations();
-    if (action === 'quiz') result = await assistantService.generateQuiz();
-    if (action === 'help') result = await assistantService.showHelp();
-    if (action === 'add-subject') result = await assistantService.addSubjectFromPrompts();
+    try {
+        let result = { ok: false, text: 'Acao nao suportada.' };
+        if (action === 'analyze') result = await assistantService.analyzeProgress();
+        if (action === 'suggest') result = await assistantService.getRecommendations();
+        if (action === 'quiz') result = await assistantService.generateQuiz();
+        if (action === 'help') result = await assistantService.showHelp();
+        if (action === 'add-subject') result = await assistantService.addSubjectFromPrompts();
 
-    setTypingIndicator(false);
-    setButtonLoading(button, false);
-    setAssistantStatus(result.ok ? 'Pronto' : 'Atencao', false);
+        setAssistantStatus(result.ok ? 'Pronto' : 'Atencao', false);
 
-    if (result.cancelled) {
-        showToast('Operacao cancelada.', 'info');
-        return;
-    }
+        if (result.cancelled) {
+            showToast('Operacao cancelada.', 'info');
+            return;
+        }
 
-    const text = result.ok ? result.text : `Erro: ${result.text}`;
-    appendChatMessage('assistant', text);
-    persistMessage('assistant', text);
+        const text = result.ok ? result.text : `Erro: ${result.text}`;
+        appendChatMessage('assistant', text);
+        persistMessage('assistant', text);
 
-    if (!result.ok) {
+        if (!result.ok) {
+            showToast('Nao foi possivel concluir a acao.', 'error');
+        }
+    } catch (error) {
+        console.error('Quick action failed', error);
+        appendChatMessage('assistant', `Erro: ${error.message || error}`);
+        persistMessage('assistant', `Erro: ${error.message || error}`);
+        setAssistantStatus('Atencao', false);
         showToast('Nao foi possivel concluir a acao.', 'error');
+    } finally {
+        state.busy = false;
+        setTypingIndicator(false);
+        setButtonLoading(button, false);
     }
 }
 

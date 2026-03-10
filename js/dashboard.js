@@ -51,6 +51,17 @@ function formatQuizCreatedAt(isoDate) {
     });
 }
 
+function renderTotalHoursText(hours) {
+    const value = Number(hours);
+    if (!Number.isFinite(value) || value <= 0) return '';
+    return `${formatHours(value)} totais`;
+}
+
+function renderDescriptionText(description) {
+    const text = String(description || '').trim();
+    return text || '';
+}
+
 function renderQuizLibrary(quizzes) {
     if (!quizzes.length) {
         return `
@@ -472,11 +483,11 @@ class Dashboard {
                                 </div>
                                 <div>
                                     <div class="font-semibold">${materia.nome}</div>
-                                    <div class="text-sm text-gray-500">${materia.horas_totais}h totais</div>
+                                    ${renderTotalHoursText(materia.horas_totais) ? `<div class="text-sm text-gray-500">${renderTotalHoursText(materia.horas_totais)}</div>` : ''}
                                 </div>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-600 mb-4">${materia.descricao || 'Sem descrição'}</p>
+                        ${renderDescriptionText(materia.descricao) ? `<p class="text-sm text-gray-600 mb-4">${renderDescriptionText(materia.descricao)}</p>` : ''}
                         <div class="space-y-3">
                             <div class="form-group">
                                 <label class="form-label text-sm">Data do Exame (Opcional)</label>
@@ -1301,7 +1312,7 @@ class Dashboard {
                             </div>
                             <div>
                                 <div class="font-semibold">${materia.nome}</div>
-                                <div class="text-sm text-gray-500">${formatHours(materia.horas_totais)} totais</div>
+                                ${renderTotalHoursText(materia.horas_totais) ? `<div class="text-sm text-gray-500">${renderTotalHoursText(materia.horas_totais)}</div>` : ''}
                             </div>
                         </div>
                     </div>

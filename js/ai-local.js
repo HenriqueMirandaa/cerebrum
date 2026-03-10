@@ -40,6 +40,8 @@ function emitGeneratedQuizCreated(quiz) {
 function cleanupTopicPart(value) {
     return String(value || '')
         .replace(/[?.!,:;]+$/g, '')
+        .replace(/\bde\s+\d+\s+perguntas?\b/gi, '')
+        .replace(/\bcom\s+\d+\s+perguntas?\b/gi, '')
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -56,8 +58,10 @@ function extractQuizRequest(rawText, subjects = []) {
     if (topicMatch) topic = cleanupTopicPart(topicMatch[1]);
 
     let subject = '';
-    const subjectMatch = raw.match(/\bquiz(?:\s+de\s+\d+\s+perguntas?)?\s+de\s+(.+?)(?=\s+sobre\s+|$)/i);
-    if (subjectMatch) subject = cleanupTopicPart(subjectMatch[1]);
+    const subjectWithCountMatch = raw.match(/\bquiz\s+de\s+\d+\s+perguntas?\s+de\s+(.+?)(?=\s+sobre\s+|$)/i);
+    const subjectDirectMatch = raw.match(/\bquiz\s+de\s+(.+?)(?=\s+sobre\s+|$)/i);
+    if (subjectWithCountMatch) subject = cleanupTopicPart(subjectWithCountMatch[1]);
+    else if (subjectDirectMatch) subject = cleanupTopicPart(subjectDirectMatch[1]);
 
     const mentioned = findMentionedSubject(raw, subjects);
     if (mentioned) {
@@ -80,70 +84,169 @@ function extractQuizRequest(rawText, subjects = []) {
 function buildHistoryQuizTemplates(topic) {
     return [
         {
-            prompt: `Qual alternativa melhor resume o que foi ${topic}?`,
-            options: [
-                `Um processo de transformacoes economicas, sociais e tecnologicas que alterou a producao e o trabalho.`,
+            prompt: `O que melhor define ${topic}?`,
+            correctOption: 'Um processo de transformacoes economicas, sociais e tecnologicas que alterou a producao e o trabalho.',
+            distractors: [
                 'Um acordo diplomatico voltado apenas para a divisao territorial da Europa.',
                 'Uma crise exclusivamente agricola, sem impacto na industria.',
                 'Um movimento artistico focado apenas em literatura.'
             ],
-            answerIndex: 0,
             explanation: `A forma mais segura de definir ${topic} e destacar suas mudancas tecnicas, economicas e sociais.`
         },
         {
-            prompt: `No contexto de ${topic}, qual fator costuma ser apontado como impulsionador inicial?`,
-            options: [
-                'A combinacao entre inovacao tecnica, capital e ampliacao da producao.',
+            prompt: `Qual fator impulsionou ${topic}?`,
+            correctOption: 'A combinacao entre inovacao tecnica, capital e ampliacao da producao.',
+            distractors: [
                 'A proibicao completa do comercio internacional.',
                 'O abandono total das cidades em favor do campo.',
                 'A extincao imediata do trabalho assalariado.'
             ],
-            answerIndex: 0,
             explanation: 'Os processos historicos ligados a industrializacao avancam quando tecnologia, investimento e demanda se combinam.'
         },
         {
-            prompt: `Qual foi um efeito social frequente associado a ${topic}?`,
-            options: [
-                'Urbanizacao acelerada e reorganizacao das relacoes de trabalho.',
+            prompt: `Qual efeito social foi comum em ${topic}?`,
+            correctOption: 'Urbanizacao acelerada e reorganizacao das relacoes de trabalho.',
+            distractors: [
                 'Fim de qualquer desigualdade entre grupos sociais.',
                 'Desaparecimento das fabricas e retorno ao artesanato como unica forma de producao.',
                 'Reducao completa do uso de maquinas.'
             ],
-            answerIndex: 0,
             explanation: 'Mudancas produtivas costumam reconfigurar cidades, jornadas e formas de contratacao.'
         },
         {
-            prompt: `Ao estudar ${topic}, que tipo de evidencia historica ajuda a analisar suas transformacoes?`,
-            options: [
-                'Dados de producao, relatos de trabalhadores, leis e inovacoes tecnicas.',
+            prompt: `Que fonte ajuda a analisar ${topic}?`,
+            correctOption: 'Dados de producao, relatos de trabalhadores, leis e inovacoes tecnicas.',
+            distractors: [
                 'Apenas lendas sem contexto documental.',
                 'Somente mapas climaticos, sem relacao com economia.',
                 'Exclusivamente obras de ficcao sem fonte historica.'
             ],
-            answerIndex: 0,
             explanation: 'Fontes economicas, sociais e tecnologicas permitem compreender o processo historico de forma mais completa.'
         },
         {
-            prompt: `Por que ${topic} continua relevante nas aulas de Historia?`,
-            options: [
-                'Porque ajuda a explicar as bases do mundo urbano-industrial contemporaneo.',
+            prompt: `Por que ${topic} segue relevante hoje?`,
+            correctOption: 'Porque ajuda a explicar as bases do mundo urbano-industrial contemporaneo.',
+            distractors: [
                 'Porque foi um evento sem qualquer efeito duradouro.',
                 'Porque eliminou todos os conflitos sociais do periodo.',
                 'Porque ocorreu da mesma forma em todos os paises e epocas.'
             ],
-            answerIndex: 0,
             explanation: 'O tema ajuda a conectar passado, trabalho, tecnologia e desigualdades do presente.'
         },
         {
-            prompt: `Qual habilidade de estudo e mais util ao revisar ${topic}?`,
-            options: [
-                'Relacionar causas, mudancas tecnicas e consequencias sociais em cadeia.',
+            prompt: `Ao revisar ${topic}, o que e mais importante?`,
+            correctOption: 'Relacionar causas, mudancas tecnicas e consequencias sociais em cadeia.',
+            distractors: [
                 'Memorizar uma data isolada e ignorar o contexto.',
                 'Decorar nomes aleatorios sem ligar conceitos.',
                 'Evitar comparar fontes e interpretacoes.'
             ],
-            answerIndex: 0,
             explanation: 'Em Historia, compreender conexoes costuma ser mais forte do que decorar fatos soltos.'
+        },
+        {
+            prompt: `Qual mudanca economica marcou ${topic}?`,
+            correctOption: 'A ampliacao da producao mecanizada e do sistema fabril.',
+            distractors: [
+                'O fim imediato de todo comercio e manufatura.',
+                'A substituicao completa das cidades por zonas rurais.',
+                'O abandono de qualquer inovacao tecnica.'
+            ],
+            explanation: 'A mecanizacao e a fabrica estao no centro das transformacoes economicas desse processo.'
+        },
+        {
+            prompt: `Que grupo social ganhou destaque durante ${topic}?`,
+            correctOption: 'A burguesia industrial e o operariado urbano.',
+            distractors: [
+                'A nobreza feudal como unico grupo relevante.',
+                'Somente artistas e escritores, sem trabalhadores.',
+                'Apenas lideres religiosos, sem impacto economico.'
+            ],
+            explanation: 'O crescimento das fabricas reorganizou classes sociais e relacoes de trabalho.'
+        }
+    ];
+}
+
+function buildGeographyQuizTemplates(topic) {
+    return [
+        {
+            prompt: `O que melhor define ${topic}?`,
+            correctOption: 'A intensificacao das conexoes entre lugares por meio de fluxos de mercadorias, pessoas, capitais e informacoes.',
+            distractors: [
+                'O isolamento total dos paises e o fim das trocas internacionais.',
+                'Um processo restrito ao clima, sem impacto social ou economico.',
+                'A substituicao de redes globais por economias totalmente fechadas.'
+            ],
+            explanation: 'Em Geografia, o conceito destaca redes, fluxos e interdependencia espacial.'
+        },
+        {
+            prompt: `Qual situacao exemplifica ${topic}?`,
+            correctOption: 'Uma empresa produz em varios paises e vende para mercados de diferentes continentes.',
+            distractors: [
+                'Uma comunidade sem qualquer contato externo ao longo do tempo.',
+                'Uma economia local sem uso de transporte ou comunicacao.',
+                'Uma atividade isolada que nao depende de redes de circulacao.'
+            ],
+            explanation: 'Cadeias produtivas internacionais sao exemplos tipicos do fenomeno.'
+        },
+        {
+            prompt: `Qual efeito espacial pode surgir com ${topic}?`,
+            correctOption: 'Maior integracao entre regioes, mas tambem aumento de desigualdades entre territorios.',
+            distractors: [
+                'Desaparecimento completo das diferencas regionais.',
+                'Fim de qualquer circulacao de informacao no planeta.',
+                'Eliminacao total das hierarquias urbanas.'
+            ],
+            explanation: 'A integracao global nao elimina desigualdades; muitas vezes as reorganiza.'
+        },
+        {
+            prompt: `Qual elemento impulsiona ${topic}?`,
+            correctOption: 'Avancos nos transportes, nas telecomunicacoes e na circulacao financeira.',
+            distractors: [
+                'A reducao total das tecnologias de comunicacao.',
+                'O fechamento permanente das fronteiras economicas.',
+                'A extincao dos meios de transporte em massa.'
+            ],
+            explanation: 'Transportes e comunicacoes aceleram conexoes e fluxos em escala global.'
+        },
+        {
+            prompt: `Qual afirmacao sobre ${topic} esta correta?`,
+            correctOption: 'O processo amplia conexoes globais, mas seus beneficios nao se distribuem de forma igual.',
+            distractors: [
+                'O processo beneficia todos os territorios da mesma maneira.',
+                'O processo impede qualquer circulacao cultural entre paises.',
+                'O processo acontece sem relacao com empresas ou Estados.'
+            ],
+            explanation: 'A globalizacao e desigual e produz ganhadores e perdedores.'
+        },
+        {
+            prompt: `Como ${topic} aparece no quotidiano?`,
+            correctOption: 'No consumo de produtos importados, no uso de plataformas digitais e na circulacao instantanea de informacoes.',
+            distractors: [
+                'Apenas em mapas antigos sem relacao com a vida atual.',
+                'Somente em areas rurais sem acesso a tecnologia.',
+                'Exclusivamente em fronteiras fechadas ao comercio.'
+            ],
+            explanation: 'O conceito aparece em habitos de consumo, tecnologia e comunicacao.'
+        },
+        {
+            prompt: `Que critica e comum a ${topic}?`,
+            correctOption: 'Pode aprofundar dependencias economicas e desigualdades entre lugares.',
+            distractors: [
+                'Elimina automaticamente todos os conflitos territoriais.',
+                'Torna todos os paises culturalmente identicos de imediato.',
+                'Acaba com qualquer disputa por mercado e recursos.'
+            ],
+            explanation: 'Uma leitura geografica considera assimetrias de poder e dependencia.'
+        },
+        {
+            prompt: `Qual conceito se relaciona diretamente com ${topic}?`,
+            correctOption: 'Fluxos globais e redes tecnicas que conectam territorios.',
+            distractors: [
+                'Autossuficiencia absoluta sem trocas externas.',
+                'Imobilidade total de pessoas e capitais.',
+                'Fim das cidades e retorno universal ao campo.'
+            ],
+            explanation: 'Fluxos e redes sao chaves para entender a organizacao do espaco globalizado.'
         }
     ];
 }
@@ -151,69 +254,83 @@ function buildHistoryQuizTemplates(topic) {
 function buildGenericQuizTemplates(subject, topic) {
     return [
         {
-            prompt: `Qual alternativa melhor descreve a ideia central de ${topic} em ${subject}?`,
-            options: [
-                `A definicao principal de ${topic} e seu papel dentro de ${subject}.`,
-                `Um detalhe secundario que nao se relaciona com ${subject}.`,
-                `Um conceito sem aplicacao pratica ou teorica.`,
-                `Uma excecao que invalida todo o restante do conteudo.`
+            prompt: `O que melhor define ${topic}?`,
+            correctOption: `A ideia central de ${topic} e seu papel no estudo de ${subject}.`,
+            distractors: [
+                `Um detalhe isolado sem relacao com ${subject}.`,
+                'Um conceito sem aplicacao teorica nem pratica.',
+                'Uma excecao que anula o restante do conteudo.'
             ],
-            answerIndex: 0,
             explanation: `A revisao deve comecar pela definicao central e pela funcao do tema em ${subject}.`
         },
         {
-            prompt: `Ao estudar ${topic}, qual estrategia ajuda mais a consolidar o conteudo?`,
-            options: [
-                'Explicar o tema com suas proprias palavras e resolver perguntas curtas.',
-                'Ler uma vez sem revisar e sem testar a memoria.',
-                'Ignorar exemplos e aplicacoes.',
+            prompt: `Qual exemplo representa ${topic}?`,
+            correctOption: `Uma situacao concreta em que ${topic} pode ser observado ou aplicado.`,
+            distractors: [
+                'Um caso que contradiz totalmente a definicao do tema.',
+                'Uma frase decorada sem relacao com a pratica.',
+                'Um conteudo de outra materia sem conexao com o assunto.'
+            ],
+            explanation: 'Entender um conceito inclui reconhece-lo em exemplos concretos.'
+        },
+        {
+            prompt: `Qual estrategia ajuda a estudar ${topic}?`,
+            correctOption: 'Explicar o tema com palavras proprias e resolver perguntas curtas.',
+            distractors: [
+                'Ler uma vez sem revisar nem testar a memoria.',
+                'Ignorar exemplos e aplicacoes do conceito.',
                 'Trocar o tema por outro assunto nao relacionado.'
             ],
-            answerIndex: 0,
             explanation: 'Explicacao ativa e pratica de recuperacao melhoram a fixacao.'
         },
         {
-            prompt: `Qual sinal mostra que o utilizador entendeu bem ${topic}?`,
-            options: [
-                `Consegue definir ${topic}, dar um exemplo e diferenciar o tema de conceitos proximos.`,
-                'Repete uma frase decorada sem saber o significado.',
-                'Evita qualquer exemplo concreto.',
-                'Depende sempre do material aberto para responder.'
+            prompt: `Como saber se entendeu ${topic}?`,
+            correctOption: `Conseguir definir ${topic}, dar um exemplo e diferenciar o tema de conceitos proximos.`,
+            distractors: [
+                'Repetir uma frase decorada sem saber o significado.',
+                'Evitar qualquer exemplo concreto.',
+                'Depender sempre do material aberto para responder.'
             ],
-            answerIndex: 0,
             explanation: 'Dominio real aparece quando ha definicao, exemplo e comparacao.'
         },
         {
-            prompt: `Qual erro de estudo e comum ao revisar ${topic}?`,
-            options: [
-                'Memorizar palavras-chave sem compreender relacoes e aplicacoes.',
+            prompt: `Qual erro e comum ao revisar ${topic}?`,
+            correctOption: 'Memorizar palavras-chave sem compreender relacoes e aplicacoes.',
+            distractors: [
                 'Resolver exercicios progressivos com feedback.',
                 'Fazer revisoes espacadas ao longo da semana.',
                 'Anotar duvidas para corrigir depois.'
             ],
-            answerIndex: 0,
             explanation: 'Memorizacao isolada costuma falhar quando o tema exige transferencia e interpretacao.'
         },
         {
-            prompt: `Se precisasses resumir ${topic} em uma resposta curta, o que nao poderia faltar?`,
-            options: [
-                `Definicao, objetivo do tema e um exemplo relevante em ${subject}.`,
+            prompt: `O que nao pode faltar num resumo de ${topic}?`,
+            correctOption: `Definicao, funcao do tema e um exemplo relevante em ${subject}.`,
+            distractors: [
                 'Apenas uma lista de palavras soltas.',
                 'Uma opiniao sem relacao com o conteudo.',
                 'Um detalhe menor apresentado como se fosse tudo.'
             ],
-            answerIndex: 0,
             explanation: 'Uma resposta forte combina conceito, funcao e exemplo.'
         },
         {
-            prompt: `Qual pergunta de autoavaliacao e boa para testar dominio de ${topic}?`,
-            options: [
-                `Eu consigo explicar ${topic} sem consultar apontamentos e aplicar a ideia num caso simples?`,
+            prompt: `Qual afirmacao sobre ${topic} esta correta?`,
+            correctOption: `O tema precisa ser entendido pelo conceito e pela forma como aparece em ${subject}.`,
+            distractors: [
+                'O tema nao possui relacao com o restante da materia.',
+                'O tema e apenas decorativo e sem utilidade.',
+                'O tema invalida todos os outros conceitos.'
+            ],
+            explanation: 'O conteudo ganha sentido quando ligado ao contexto da disciplina.'
+        },
+        {
+            prompt: `Que pergunta testa melhor o dominio de ${topic}?`,
+            correctOption: `Eu consigo explicar ${topic} sem consultar apontamentos e aplicar a ideia num caso simples?`,
+            distractors: [
                 'Eu reli o titulo e achei familiar?',
                 'Eu vi a materia passar na aula uma vez?',
                 'Eu marquei o texto com sublinhados coloridos?'
             ],
-            answerIndex: 0,
             explanation: 'Recordacao ativa e aplicacao simples sao sinais melhores de aprendizagem.'
         }
     ];
@@ -223,23 +340,30 @@ function buildQuizQuestions(subject, topic, questionCount) {
     const normalizedSubject = normalizeText(subject);
     const templates = normalizedSubject.includes('hist')
         ? buildHistoryQuizTemplates(topic)
-        : buildGenericQuizTemplates(subject, topic);
+        : normalizedSubject.includes('geo')
+            ? buildGeographyQuizTemplates(topic)
+            : buildGenericQuizTemplates(subject, topic);
 
     return Array.from({ length: questionCount }, (_, index) => {
         const item = templates[index % templates.length];
         const cycle = Math.floor(index / templates.length);
-        const promptSuffix = cycle > 0 ? ` (variante ${cycle + 1})` : '';
-        const rotatedAnswerIndex = (item.answerIndex + cycle) % item.options.length;
-        const rotatedOptions = item.options.map((_, optionIndex) => {
-            const sourceIndex = (optionIndex - cycle + item.options.length) % item.options.length;
-            return item.options[sourceIndex];
-        });
+        const correctPosition = (index * 2 + normalizeText(topic).length + cycle) % 4;
+        const distractors = [...item.distractors];
+        const options = [];
+        let distractorCursor = 0;
+        for (let optionIndex = 0; optionIndex < 4; optionIndex += 1) {
+            if (optionIndex === correctPosition) options.push(item.correctOption);
+            else {
+                options.push(distractors[distractorCursor % distractors.length]);
+                distractorCursor += 1;
+            }
+        }
 
         return {
             id: `q_${Date.now()}_${index + 1}`,
-            prompt: `${item.prompt}${promptSuffix}`,
-            options: rotatedOptions,
-            answerIndex: rotatedAnswerIndex,
+            prompt: item.prompt,
+            options,
+            answerIndex: correctPosition,
             explanation: item.explanation
         };
     });
