@@ -10,6 +10,26 @@ const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
 const FERRAMENTAS_TAB_KEY = 'cerebrum_ferramentas_active_tab';
 const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
 
+function normalizeQuizScope(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function getGeneratedQuizStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_QUIZ_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
 function escapeHtml(value) {
     return String(value || '').replace(/[&<>"]/g, (char) => ({
         '&': '&amp;',
@@ -21,7 +41,7 @@ function escapeHtml(value) {
 
 function getStoredGeneratedQuizzes() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(GENERATED_QUIZ_STORAGE_KEY) || '[]');
+        const parsed = JSON.parse(localStorage.getItem(getGeneratedQuizStorageKey()) || '[]');
         return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
         console.warn('[Dashboard] failed to parse generated quizzes', error);
@@ -672,7 +692,7 @@ class Dashboard {
         const clearQuizzesBtn = document.getElementById('clear-generated-quizzes-btn');
         if (clearQuizzesBtn) {
             clearQuizzesBtn.addEventListener('click', () => {
-                localStorage.removeItem(GENERATED_QUIZ_STORAGE_KEY);
+                localStorage.removeItem(getGeneratedQuizStorageKey());
                 setFerramentasActiveTab('quizzes');
                 this._showToast('Biblioteca de quizzes limpa.', 'info');
                 this.renderFerramentas().catch((error) => console.warn('Failed to rerender ferramentas after clearing quizzes', error));

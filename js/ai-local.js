@@ -13,9 +13,29 @@ const chatState = {
 const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
 const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
 
+function normalizeQuizScope(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function getGeneratedQuizStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_QUIZ_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
 function getStoredGeneratedQuizzes() {
     try {
-        const parsed = JSON.parse(localStorage.getItem(GENERATED_QUIZ_STORAGE_KEY) || '[]');
+        const parsed = JSON.parse(localStorage.getItem(getGeneratedQuizStorageKey()) || '[]');
         return Array.isArray(parsed) ? parsed : [];
     } catch (error) {
         console.warn('Falha ao ler quizzes gerados', error);
@@ -26,7 +46,7 @@ function getStoredGeneratedQuizzes() {
 function persistGeneratedQuiz(quiz) {
     const current = getStoredGeneratedQuizzes();
     current.unshift(quiz);
-    localStorage.setItem(GENERATED_QUIZ_STORAGE_KEY, JSON.stringify(current.slice(0, 20)));
+    localStorage.setItem(getGeneratedQuizStorageKey(), JSON.stringify(current.slice(0, 20)));
 }
 
 function emitGeneratedQuizCreated(quiz) {
