@@ -177,6 +177,14 @@ function createApiService() {
             return resp;
         },
 
+        async forgotPassword(email) {
+            return request('/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });
+        },
+
+        async resetPassword(token, password) {
+            return request('/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
+        },
+
         async logout() {
             try { await request('/logout', { method: 'POST' }); } catch (e) { /* ignore */ }
             setToken(null);

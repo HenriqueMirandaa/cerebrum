@@ -1,36 +1,80 @@
-// auth.js - Script de autenticação integrado com backend real
 import './i18n.js';
 import api from './api.js';
 
-// Aguarda o DOM carregar completamente
 document.addEventListener('DOMContentLoaded', function() {
-    // Elementos do DOM
     const loginForm = document.getElementById('loginForm');
     const registerForm = document.getElementById('registerForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const resetPasswordForm = document.getElementById('resetPasswordForm');
+    const authForms = [loginForm, registerForm, forgotPasswordForm, resetPasswordForm].filter(Boolean);
+
     const loginBtn = document.getElementById('loginBtn');
     const registerBtn = document.getElementById('registerBtn');
+    const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+    const resetPasswordBtn = document.getElementById('resetPasswordBtn');
     const tabBtns = document.querySelectorAll('.tab-btn');
-    const authForms = document.querySelectorAll('.auth-form');
     const passwordToggles = document.querySelectorAll('.password-toggle');
+
     const loginMessage = document.getElementById('loginMessage');
     const registerMessage = document.getElementById('registerMessage');
+    const forgotPasswordMessage = document.getElementById('forgotPasswordMessage');
+    const resetPasswordMessage = document.getElementById('resetPasswordMessage');
+    const allMessages = [loginMessage, registerMessage, forgotPasswordMessage, resetPasswordMessage].filter(Boolean);
 
-    // Sistema de tabs
-    tabBtns.forEach(btn => {
+    const showForgotPasswordBtn = document.getElementById('showForgotPasswordBtn');
+    const backToLoginBtn = document.getElementById('backToLoginBtn');
+    const cancelResetBtn = document.getElementById('cancelResetBtn');
+
+    const loginEmail = document.getElementById('loginEmail');
+    const loginPassword = document.getElementById('loginPassword');
+    const forgotEmail = document.getElementById('forgotEmail');
+    const resetToken = document.getElementById('resetToken');
+    const resetPassword = document.getElementById('resetPassword');
+    const resetPasswordConfirm = document.getElementById('resetPasswordConfirm');
+
+    const params = new URLSearchParams(window.location.search);
+    const resetMode = params.get('mode') === 'reset';
+    const resetTokenFromUrl = params.get('token') || '';
+
+    function setActiveTab(tabName) {
+        tabBtns.forEach((btn) => {
+            const active = btn.getAttribute('data-tab') === tabName;
+            btn.classList.toggle('active', active);
+            btn.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+    }
+
+    function switchForm(formId, tabName = null) {
+        authForms.forEach((form) => {
+            const active = form && form.id === formId;
+            form.classList.toggle('active', active);
+            form.setAttribute('aria-hidden', active ? 'false' : 'true');
+        });
+
+        if (tabName) setActiveTab(tabName);
+        else tabBtns.forEach((btn) => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+
+        clearMessages();
+    }
+
+    function clearResetQuery() {
+        const nextUrl = new URL(window.location.href);
+        nextUrl.searchParams.delete('mode');
+        nextUrl.searchParams.delete('token');
+        window.history.replaceState({}, document.title, nextUrl.toString());
+    }
+
+    tabBtns.forEach((btn) => {
         btn.addEventListener('click', function() {
             const targetTab = this.getAttribute('data-tab');
-            tabBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            authForms.forEach(form => {
-                form.classList.remove('active');
-                if (form.id === `${targetTab}Form`) form.classList.add('active');
-            });
-            clearMessages();
+            switchForm(`${targetTab}Form`, targetTab);
         });
     });
 
-    // Toggle de visibilidade de senha
-    passwordToggles.forEach(toggle => {
+    passwordToggles.forEach((toggle) => {
         toggle.addEventListener('click', function() {
             const input = this.parentElement.querySelector('input');
             const icon = this.querySelector('i');
@@ -49,62 +93,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Real-time validation: enable/disable submit button
-    const loginEmail = document.getElementById('loginEmail');
-    const loginPassword = document.getElementById('loginPassword');
-
     function updateLoginButtonState() {
-        const valid = validateEmail(loginEmail.value) && validatePassword(loginPassword.value);
+        const valid = validateEmail(loginEmail?.value || '') && validatePassword(loginPassword?.value || '');
+        if (!loginBtn) return;
         loginBtn.disabled = !valid;
-        if (valid) loginBtn.classList.remove('disabled'); else loginBtn.classList.add('disabled');
+        loginBtn.classList.toggle('disabled', !valid);
     }
 
     if (loginEmail) loginEmail.addEventListener('input', updateLoginButtonState);
     if (loginPassword) loginPassword.addEventListener('input', updateLoginButtonState);
 
-    // Login
     if (loginForm) loginForm.addEventListener('submit', function(e) {
         e.preventDefault();
         handleLogin();
     });
 
-    // Cadastro
     if (registerForm) registerForm.addEventListener('submit', function(e) {
         e.preventDefault();
         handleRegister();
     });
 
+    if (forgotPasswordForm) forgotPasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleForgotPassword();
+    });
+
+    if (resetPasswordForm) resetPasswordForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        handleResetPassword();
+    });
+
+    if (showForgotPasswordBtn) {
+        showForgotPasswordBtn.addEventListener('click', function() {
+            if (forgotEmail && loginEmail && validateEmail(loginEmail.value)) {
+                forgotEmail.value = loginEmail.value.trim();
+            }
+            switchForm('forgotPasswordForm');
+        });
+    }
+
+    if (backToLoginBtn) {
+        backToLoginBtn.addEventListener('click', function() {
+            switchForm('loginForm', 'login');
+        });
+    }
+
+    if (cancelResetBtn) {
+        cancelResetBtn.addEventListener('click', function() {
+            clearResetQuery();
+            if (resetToken) resetToken.value = '';
+            if (resetPassword) resetPassword.value = '';
+            if (resetPasswordConfirm) resetPasswordConfirm.value = '';
+            switchForm('loginForm', 'login');
+        });
+    }
+
     async function handleLogin() {
-        const email = document.getElementById('loginEmail').value;
-        const password = document.getElementById('loginPassword').value;
-        console.log('[Auth] handleLogin called with', { email });
+        const email = loginEmail.value.trim();
+        const password = loginPassword.value;
         showLoading(loginBtn);
         clearMessages();
 
         try {
             const res = await api.login({ email, password });
-            // store token for API calls
             if (res.token) api.setToken(res.token);
-            // persist user name for personalized UI
-            try { if (res.user?.name) localStorage.setItem('user_name', res.user.name); } catch (e) { /* ignore */ }
+            try {
+                if (res.user?.name) localStorage.setItem('user_name', res.user.name);
+            } catch (e) { /* ignore */ }
+
             showMessage(loginMessage, 'Login realizado com sucesso!', 'success');
 
-            // Redirect depending on role - use absolute URLs and robust logging
             const role = res.user?.role || 'user';
             const target = (role === 'admin' || role === 'administrator') ? 'admin.html' : 'dashboard.html';
-            // Compute base path where the app is hosted (handles subfolders like /pap2326/)
             let basePath = window.location.pathname;
             if (!basePath.endsWith('/')) basePath = basePath.substring(0, basePath.lastIndexOf('/') + 1);
             const absolute = window.location.origin + basePath + target;
-            console.log('[Auth] login success for', res.user?.email || res.user?.name, 'role=', role, 'redirect=', absolute);
 
-            // short delay to show success UI, then navigate
             setTimeout(() => {
-                // Use replace to avoid leaving login in history on success
                 try {
                     window.location.replace(absolute);
                 } catch (err) {
-                    console.warn('[Auth] replace failed, falling back to href', err);
                     window.location.href = absolute;
                 }
             }, 300);
@@ -117,10 +185,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function handleRegister() {
-        const name = document.getElementById('registerName').value;
-        const email = document.getElementById('registerEmail').value;
+        const name = document.getElementById('registerName').value.trim();
+        const email = document.getElementById('registerEmail').value.trim();
         const password = document.getElementById('registerPassword').value;
-        console.log('[Auth] handleRegister called with', { name, email });
 
         showLoading(registerBtn);
         clearMessages();
@@ -128,12 +195,20 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await api.register({ name, email, password });
             if (res.token) api.setToken(res.token);
-            try { if (res.user?.name) localStorage.setItem('user_name', res.user.name); } catch (e) { /* ignore */ }
-            showMessage(registerMessage, 'Cadastro realizado com sucesso!', 'success');
+            try {
+                if (res.user?.name) localStorage.setItem('user_name', res.user.name);
+            } catch (e) { /* ignore */ }
+            showMessage(
+                registerMessage,
+                res.message || 'Cadastro realizado com sucesso! Se o SMTP estiver configurado, vais receber um email.',
+                'success'
+            );
             setTimeout(() => {
-                tabBtns[0].click();
+                switchForm('loginForm', 'login');
                 registerForm.reset();
-            }, 900);
+                if (loginEmail) loginEmail.value = email;
+                updateLoginButtonState();
+            }, 1400);
         } catch (error) {
             console.error('[Auth] handleRegister error', error);
             showMessage(registerMessage, error.message || 'Erro ao cadastrar', 'error');
@@ -142,17 +217,76 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Funções de validação
+    async function handleForgotPassword() {
+        const email = forgotEmail.value.trim();
+        showLoading(forgotPasswordBtn);
+        clearMessages();
+
+        try {
+            const res = await api.forgotPassword(email);
+            showMessage(
+                forgotPasswordMessage,
+                res.message || 'Se existir uma conta com este email, enviamos um link para redefinir a senha.',
+                'success'
+            );
+        } catch (error) {
+            console.error('[Auth] handleForgotPassword error', error);
+            showMessage(forgotPasswordMessage, error.message || 'Erro ao pedir redefinicao de senha', 'error');
+        } finally {
+            hideLoading(forgotPasswordBtn);
+        }
+    }
+
+    async function handleResetPassword() {
+        const token = resetToken.value.trim();
+        const password = resetPassword.value;
+        const confirmPassword = resetPasswordConfirm.value;
+
+        clearMessages();
+
+        if (!token) {
+            showMessage(resetPasswordMessage, 'Link de redefinicao invalido.', 'error');
+            return;
+        }
+
+        if (!validatePassword(password)) {
+            showMessage(resetPasswordMessage, 'A nova senha deve ter pelo menos 6 caracteres.', 'error');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            showMessage(resetPasswordMessage, 'As senhas nao coincidem.', 'error');
+            return;
+        }
+
+        showLoading(resetPasswordBtn);
+
+        try {
+            const res = await api.resetPassword(token, password);
+            showMessage(resetPasswordMessage, res.message || 'Senha redefinida com sucesso.', 'success');
+            clearResetQuery();
+            setTimeout(() => {
+                if (resetToken) resetToken.value = '';
+                if (resetPassword) resetPassword.value = '';
+                if (resetPasswordConfirm) resetPasswordConfirm.value = '';
+                switchForm('loginForm', 'login');
+            }, 1400);
+        } catch (error) {
+            console.error('[Auth] handleResetPassword error', error);
+            showMessage(resetPasswordMessage, error.message || 'Erro ao redefinir senha', 'error');
+        } finally {
+            hideLoading(resetPasswordBtn);
+        }
+    }
+
     function validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     }
 
     function validatePassword(password) {
-        return password.length >= 6;
+        return String(password || '').length >= 6;
     }
 
-    // Funções auxiliares
     function showLoading(button) {
         if (!button) return;
         const btnText = button.querySelector('.btn-text');
@@ -179,13 +313,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function clearMessages() {
-        [loginMessage, registerMessage].forEach(el => {
-            if (!el) return;
+        allMessages.forEach((el) => {
             el.textContent = '';
             el.className = 'auth-message';
             el.removeAttribute('aria-live');
         });
     }
 
-    console.log('🔐 Sistema de autenticação inicializado com backend real');
+    if (resetMode && resetTokenFromUrl) {
+        if (resetToken) resetToken.value = resetTokenFromUrl;
+        switchForm('resetPasswordForm');
+    } else {
+        switchForm('loginForm', 'login');
+    }
+
+    updateLoginButtonState();
+    console.log('[Auth] Sistema de autenticacao inicializado');
 });

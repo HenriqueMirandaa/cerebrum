@@ -72,6 +72,12 @@
         /* forms area spacing */
         .auth-form { margin-top:6px; padding: 8px 2px; }
         .form-actions { margin-top:12px; display:flex; gap:8px; }
+        .form-actions.wrap { flex-wrap: wrap; }
+        .auth-inline-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
+        .auth-text-link { background: transparent; border: none; color: #c084fc; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
+        .auth-text-link:hover { color: #ddd6fe; }
+        .auth-form-note { margin-top: 10px; color: #9aa3bf; font-size: 0.92rem; line-height: 1.5; }
+        .auth-form-title { margin: 0 0 6px; color: #fff; font-size: 1.05rem; font-family: 'Poppins', Inter, system-ui, sans-serif; }
 
         /* ensure label groups keep normal flow */
         .form-group {
@@ -257,6 +263,11 @@
                     </button>
                 </div>
 
+                <div class="auth-inline-row">
+                    <span class="auth-form-note">Acede com o email da tua conta.</span>
+                    <button type="button" class="auth-text-link" id="showForgotPasswordBtn">Esqueci a senha</button>
+                </div>
+
                 <div id="loginMessage" class="auth-message" role="status" aria-live="polite"></div>
             </form>
 
@@ -295,6 +306,63 @@
                 </div>
 
                 <div id="registerMessage" class="auth-message" role="status" aria-live="polite"></div>
+            </form>
+
+            <form id="forgotPasswordForm" class="auth-form" novalidate aria-hidden="true">
+                <div class="auth-form-title">Recuperar acesso</div>
+                <p class="auth-form-note">Indica o teu email e, se existir conta associada, enviamos um link para redefinir a senha.</p>
+
+                <div class="form-group">
+                    <label for="forgotEmail" class="form-label">E-mail</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                        <input type="email" id="forgotEmail" class="form-input" placeholder="seu@email.com" required>
+                    </div>
+                </div>
+
+                <div class="form-actions wrap">
+                    <button type="submit" class="auth-btn" id="forgotPasswordBtn">
+                        <span class="btn-text">Enviar link</span>
+                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                    <button type="button" class="auth-text-link" id="backToLoginBtn">Voltar para login</button>
+                </div>
+
+                <div id="forgotPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
+            </form>
+
+            <form id="resetPasswordForm" class="auth-form" novalidate aria-hidden="true">
+                <div class="auth-form-title">Definir nova senha</div>
+                <p class="auth-form-note">Escolhe uma nova senha para a tua conta. O link do email so pode ser usado uma vez.</p>
+                <input type="hidden" id="resetToken">
+
+                <div class="form-group">
+                    <label for="resetPassword" class="form-label">Nova senha</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="resetPassword" class="form-input" placeholder="Minimo 6 caracteres" required>
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="resetPasswordConfirm" class="form-label">Confirmar senha</label>
+                    <div class="input-group">
+                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                        <input type="password" id="resetPasswordConfirm" class="form-input" placeholder="Repete a nova senha" required>
+                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-actions wrap">
+                    <button type="submit" class="auth-btn" id="resetPasswordBtn">
+                        <span class="btn-text">Guardar nova senha</span>
+                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                    </button>
+                    <button type="button" class="auth-text-link" id="cancelResetBtn">Cancelar</button>
+                </div>
+
+                <div id="resetPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
             </form>
 
             <!-- INFO: moved below forms so it no longer overlaps labels -->
