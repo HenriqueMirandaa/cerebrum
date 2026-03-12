@@ -1,0 +1,382 @@
+﻿/* Responsive layout for dashboard and dynamic views */
+.mobile-only {
+    display: none;
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.dashboard-header-left,
+.dashboard-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+
+.dashboard-search-wrap {
+    position: relative;
+    width: min(320px, 36vw);
+    min-width: 220px;
+}
+
+.dashboard-search-input {
+    width: 100%;
+    padding-right: 2.25rem;
+}
+
+.dashboard-search-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gray-400);
+    pointer-events: none;
+}
+
+.mobile-menu-btn,
+.mobile-sidebar-close {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.625rem;
+    border: 1px solid rgba(124, 58, 237, 0.32);
+    background: rgba(124, 58, 237, 0.14);
+    color: #efe9ff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+.mobile-sidebar-close {
+    position: absolute;
+    right: 0.85rem;
+    top: 0.85rem;
+    z-index: 2;
+}
+
+.dashboard-sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    border: 0;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(3, 6, 16, 0.64);
+    transition: opacity 0.24s ease;
+}
+
+.hero-main {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.hero-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.dashboard-subject-meta,
+.dashboard-subject-stats {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.add-materia-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.add-materia-modal-title {
+    margin: 0;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.add-materia-form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+}
+
+.add-materia-form-grid-full {
+    grid-column: 1 / -1;
+}
+
+.add-materia-modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.9rem;
+}
+
+.btn-icon {
+    width: 2.25rem;
+    height: 2.25rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.625rem;
+    border: 1px solid var(--startup-border, rgba(148, 163, 184, 0.22));
+    background: rgba(148, 163, 184, 0.08);
+    color: var(--startup-text, #e6edf8);
+}
+
+.cronograma-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.cronograma-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.cronograma-mode-select {
+    min-width: 9rem;
+}
+
+.cronograma-grid-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.2rem;
+}
+
+.cronograma-week-grid,
+.cronograma-month-grid {
+    min-width: 760px;
+}
+
+#view .card,
+#view .stat-card,
+#view .subject-card {
+    min-width: 0;
+}
+
+@media (max-width: 1100px) {
+    .dashboard-search-wrap {
+        width: min(280px, 45vw);
+        min-width: 180px;
+    }
+
+    main.flex-1 {
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    body.sidebar-open {
+        overflow: hidden;
+    }
+
+    body.startup-ui {
+        display: block;
+    }
+
+    .mobile-only {
+        display: inline-flex !important;
+    }
+
+    .sidebar {
+        position: fixed !important;
+        left: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: min(84vw, 320px) !important;
+        max-width: 320px;
+        height: 100vh !important;
+        border-radius: 0 !important;
+        transform: translateX(-104%) !important;
+        transition: transform 0.28s ease !important;
+        overflow-y: auto;
+        z-index: 50 !important;
+    }
+
+    body.sidebar-open .sidebar {
+        transform: translateX(0) !important;
+    }
+
+    body.sidebar-open .dashboard-sidebar-overlay {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    body > .sidebar + .flex-1 {
+        margin-left: 0 !important;
+        width: 100% !important;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .dashboard-header-left,
+    .dashboard-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .dashboard-header-right {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .dashboard-search-wrap {
+        flex: 1 1 240px;
+        width: auto;
+        min-width: 0;
+    }
+
+    .dashboard-search-input {
+        min-width: 0;
+    }
+
+    .user-info {
+        margin-left: auto;
+    }
+
+    main.flex-1 {
+        padding: 0.875rem;
+    }
+
+    .hero {
+        gap: 0.9rem;
+    }
+
+    .hero-actions {
+        width: 100%;
+        margin-left: 0;
+        justify-content: flex-start;
+    }
+
+    .hero-actions .btn-primary,
+    .hero-actions .btn-uiverse {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .add-materia-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .add-materia-modal-actions {
+        justify-content: stretch;
+    }
+
+    .add-materia-modal-actions .btn-primary {
+        width: 100%;
+    }
+
+    .fab {
+        right: 0.9rem !important;
+        bottom: 0.9rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header-left .app-title {
+        font-size: 1.05rem !important;
+    }
+
+    .dashboard-header-left .app-subtitle {
+        font-size: 0.83rem;
+    }
+
+    .dashboard-header-right .user-info {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .dashboard-header-right .user-name {
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    #view .text-3xl {
+        font-size: 1.6rem;
+    }
+
+    .cronograma-actions {
+        width: 100%;
+    }
+
+    .cronograma-actions > * {
+        flex: 1 1 48%;
+    }
+
+    .cronograma-actions .btn-icon {
+        flex: 0 0 auto;
+    }
+
+    .cronograma-actions .btn-primary {
+        flex: 1 1 100%;
+    }
+
+    .cronograma-mode-select {
+        max-width: none;
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+
+    .assistant-chat-actions {
+        width: 100%;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
+    #chatForm {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+    }
+
+    #chatForm .form-input,
+    #chatForm button {
+        width: 100%;
+    }
+
+    .assistant-message .chat-bubble {
+        max-width: 100%;
+    }
+
+    .chat-bubble {
+        max-width: 88%;
+    }
+
+    #focus-overlay h1 {
+        font-size: 1.75rem !important;
+    }
+
+    #focus-overlay #focus-timer {
+        font-size: 3rem !important;
+    }
+
+    #focus-overlay > div > div {
+        flex-wrap: wrap;
+    }
+}

@@ -135,6 +135,7 @@ class Dashboard {
         this.currentView = 'inicio';
         this.minhasDisciplinas = [];
         this.disciplinasDisponiveis = [];
+        this.mobileSidebarMedia = window.matchMedia('(max-width: 1024px)');
         this.init();
     }
 
@@ -237,6 +238,8 @@ class Dashboard {
     }
 
     setupEventListeners() {
+        this.setupMobileSidebar();
+
         // Navegação
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
@@ -245,6 +248,7 @@ class Dashboard {
                 this.showView(view);
                 document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
+                this.closeMobileSidebar();
             });
         });
 
@@ -282,6 +286,43 @@ class Dashboard {
                 this.renderFerramentas().catch((error) => console.warn('Failed to refresh ferramentas after quiz creation', error));
             }
         });
+    }
+
+    setupMobileSidebar() {
+        const body = document.body;
+        const menuBtn = document.getElementById('mobileMenuBtn');
+        const closeBtn = document.getElementById('mobileSidebarClose');
+        const overlay = document.getElementById('dashboardSidebarOverlay');
+
+        const openSidebar = () => {
+            if (!this.mobileSidebarMedia.matches) return;
+            body.classList.add('sidebar-open');
+        };
+
+        const closeSidebar = () => {
+            body.classList.remove('sidebar-open');
+        };
+
+        this.openMobileSidebar = openSidebar;
+        this.closeMobileSidebar = closeSidebar;
+
+        if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+        if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+        if (overlay) overlay.addEventListener('click', closeSidebar);
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') closeSidebar();
+        });
+
+        const handleMediaChange = (event) => {
+            if (!event.matches) closeSidebar();
+        };
+
+        if (typeof this.mobileSidebarMedia.addEventListener === 'function') {
+            this.mobileSidebarMedia.addEventListener('change', handleMediaChange);
+        } else if (typeof this.mobileSidebarMedia.addListener === 'function') {
+            this.mobileSidebarMedia.addListener(handleMediaChange);
+        }
     }
 
     updateUserInfo() {

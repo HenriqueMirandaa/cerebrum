@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="css/components/sidebar.css">
     <link rel="stylesheet" href="css/components/cards.css">
     <link rel="stylesheet" href="css/components/chat.css">
+    <link rel="stylesheet" href="css/components/responsive-dashboard.css">
     <link rel="stylesheet" href="css/components/startup-theme.css">
     <link rel="stylesheet" href="css/uiverse.css">
     <link rel="stylesheet" href="css/components/visual-refresh.css">
@@ -94,8 +95,12 @@
 <body class="flex min-h-screen startup-ui">
     <!-- Full-viewport background canvas (Three.js) -->
     <canvas id="bg-canvas" aria-hidden="true"></canvas>
+    <button class="dashboard-sidebar-overlay" id="dashboardSidebarOverlay" type="button" aria-label="Fechar menu"></button>
     <!-- Sidebar -->
     <aside class="sidebar flex flex-col">
+        <button class="mobile-only mobile-sidebar-close" id="mobileSidebarClose" type="button" aria-label="Fechar menu">
+            <i class="fas fa-times"></i>
+        </button>
         <div class="p-6 border-b">
             <div class="flex items-center gap-3">
                 <div class="logo-icon">
@@ -168,16 +173,21 @@
     <div class="flex-1 flex flex-col overflow-hidden">
         <!-- Header -->
         <header class="glass border-b p-4">
-            <div class="flex items-center justify-between">
+            <div class="dashboard-header">
+                <div class="dashboard-header-left">
+                    <button class="mobile-only mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Abrir menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                 <div>
                     <h1 class="app-title">Cerebrum</h1>
                     <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
                 </div>
-                <div class="flex items-center gap-4">
-                    <div style="min-width:260px;">
+                </div>
+                <div class="dashboard-header-right">
+                    <div class="dashboard-search-wrap" style="min-width:260px;">
                         <div style="position:relative">
-                            <input id="globalSearch" class="form-input" placeholder="Buscar disciplinas..." style="width:260px;padding-right:38px;" />
-                            <i class="fas fa-search" style="position:absolute;right:10px;top:10px;color:var(--gray-400)"></i>
+                            <input id="globalSearch" class="form-input dashboard-search-input" placeholder="Buscar disciplinas..." style="width:260px;padding-right:38px;" />
+                            <i class="fas fa-search dashboard-search-icon" style="position:absolute;right:10px;top:10px;color:var(--gray-400)"></i>
                         </div>
                     </div>
                     <!-- Tema fixo: modo escuro (botão de alternar tema removido) -->
