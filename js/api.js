@@ -185,6 +185,10 @@ function createApiService() {
             return request('/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
         },
 
+        async getPublicConfig() {
+            return request('/public-config');
+        },
+
         async logout() {
             try { await request('/logout', { method: 'POST' }); } catch (e) { /* ignore */ }
             setToken(null);

@@ -213,6 +213,18 @@ app.get('/api/health', async (req, res) => {
     res.json(payload);
 });
 
+// Public frontend config (safe-to-expose values only)
+app.get('/api/public-config', (req, res) => {
+    res.json({
+        emailjs: {
+            enabled: process.env.EMAILJS_WELCOME_ENABLED === 'true',
+            serviceId: process.env.EMAILJS_SERVICE_ID || '',
+            templateId: process.env.EMAILJS_TEMPLATE_ID || '',
+            publicKey: process.env.EMAILJS_PUBLIC_KEY || '',
+        }
+    });
+});
+
 // Debug endpoint to inspect session and cookies (development only)
 app.get('/api/debug/session', (req, res) => {
     try {

@@ -35,6 +35,55 @@ document.addEventListener('DOMContentLoaded', function() {
     const params = new URLSearchParams(window.location.search);
     const resetMode = params.get('mode') === 'reset';
     const resetTokenFromUrl = params.get('token') || '';
+    let publicConfigPromise = null;
+
+    function getPublicConfig() {
+        if (!publicConfigPromise) {
+            publicConfigPromise = api.getPublicConfig().catch((error) => {
+                console.warn('[Auth] failed to load public config', error);
+                return {};
+            });
+        }
+        return publicConfigPromise;
+    }
+
+    async function sendWelcomeEmailViaEmailJS({ name, email }) {
+        const config = await getPublicConfig();
+        const emailjs = config && config.emailjs ? config.emailjs : {};
+
+        if (!emailjs.enabled || !emailjs.serviceId || !emailjs.templateId || !emailjs.publicKey) {
+            return { skipped: true };
+        }
+
+        const appName = 'Cerebrum';
+        const loginUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, 'index.html');
+        const response = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                service_id: emailjs.serviceId,
+                template_id: emailjs.templateId,
+                user_id: emailjs.publicKey,
+                template_params: {
+                    to_email: email,
+                    to_name: name,
+                    user_name: name,
+                    user_email: email,
+                    app_name: appName,
+                    login_url: loginUrl,
+                }
+            })
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(text || 'Falha ao enviar email de boas-vindas via EmailJS');
+        }
+
+        return { skipped: false };
+    }
 
     function setActiveTab(tabName) {
         tabBtns.forEach((btn) => {
@@ -198,11 +247,15 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 if (res.user?.name) localStorage.setItem('user_name', res.user.name);
             } catch (e) { /* ignore */ }
-            showMessage(
-                registerMessage,
-                res.message || 'Cadastro realizado com sucesso! Se o SMTP estiver configurado, vais receber um email.',
-                'success'
-            );
+            let welcomeSuffix = '';
+            try {
+                const emailResult = await sendWelcomeEmailViaEmailJS({ name, email });
+                welcomeSuffix = emailResult.skipped ? '' : ' Email de boas-vindas enviado.';
+            } catch (emailError) {
+                console.warn('[Auth] welcome email via EmailJS failed', emailError);
+                welcomeSuffix = ' Conta criada, mas o email de boas-vindas nao foi enviado.';
+            }
+            showMessage(registerMessage, `${res.message || 'Cadastro realizado com sucesso!'}${welcomeSuffix}`, 'success');
             setTimeout(() => {
                 switchForm('loginForm', 'login');
                 registerForm.reset();
@@ -327,6 +380,7 @@ document.addEventListener('DOMContentLoaded', function() {
         switchForm('loginForm', 'login');
     }
 
+    getPublicConfig();
     updateLoginButtonState();
     console.log('[Auth] Sistema de autenticacao inicializado');
 });

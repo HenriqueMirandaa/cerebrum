@@ -2,7 +2,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
-const { sendWelcomeEmail, sendPasswordResetEmail } = require('../utils/mailer');
+const { sendPasswordResetEmail } = require('../utils/mailer');
 
 const RESET_TOKEN_MINUTES = Math.max(5, Number.parseInt(process.env.RESET_PASSWORD_TOKEN_MINUTES || '60', 10) || 60);
 const RESET_GENERIC_MESSAGE = 'Se existir uma conta com este email, sera enviado um link para redefinir a senha.';
@@ -86,12 +86,6 @@ const authController = {
                 [name, email, passwordHash, 'user', 'active']
             );
 
-            sendWelcomeEmail(name, email)
-                .then((ok) => {
-                    if (!ok) console.error('Falha no envio do email de boas-vindas para', email);
-                })
-                .catch((err) => console.error('Erro ao tentar enviar email de boas-vindas:', err));
-
             const user = { id: result.insertId, name, email, role: 'user' };
             const token = signToken(result.insertId);
 
@@ -105,7 +99,7 @@ const authController = {
                         return respondAuthSuccess(
                             res,
                             201,
-                            'Utilizador criado com sucesso! Se o SMTP estiver configurado, sera enviado um email de boas-vindas.',
+                            'Utilizador criado com sucesso!',
                             user,
                             token
                         );
@@ -116,7 +110,7 @@ const authController = {
             return respondAuthSuccess(
                 res,
                 201,
-                'Utilizador criado com sucesso! Se o SMTP estiver configurado, sera enviado um email de boas-vindas.',
+                'Utilizador criado com sucesso!',
                 user,
                 token
             );
