@@ -68,6 +68,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 user_id: emailjs.publicKey,
                 template_params: {
                     to_email: email,
+                    email,
+                    to: email,
+                    recipient: email,
+                    recipient_email: email,
                     to_name: name,
                     user_name: name,
                     user_email: email,

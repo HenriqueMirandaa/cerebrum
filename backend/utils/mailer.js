@@ -101,6 +101,10 @@ async function sendPasswordResetEmail(name, email, resetUrl, expiresMinutes) {
                 templateId: resetTemplateId,
                 templateParams: {
                     to_email: email,
+                    email,
+                    to: email,
+                    recipient: email,
+                    recipient_email: email,
                     user_email: email,
                     to_name: name || 'utilizador',
                     user_name: name || 'utilizador',
