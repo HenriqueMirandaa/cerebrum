@@ -66,35 +66,54 @@ function cleanupTopicPart(value) {
         .trim();
 }
 
-function getSuggestedQuizTopics(subjectName = '') {
+function subjectMatches(subjectName = '', aliases = []) {
     const normalized = normalizeText(subjectName);
+    if (!normalized) return false;
 
-    if (normalized.includes('port')) {
+    return aliases.some((alias) => {
+        const normalizedAlias = normalizeText(alias);
+        if (!normalizedAlias) return false;
+        if (normalized === normalizedAlias) return true;
+        if (normalized.startsWith(`${normalizedAlias} `)) return true;
+        if (normalized.endsWith(` ${normalizedAlias}`)) return true;
+        if (normalized.includes(` ${normalizedAlias} `)) return true;
+        return false;
+    });
+}
+
+function getSuggestedQuizTopics(subjectName = '') {
+    if (subjectMatches(subjectName, ['portugues', 'português', 'lingua portuguesa', 'língua portuguesa'])) {
         return ['interpretacao de texto', 'gramatica', 'sintaxe', 'ortografia', 'literatura'];
     }
-    if (normalized.includes('mat')) {
+    if (subjectMatches(subjectName, ['matematica', 'matemática', 'algebra', 'álgebra'])) {
         return ['equacoes', 'fracoes', 'geometria', 'funcoes', 'probabilidade'];
     }
-    if (normalized.includes('hist')) {
+    if (subjectMatches(subjectName, ['historia', 'história'])) {
         return ['revolucao industrial', 'primeira guerra', 'idade media', 'imperialismo', 'brasil colonia'];
     }
-    if (normalized.includes('geo')) {
+    if (subjectMatches(subjectName, ['geografia'])) {
         return ['globalizacao', 'clima', 'relevo', 'populacao', 'cartografia'];
     }
-    if (normalized.includes('fis')) {
+    if (subjectMatches(subjectName, ['fisica', 'física'])) {
         return ['movimento', 'forca', 'energia', 'eletricidade', 'optica'];
     }
-    if (normalized.includes('quim')) {
+    if (subjectMatches(subjectName, ['quimica', 'química'])) {
         return ['atomos', 'ligacoes quimicas', 'reacoes', 'tabela periodica', 'solucoes'];
     }
-    if (normalized.includes('bio')) {
+    if (subjectMatches(subjectName, ['biologia'])) {
         return ['celula', 'genetica', 'ecologia', 'corpo humano', 'evolucao'];
     }
-    if (normalized.includes('fil')) {
+    if (subjectMatches(subjectName, ['ciencias naturais', 'ciências naturais', 'ciencias', 'ciências', 'science'])) {
+        return ['seres vivos', 'ecossistemas', 'corpo humano', 'ambiente', 'materia e energia'];
+    }
+    if (subjectMatches(subjectName, ['filosofia'])) {
         return ['etica', 'logica', 'politica', 'conhecimento', 'filosofos'];
     }
-    if (normalized.includes('ing') || normalized.includes('en')) {
+    if (subjectMatches(subjectName, ['ingles', 'inglês', 'english', 'lingua inglesa', 'língua inglesa'])) {
         return ['vocabulary', 'reading comprehension', 'verb tenses', 'grammar', 'interpretation'];
+    }
+    if (subjectMatches(subjectName, ['frances', 'francês', 'french', 'lingua francesa', 'língua francesa'])) {
+        return ['vocabulaire', 'comprehension', 'grammaire', 'verbes', 'interpretation'];
     }
 
     return ['conceitos centrais', 'definicoes', 'aplicacoes', 'exercicios base', 'revisao geral'];
