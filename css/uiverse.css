@@ -212,6 +212,90 @@
 
 /* Ensure event tiles use the darker surface with clear text */
 .cronograma-root [data-event-id] { background: transparent; }
+.cronograma-root .cronograma-event-tile {
+  min-width: 0;
+  overflow: hidden;
+}
+.cronograma-root .cronograma-event-tile__title,
+.cronograma-root .cronograma-event-tile__meta {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cronograma-root .cronograma-modal-container {
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100vh - 32px);
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 22px 48px rgba(2,6,23,0.42);
+}
+.cronograma-root .cronograma-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 16px 18px 0;
+}
+.cronograma-root .cronograma-modal-header h3 {
+  margin: 0;
+  min-width: 0;
+}
+.cronograma-root .modal-close {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(148,163,184,0.08);
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  line-height: 1;
+}
+.cronograma-root .cronograma-modal-content {
+  padding: 12px 18px 18px;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.cronograma-root .cronograma-event-form {
+  display: grid;
+  gap: 14px;
+}
+.cronograma-root .cronograma-event-form .form-group {
+  margin-bottom: 0;
+}
+.cronograma-root .cronograma-event-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: rgba(255,255,255,0.84);
+}
+.cronograma-root .cronograma-event-form input,
+.cronograma-root .cronograma-event-form select,
+.cronograma-root .cronograma-event-form textarea {
+  width: 100%;
+  min-width: 0;
+}
+.cronograma-root .cronograma-modal-actions {
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .cronograma-root .cronograma-modal-header {
+    padding: 14px 14px 0;
+  }
+  .cronograma-root .cronograma-modal-content {
+    padding: 10px 14px 14px;
+  }
+  .cronograma-root .cronograma-modal-actions {
+    flex-direction: column-reverse;
+  }
+  .cronograma-root .cronograma-modal-actions > * {
+    width: 100%;
+  }
+}
 
 /* Global Ribbon overrides: make small label/ribbon elements black background and purple text
    This targets common badge/ribbon classes used across the UI and select controls.

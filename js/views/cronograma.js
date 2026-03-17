@@ -177,9 +177,9 @@ function renderEventTile(ev) {
     const time = ev.all_day ? 'Dia todo' : `${ev.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${ev.end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
     // store event id on data- attribute for click handling
     return `
-        <div class="p-1 rounded cursor-pointer" style="border-left:4px solid ${color}; padding-left:8px;" data-event-id="${ev.id}" tabindex="0" role="button" aria-pressed="false">
-            <div class="text-sm font-semibold">${escapeHtml(title)}</div>
-            <div class="text-xs text-gray-500">${time}${materia ? ' • ' + (materia.name || materia.nome) : ''}</div>
+        <div class="p-1 rounded cursor-pointer cronograma-event-tile" style="border-left:4px solid ${color}; padding-left:8px;" data-event-id="${ev.id}" tabindex="0" role="button" aria-pressed="false">
+            <div class="text-sm font-semibold cronograma-event-tile__title">${escapeHtml(title)}</div>
+            <div class="text-xs text-gray-500 cronograma-event-tile__meta">${time}${materia ? ' • ' + (materia.name || materia.nome) : ''}</div>
         </div>
     `;
 }
@@ -214,13 +214,13 @@ function renderModalHtml() {
     return `
         <div class="modal hidden" id="eventModal" aria-hidden="true">
             <div class="modal-overlay">
-                <div class="modal-container" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
-                    <div class="modal-header">
+                <div class="modal-container cronograma-modal-container" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+                    <div class="modal-header cronograma-modal-header">
                         <h3 id="eventModalTitle" class="text-lg font-semibold">Evento</h3>
                         <button id="closeModal" class="modal-close" aria-label="Fechar">×</button>
                     </div>
-                    <div class="modal-content">
-                        <form id="eventForm">
+                    <div class="modal-content cronograma-modal-content">
+                        <form id="eventForm" class="cronograma-event-form">
                             <input type="hidden" id="eventId">
                             <div class="form-group">
                                 <label for="eventTitle">Título</label>
@@ -245,7 +245,7 @@ function renderModalHtml() {
                                 <label for="eventNotes">Notas</label>
                                 <textarea id="eventNotes" class="form-input w-full" rows="3"></textarea>
                             </div>
-                            <div class="flex justify-end gap-2 mt-4">
+                            <div class="flex justify-end gap-2 mt-4 cronograma-modal-actions">
                                 <button type="button" id="deleteEventBtn" class="btn-secondary">Excluir</button>
                                 <button type="button" id="cancelBtn" class="btn-secondary">Cancelar</button>
                                 <button type="submit" class="btn-primary">Salvar</button>
