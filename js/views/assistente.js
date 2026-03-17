@@ -62,7 +62,6 @@ function renderAssistantLayout() {
                         <button data-action="suggest" class="btn w-full">Sugestoes de Estudo</button>
                         <button data-action="quiz" class="btn w-full">Gerar Quiz Rapido</button>
                         <button data-action="help" class="btn w-full">Mostrar Comandos</button>
-                        <button type="button" class="btn w-full" id="showCapabilitiesBtn">Ver Capacidades da IA</button>
                     </div>
                     <div class="assistant-capabilities-bubble hidden" id="capabilitiesBubble" role="dialog" aria-label="Capacidades da IA">
                         <div class="assistant-capabilities-card">
@@ -685,7 +684,6 @@ function bindEvents(state) {
     const submitBtn = document.getElementById('chatSubmitBtn');
     const quickActionButtons = document.querySelectorAll('#assistantQuickActions [data-action]');
     const clearBtn = document.getElementById('chatClearBtn');
-    const showCapabilitiesBtn = document.getElementById('showCapabilitiesBtn');
     const closeCapabilitiesBtn = document.getElementById('closeCapabilitiesBtn');
 
     if (form && input && submitBtn) {
@@ -713,12 +711,6 @@ function bindEvents(state) {
         clearBtn.addEventListener('click', () => {
             if (state.busy) return;
             clearChatHistory();
-        });
-    }
-
-    if (showCapabilitiesBtn) {
-        showCapabilitiesBtn.addEventListener('click', () => {
-            toggleCapabilitiesBubble();
         });
     }
 

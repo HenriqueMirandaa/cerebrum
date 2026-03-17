@@ -875,12 +875,35 @@ function getGreetingReply() {
 
 function getCapabilityReply() {
     return [
-        'Posso conversar de forma natural com voce sobre estudos.',
+        'Posso ajudar em quatro frentes principais:',
+        '- organizacao: adicionar materias, montar plano e sugerir foco',
+        '- acompanhamento: analisar progresso geral ou por disciplina',
+        '- revisao: gerar quiz rapido com tema coerente',
+        '- rotina: consultar cronograma e proxima sessao',
+        '',
+        'Exemplos naturais:',
+        '- "quero adicionar materia de fisica com 30 horas e prova em 2026-06-20"',
+        '- "como esta meu progresso geral?"',
+        '- "o que devo estudar esta semana?"',
+        '- "gera um quiz de matematica sobre funcoes"'
+    ].join('\n');
+}
+
+function getHelpReply() {
+    return [
+        'Podes escrever de forma natural ou usar pedidos curtos como estes:',
+        '',
+        '- recomendacoes: devolve prioridades de estudo com foco em hoje, esta semana ou proxima prova',
+        '- analisar: faz um resumo do teu progresso, riscos e proximo passo',
+        '- quiz: abre o painel para escolher materia e tema do quiz',
+        '- proxima sessao: mostra o proximo estudo agendado no cronograma',
+        '- adicionar <Nome> | <horas> | <AAAA-MM-DD>: adiciona materia rapidamente',
+        '',
         'Exemplos:',
-        '- "quero adicionar materia de fisica com 30 horas"',
-        '- "como esta meu progresso?"',
-        '- "me sugere o que estudar hoje"',
-        '- "gera um quiz da materia de matematica"'
+        '- adicionar Fisica | 24 | 2026-06-20',
+        '- recomendacoes',
+        '- analisar',
+        '- proxima sessao'
     ].join('\n');
 }
 
@@ -1177,14 +1200,7 @@ const aiLocal = {
         }
 
         if (t === 'comandos' || t === 'help' || t === 'ajuda') {
-            return [
-                'Comandos disponiveis:',
-                '- recomendacoes',
-                '- analisar',
-                '- quiz',
-                '- proxima sessao',
-                '- adicionar <Nome> | <horas> | <AAAA-MM-DD>'
-            ].join('\n');
+            return getHelpReply();
         }
 
         if (includesAny(t, ['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite'])) {
@@ -1239,8 +1255,11 @@ const aiLocal = {
             const next = sessions
                 .filter((s) => !s.completed && new Date(s.start_time) > new Date())
                 .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
-            if (next) return `Proxima sessao: ${next.name || next.subject_id} - ${new Date(next.start_time).toLocaleString()} (${formatHours(next.duration || 0)})`;
-            return 'Nenhuma sessao futura encontrada.';
+            if (next) {
+                const nextLabel = next.name || next.title || next.subject_id || 'Sessao de estudo';
+                return `A tua proxima sessao e ${nextLabel}, em ${new Date(next.start_time).toLocaleString()}, com duracao prevista de ${formatHours(next.duration || 0)}.`;
+            }
+            return 'Nao encontrei sessoes futuras no cronograma. Se quiseres, posso ajudar-te a montar um plano de estudo ou priorizar o que estudar hoje.';
         }
 
         const subjects = await safeGetSubjects();
@@ -1251,7 +1270,7 @@ const aiLocal = {
             return `Entendi que voce quer falar sobre ${subjectMention.name}. Progresso atual: ${progress}%. Se quiser, eu posso gerar um quiz ou sugerir um plano curto para essa materia.`;
         }
 
-        return 'Entendi. Posso te ajudar com recomendacoes, analise de progresso, quiz, cronograma ou cadastro de materia. Se quiser, escreva de forma natural o que voce precisa.';
+        return 'Entendi. Posso ajudar com recomendacoes, analise de progresso, quiz, cronograma ou cadastro de materia. Se quiser, escreve "ajuda" e eu mostro exemplos mais uteis.';
     }
 };
 
