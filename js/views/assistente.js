@@ -79,13 +79,61 @@ function renderAssistantLayout() {
                     </div>
                 </aside>
             </div>
+            <div class="modal hidden" id="assistantQuizModal" aria-hidden="true">
+                <div class="modal-overlay">
+                    <div class="modal-card assistant-quiz-modal" role="dialog" aria-modal="true" aria-labelledby="assistantQuizModalTitle">
+                        <div class="assistant-quiz-modal__header">
+                            <div>
+                                <h3 class="assistant-quiz-modal__title" id="assistantQuizModalTitle">Configurar Quiz Rapido</h3>
+                                <p class="assistant-quiz-modal__subtitle">Escolhe como queres gerar o quiz antes de enviar para a IA.</p>
+                            </div>
+                            <button type="button" class="assistant-quiz-modal__close" id="assistantQuizModalClose" aria-label="Fechar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <form id="assistantQuizForm" class="assistant-quiz-modal__body">
+                            <div class="assistant-quiz-mode">
+                                <button type="button" class="assistant-quiz-choice is-active" data-quiz-mode="specific">
+                                    <span class="assistant-quiz-choice__title">Quiz especifico</span>
+                                    <span class="assistant-quiz-choice__text">Escolhes a materia e o tema.</span>
+                                </button>
+                                <button type="button" class="assistant-quiz-choice" data-quiz-mode="random">
+                                    <span class="assistant-quiz-choice__title">Quiz aleatorio</span>
+                                    <span class="assistant-quiz-choice__text">A IA sorteia um tema coerente automaticamente.</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="assistantQuizMode" value="specific">
+                            <div class="assistant-quiz-fields" id="assistantQuizFields">
+                                <label class="assistant-quiz-field">
+                                    <span class="assistant-quiz-field__label">Materia</span>
+                                    <select id="assistantQuizSubject" class="form-input"></select>
+                                </label>
+                                <label class="assistant-quiz-field">
+                                    <span class="assistant-quiz-field__label">Tema</span>
+                                    <select id="assistantQuizTopic" class="form-input"></select>
+                                </label>
+                            </div>
+                            <div class="assistant-quiz-summary hidden" id="assistantQuizSummary">
+                                No modo aleatorio, a IA escolhe uma materia prioritaria e um tema curto e coerente para revisao.
+                            </div>
+                            <div class="assistant-quiz-modal__actions">
+                                <button type="button" class="btn btn-secondary" id="assistantQuizCancelBtn">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="assistantQuizSubmitBtn">Gerar Quiz</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </section>
     `;
 }
 
 function getInitialState() {
     return {
-        busy: false
+        busy: false,
+        quizSubjects: [],
+        quizTopics: [],
+        quizPanelOpen: false
     };
 }
 
@@ -325,6 +373,137 @@ async function askQuizPreferences() {
     };
 }
 
+function getQuizModal() {
+    return document.getElementById('assistantQuizModal');
+}
+
+function closeQuizModal(state) {
+    const modal = getQuizModal();
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    state.quizPanelOpen = false;
+}
+
+function populateQuizTopics(state, subjectName, preserveCurrent = false) {
+    const topicSelect = document.getElementById('assistantQuizTopic');
+    if (!topicSelect) return;
+
+    const currentValue = preserveCurrent ? topicSelect.value : '';
+    const topicsResult = assistantService.getQuizTopicSuggestions(subjectName);
+    state.quizTopics = Array.isArray(topicsResult.topics) ? topicsResult.topics : [];
+    topicSelect.innerHTML = state.quizTopics
+        .map((topic) => `<option value="${escapeHtml(topic)}">${escapeHtml(topic)}</option>`)
+        .join('');
+
+    if (preserveCurrent && state.quizTopics.includes(currentValue)) {
+        topicSelect.value = currentValue;
+    }
+}
+
+function setQuizMode(mode) {
+    const hiddenModeInput = document.getElementById('assistantQuizMode');
+    const fields = document.getElementById('assistantQuizFields');
+    const summary = document.getElementById('assistantQuizSummary');
+    const choices = document.querySelectorAll('[data-quiz-mode]');
+
+    if (hiddenModeInput) hiddenModeInput.value = mode;
+    choices.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.quizMode === mode);
+    });
+
+    if (fields) fields.classList.toggle('hidden', mode !== 'specific');
+    if (summary) summary.classList.toggle('hidden', mode !== 'random');
+}
+
+async function openQuizModal(state) {
+    const subjectResult = await assistantService.getQuizSubjects();
+    if (!subjectResult.ok) return { error: subjectResult.text };
+    if (!subjectResult.subjects.length) {
+        return { error: 'Nao encontrei materias ativas para montar um quiz.' };
+    }
+
+    state.quizSubjects = subjectResult.subjects;
+    const subjectSelect = document.getElementById('assistantQuizSubject');
+    const modal = getQuizModal();
+    if (!subjectSelect || !modal) return { error: 'Nao consegui abrir o painel do quiz.' };
+
+    subjectSelect.innerHTML = state.quizSubjects
+        .map((subject) => `<option value="${escapeHtml(subject.name)}">${escapeHtml(subject.name)}</option>`)
+        .join('');
+
+    populateQuizTopics(state, state.quizSubjects[0]?.name || '');
+    setQuizMode('specific');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    state.quizPanelOpen = true;
+    subjectSelect.focus();
+    return { ok: true };
+}
+
+async function askQuizPreferencesPanel(state) {
+    const opened = await openQuizModal(state);
+    if (opened?.error) return { error: opened.error };
+
+    return new Promise((resolve) => {
+        const modal = getQuizModal();
+        const form = document.getElementById('assistantQuizForm');
+        const cancelBtn = document.getElementById('assistantQuizCancelBtn');
+        const closeBtn = document.getElementById('assistantQuizModalClose');
+        const subjectSelect = document.getElementById('assistantQuizSubject');
+        const topicSelect = document.getElementById('assistantQuizTopic');
+        const modeButtons = document.querySelectorAll('[data-quiz-mode]');
+        const modeInput = document.getElementById('assistantQuizMode');
+
+        if (!modal || !form || !cancelBtn || !closeBtn || !subjectSelect || !topicSelect || !modeInput) {
+            resolve({ error: 'Nao consegui carregar o painel do quiz.' });
+            return;
+        }
+
+        let finished = false;
+        const cleanup = () => {
+            form.removeEventListener('submit', handleSubmit);
+            cancelBtn.removeEventListener('click', handleCancel);
+            closeBtn.removeEventListener('click', handleCancel);
+            subjectSelect.removeEventListener('change', handleSubjectChange);
+            modeButtons.forEach((button) => button.removeEventListener('click', handleModeClick));
+            modal.removeEventListener('click', handleOverlayClick);
+        };
+        const done = (payload) => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+            closeQuizModal(state);
+            resolve(payload);
+        };
+        const handleCancel = () => done({ cancelled: true });
+        const handleOverlayClick = (event) => {
+            if (event.target === modal || event.target.classList.contains('modal-overlay')) handleCancel();
+        };
+        const handleSubjectChange = () => populateQuizTopics(state, subjectSelect.value);
+        const handleModeClick = (event) => setQuizMode(event.currentTarget.dataset.quizMode);
+        const handleSubmit = (event) => {
+            event.preventDefault();
+            if (modeInput.value === 'random') {
+                done({ random: true });
+                return;
+            }
+
+            done({
+                subjectName: subjectSelect.value,
+                topic: topicSelect.value
+            });
+        };
+
+        form.addEventListener('submit', handleSubmit);
+        cancelBtn.addEventListener('click', handleCancel);
+        closeBtn.addEventListener('click', handleCancel);
+        subjectSelect.addEventListener('change', handleSubjectChange);
+        modeButtons.forEach((button) => button.addEventListener('click', handleModeClick));
+        modal.addEventListener('click', handleOverlayClick);
+    });
+}
+
 async function handleQuickAction(action, button, state) {
     if (state.busy) return;
 
@@ -339,7 +518,7 @@ async function handleQuickAction(action, button, state) {
         if (action === 'analyze') result = await assistantService.analyzeProgress();
         if (action === 'suggest') result = await assistantService.getRecommendations();
         if (action === 'quiz') {
-            const quizPreferences = await askQuizPreferences();
+            const quizPreferences = await askQuizPreferencesPanel(state);
             if (quizPreferences?.cancelled) {
                 result = { ok: false, cancelled: true, text: 'Operacao cancelada.' };
             } else if (quizPreferences?.error) {
@@ -426,6 +605,12 @@ function bindEvents(state) {
             toggleCapabilitiesBubble(false);
         });
     }
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && state.quizPanelOpen) {
+            closeQuizModal(state);
+        }
+    });
 }
 
 async function renderAssistente() {
