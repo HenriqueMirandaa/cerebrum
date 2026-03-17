@@ -389,12 +389,67 @@ function buildQuizQuestions(subject, topic, questionCount) {
     });
 }
 
+function normalizeSubjectRecord(subject = {}) {
+    const id = subject.id || subject.subject_id || '';
+    const progress = Number(subject.progress ?? subject.progresso ?? 0) || 0;
+    const totalHours = Number(subject.total_hours ?? subject.horas_totais ?? subject.totalHours ?? 0) || 0;
+    const examDate = subject.exam_date || subject.data_prova || subject.examDate || null;
+
+    return {
+        ...subject,
+        id: String(id),
+        name: subject.name || subject.nome || subject.title || 'Materia sem nome',
+        progress: Math.max(0, Math.min(100, progress)),
+        total_hours: Math.max(0, totalHours),
+        exam_date: examDate
+    };
+}
+
+function normalizeSessionRecord(session = {}) {
+    return {
+        ...session,
+        subject_id: String(session.subject_id || session.materia_id || session.subjectId || ''),
+        start_time: session.start_time || session.start_iso || session.start || null,
+        end_time: session.end_time || session.end_iso || session.end || null,
+        duration: Number(session.duration || 0) || 0,
+        completed: Boolean(session.completed)
+    };
+}
+
 async function safeGetSubjects() {
-    try { return await db.getSubjects(); } catch (e) { return []; }
+    try {
+        const remoteSubjects = await api.getMinhasMaterias();
+        if (Array.isArray(remoteSubjects) && remoteSubjects.length) {
+            return remoteSubjects.map(normalizeSubjectRecord);
+        }
+    } catch (error) {
+        console.warn('Falha ao carregar materias da API para a IA local', error);
+    }
+
+    try {
+        const localSubjects = await db.getSubjects();
+        return Array.isArray(localSubjects) ? localSubjects.map(normalizeSubjectRecord) : [];
+    } catch (error) {
+        return [];
+    }
 }
 
 async function safeGetSessions() {
-    try { return await db.getSessions(); } catch (e) { return []; }
+    try {
+        const remoteSessions = await api.getSessions();
+        if (Array.isArray(remoteSessions) && remoteSessions.length) {
+            return remoteSessions.map(normalizeSessionRecord);
+        }
+    } catch (error) {
+        console.warn('Falha ao carregar sessoes da API para a IA local', error);
+    }
+
+    try {
+        const localSessions = await db.getSessions();
+        return Array.isArray(localSessions) ? localSessions.map(normalizeSessionRecord) : [];
+    } catch (error) {
+        return [];
+    }
 }
 
 function normalizeText(value) {
@@ -537,6 +592,45 @@ function formatHoursWithMinutes(decimalHours) {
     const hours = Math.floor(totalMinutes / 60);
     const minutes = totalMinutes % 60;
     return `${hours}h${minutes}min`;
+}
+
+function describeDaysLeft(daysLeft) {
+    if (daysLeft === null || typeof daysLeft === 'undefined') return 'sem data de prova definida';
+    if (daysLeft < 0) return 'com prova ja passada';
+    if (daysLeft === 0) return 'com prova hoje';
+    if (daysLeft === 1) return 'com prova amanha';
+    return `com prova em ${daysLeft} dias`;
+}
+
+function getSubjectPriority(subject) {
+    const progress = Number(subject.progress || 0);
+    const daysLeft = daysBetweenTodayAnd(subject.exam_date);
+    const urgency =
+        daysLeft === null ? 18
+            : daysLeft < 0 ? 0
+                : daysLeft <= 3 ? 55
+                    : daysLeft <= 7 ? 45
+                        : daysLeft <= 14 ? 34
+                            : daysLeft <= 30 ? 24
+                                : 12;
+    const progressGap = Math.max(0, 100 - progress);
+    const missingExamPenalty = subject.exam_date ? 0 : 8;
+    const totalHoursWeight = Math.min(10, Math.round(Number(subject.total_hours || 0) / 4));
+    const score = progressGap + urgency + missingExamPenalty + totalHoursWeight;
+
+    return { score, daysLeft, progress };
+}
+
+function getStudyBlockSuggestion(subject, priority) {
+    if (priority.daysLeft !== null && priority.daysLeft <= 3) return '90 minutos focados + 20 minutos de revisao';
+    if (priority.daysLeft !== null && priority.daysLeft <= 10) return '60 a 75 minutos focados';
+    if (priority.progress < 40) return '50 a 60 minutos com teoria e exercicios';
+    if (priority.progress < 75) return '45 minutos com revisao ativa';
+    return '30 a 40 minutos para consolidacao';
+}
+
+function getSubjectLabel(subject, priority) {
+    return `${subject.name} (${Math.round(priority.progress)}%, ${describeDaysLeft(priority.daysLeft)})`;
 }
 
 const WEEKDAY_PATTERNS = [
@@ -771,27 +865,49 @@ const aiLocal = {
     // Retorna lista de recomendacoes curtas
     async getRecommendations() {
         const subjects = await safeGetSubjects();
-        if (!subjects.length) return [{ title: 'Sem materias', message: 'Adicione materias para receber recomendacoes.' }];
+        if (!subjects.length) {
+            return [
+                {
+                    title: 'Comece pelas materias',
+                    message: 'Ainda nao encontrei materias ativas. Adicione pelo menos uma disciplina com data de prova para eu priorizar o estudo corretamente.'
+                }
+            ];
+        }
 
-        const now = new Date();
-        const scored = subjects.map((s) => {
-            const progress = Number(s.progress || 0);
-            let proximity = 0;
-            if (s.exam_date) {
-                const d = new Date(s.exam_date);
-                const days = Math.max(0, Math.round((d - now) / (1000 * 60 * 60 * 24)));
-                proximity = Math.max(0, 60 - days);
-            }
-            const score = (100 - progress) + proximity;
-            return { s, score };
-        }).sort((a, b) => b.score - a.score);
+        const ranked = subjects
+            .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
+            .sort((a, b) => b.priority.score - a.priority.score);
 
-        const recs = scored.slice(0, 5).map((item) => ({
-            title: `Estude: ${item.s.name}`,
-            message: `Progresso: ${item.s.progress || 0}%. Sugestao: 25-50 minutos focados e revisao semanal.`
-        }));
+        const recs = ranked.slice(0, 3).map(({ subject, priority }, index) => {
+            const block = getStudyBlockSuggestion(subject, priority);
+            const reason =
+                priority.daysLeft !== null && priority.daysLeft <= 10
+                    ? `A prova esta proxima: ${describeDaysLeft(priority.daysLeft)}.`
+                    : priority.progress < 50
+                        ? 'O progresso ainda esta baixo e precisa de ganhar tracao.'
+                        : !subject.exam_date
+                            ? 'Ainda falta definir uma data de prova para planeamento mais preciso.'
+                            : 'Esta materia merece manutencao para nao perder ritmo.';
 
-        recs.push({ title: 'Tecnica', message: 'Use Pomodoro: 25min foco + 5min pausa. A cada 4 ciclos, pausa longa.' });
+            return {
+                title: `${index + 1}. Prioridade: ${subject.name}`,
+                message: `${reason} Estado atual: ${Math.round(priority.progress)}% concluido. Sugestao objetiva: faca ${block} hoje.`
+            };
+        });
+
+        const examless = ranked.find(({ subject }) => !subject.exam_date);
+        if (examless) {
+            recs.push({
+                title: 'Ajuste de planeamento',
+                message: `Define a data de prova de ${examless.subject.name} para eu distribuir carga semanal e cronograma com mais precisao.`
+            });
+        } else {
+            recs.push({
+                title: 'Execucao',
+                message: 'Fecha o dia com revisao ativa de 10 a 15 minutos e 3 perguntas-chave da materia principal.'
+            });
+        }
+
         return recs;
     },
 
@@ -799,26 +915,72 @@ const aiLocal = {
     async analyzeProgress() {
         const subjects = await safeGetSubjects();
         const sessions = await safeGetSessions();
-        const total = subjects.length;
-        const avg = total ? Math.round(subjects.reduce((a, b) => a + Number(b.progress || 0), 0) / total) : 0;
-        const completed = sessions.filter((s) => s.completed).length;
+        if (!subjects.length) {
+            return {
+                message: 'Ainda nao ha dados suficientes para analisar o progresso.',
+                plan: 'Adicione materias e atualize o progresso para eu conseguir apontar prioridades reais.',
+                next: 'Proximo passo: cadastrar disciplinas, data de prova e carga horaria.'
+            };
+        }
 
-        const low = subjects.filter((s) => Number(s.progress || 0) < 50).map((s) => s.name).slice(0, 3);
+        const total = subjects.length;
+        const avg = total ? Math.round(subjects.reduce((sum, item) => sum + Number(item.progress || 0), 0) / total) : 0;
+        const completed = sessions.filter((session) => session.completed).length;
+        const ranked = subjects
+            .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
+            .sort((a, b) => b.priority.score - a.priority.score);
+
+        const strongest = [...ranked].sort((a, b) => b.priority.progress - a.priority.progress)[0];
+        const weakest = [...ranked].sort((a, b) => a.priority.progress - b.priority.progress)[0];
+        const urgentExam = ranked.find(({ priority }) => priority.daysLeft !== null && priority.daysLeft >= 0 && priority.daysLeft <= 14);
         const next = sessions
-            .filter((s) => !s.completed && new Date(s.start_time) > new Date())
+            .filter((session) => !session.completed && session.start_time && new Date(session.start_time) > new Date())
             .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
 
-        const message = `Materias: ${total}. Progresso medio: ${avg}%. Sessoes completadas: ${completed}.` + (low.length ? ` Foque em: ${low.join(', ')}.` : '');
-        const plan = 'Plano sugerido: 3 sessoes semanais de 45min nas materias prioritarias, com revisao curta no fim.';
-        const nextInfo = next ? `Proxima sessao: ${next.name || next.subject_id} em ${new Date(next.start_time).toLocaleString()}.` : 'Sem proximas sessoes agendadas.';
+        const messageParts = [
+            `Materias ativas: ${total}.`,
+            `Progresso medio: ${avg}%.`,
+            `Sessoes concluidas: ${completed}.`
+        ];
+        if (strongest) messageParts.push(`Melhor estado atual: ${getSubjectLabel(strongest.subject, strongest.priority)}.`);
+        if (weakest) messageParts.push(`Maior risco: ${getSubjectLabel(weakest.subject, weakest.priority)}.`);
 
-        return { message, plan, next: nextInfo };
+        const planParts = [];
+        if (urgentExam) {
+            planParts.push(`Prioridade imediata: reforcar ${urgentExam.subject.name} porque a prova esta em ${Math.max(urgentExam.priority.daysLeft, 0)} dia(s).`);
+        }
+        if (weakest && (!urgentExam || urgentExam.subject.id !== weakest.subject.id)) {
+            planParts.push(`Recuperacao: reservar um bloco forte para ${weakest.subject.name} e subir o progresso acima de 50%.`);
+        }
+        const missingExam = ranked.filter(({ subject }) => !subject.exam_date).slice(0, 2);
+        if (missingExam.length) {
+            planParts.push(`Planeamento pendente: definir data de prova para ${missingExam.map(({ subject }) => subject.name).join(' e ')}.`);
+        }
+        if (!planParts.length) {
+            planParts.push('Plano sugerido: manter 3 blocos semanais para as materias prioritarias e fechar cada bloco com revisao ativa.');
+        }
+
+        let nextInfo = 'Sem proximas sessoes agendadas.';
+        if (next) {
+            const nextLabel = next.name || next.title || next.subject_id || 'Sessao de estudo';
+            nextInfo = `Proxima sessao: ${nextLabel} em ${new Date(next.start_time).toLocaleString()}.`;
+        } else if (urgentExam) {
+            nextInfo = `Acao seguinte: agendar hoje um bloco para ${urgentExam.subject.name}.`;
+        }
+
+        return { message: messageParts.join(' '), plan: planParts.join(' '), next: nextInfo };
     },
 
     async generateQuiz(targetSubjectName = null) {
         const subjects = await safeGetSubjects();
+        if (!subjects.length && !targetSubjectName) {
+            throw new Error('Adicione pelo menos uma materia para eu gerar um quiz com contexto util.');
+        }
+
         const fallbackSubject = subjects.length
-            ? subjects.sort((a, b) => Number(a.progress || 0) - Number(b.progress || 0))[0]
+            ? [...subjects]
+                .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
+                .sort((a, b) => b.priority.score - a.priority.score)[0]?.subject
             : null;
         const request = extractQuizRequest(targetSubjectName || fallbackSubject?.name || 'quiz de 5 perguntas', subjects);
         const questions = buildQuizQuestions(request.subject, request.topic, request.questionCount);
