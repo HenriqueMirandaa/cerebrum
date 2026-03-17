@@ -273,6 +273,51 @@
   margin-bottom: 6px;
   color: rgba(255,255,255,0.84);
 }
+.cronograma-root .cronograma-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-bottom: 0;
+}
+.cronograma-root .cronograma-checkbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.cronograma-root .cronograma-checkbox__box {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(148,163,184,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.cronograma-root .cronograma-checkbox__box::after {
+  content: '';
+  width: 10px;
+  height: 6px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg) scale(0);
+  transition: transform 0.16s ease;
+}
+.cronograma-root .cronograma-checkbox input:checked + .cronograma-checkbox__box {
+  background: linear-gradient(135deg, #6d28d9, #7c3aed);
+  border-color: rgba(196,181,253,0.6);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.16);
+}
+.cronograma-root .cronograma-checkbox input:checked + .cronograma-checkbox__box::after {
+  transform: rotate(-45deg) scale(1);
+}
+.cronograma-root .cronograma-checkbox__label {
+  color: rgba(255,255,255,0.88);
+}
 .cronograma-root .cronograma-event-form input,
 .cronograma-root .cronograma-event-form select,
 .cronograma-root .cronograma-event-form textarea {

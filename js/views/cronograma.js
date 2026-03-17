@@ -239,7 +239,11 @@ function renderModalHtml() {
                                 <input id="eventEnd" type="datetime-local" class="form-input w-full" required />
                             </div>
                             <div class="form-group">
-                                <label><input id="eventAllDay" type="checkbox" /> Dia todo</label>
+                                <label for="eventAllDay" class="cronograma-checkbox">
+                                    <input id="eventAllDay" type="checkbox" />
+                                    <span class="cronograma-checkbox__box" aria-hidden="true"></span>
+                                    <span class="cronograma-checkbox__label">Dia todo</span>
+                                </label>
                             </div>
                             <div class="form-group">
                                 <label for="eventNotes">Notas</label>
@@ -343,7 +347,15 @@ async function saveEvent(e) {
 async function deleteEvent() {
     const id = document.getElementById('eventId').value;
     if (!id) return;
-    if (!confirm('Deseja excluir este evento?')) return;
+    const confirmed = window.SiteUI && typeof window.SiteUI.confirm === 'function'
+        ? await window.SiteUI.confirm({
+            title: 'Excluir evento',
+            message: 'Deseja excluir este evento?',
+            okText: 'Excluir',
+            cancelText: 'Cancelar'
+        })
+        : window.confirm('Deseja excluir este evento?');
+    if (!confirmed) return;
     try {
         await api.deleteEvent(id);
         showToast('Evento excluído', 'success');
