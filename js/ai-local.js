@@ -686,6 +686,40 @@ function getSubjectLabel(subject, priority) {
     return `${subject.name} (${Math.round(priority.progress)}%, ${describeDaysLeft(priority.daysLeft)})`;
 }
 
+function buildRecommendationEntries(ranked, focus = 'today') {
+    if (focus === 'week') {
+        return ranked.slice(0, 3).map(({ subject, priority }, index) => ({
+            title: `${index + 1}. Foco da semana: ${subject.name}`,
+            message: `Distribui ${getStudyBlockSuggestion(subject, priority)} em 2 blocos nesta semana. Estado atual: ${Math.round(priority.progress)}% e ${describeDaysLeft(priority.daysLeft)}.`
+        }));
+    }
+
+    if (focus === 'exam') {
+        const examRanked = ranked.filter(({ priority }) => priority.daysLeft !== null && priority.daysLeft >= 0);
+        const source = examRanked.length ? examRanked : ranked;
+        return source.slice(0, 3).map(({ subject, priority }, index) => ({
+            title: `${index + 1}. Proxima prova: ${subject.name}`,
+            message: `Prioridade por exame ${describeDaysLeft(priority.daysLeft)}. Faz ${getStudyBlockSuggestion(subject, priority)} e termina com revisao ativa de pontos fracos.`
+        }));
+    }
+
+    return ranked.slice(0, 3).map(({ subject, priority }, index) => {
+        const reason =
+            priority.daysLeft !== null && priority.daysLeft <= 10
+                ? `A prova esta proxima: ${describeDaysLeft(priority.daysLeft)}.`
+                : priority.progress < 50
+                    ? 'O progresso ainda esta baixo e precisa de ganhar tracao.'
+                    : !subject.exam_date
+                        ? 'Ainda falta definir uma data de prova para planeamento mais preciso.'
+                        : 'Esta materia merece manutencao para nao perder ritmo.';
+
+        return {
+            title: `${index + 1}. Prioridade de hoje: ${subject.name}`,
+            message: `${reason} Estado atual: ${Math.round(priority.progress)}% concluido. Sugestao objetiva: faca ${getStudyBlockSuggestion(subject, priority)} hoje.`
+        };
+    });
+}
+
 const WEEKDAY_PATTERNS = [
     { key: 'segunda', regex: /\b(seg|segunda)\b/g },
     { key: 'terca', regex: /\b(ter|terca|terça)\b/g },
@@ -928,7 +962,7 @@ const aiLocal = {
     },
 
     // Retorna lista de recomendacoes curtas
-    async getRecommendations() {
+    async getRecommendations(options = {}) {
         const subjects = await safeGetSubjects();
         if (!subjects.length) {
             return [
@@ -942,23 +976,8 @@ const aiLocal = {
         const ranked = subjects
             .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
             .sort((a, b) => b.priority.score - a.priority.score);
-
-        const recs = ranked.slice(0, 3).map(({ subject, priority }, index) => {
-            const block = getStudyBlockSuggestion(subject, priority);
-            const reason =
-                priority.daysLeft !== null && priority.daysLeft <= 10
-                    ? `A prova esta proxima: ${describeDaysLeft(priority.daysLeft)}.`
-                    : priority.progress < 50
-                        ? 'O progresso ainda esta baixo e precisa de ganhar tracao.'
-                        : !subject.exam_date
-                            ? 'Ainda falta definir uma data de prova para planeamento mais preciso.'
-                            : 'Esta materia merece manutencao para nao perder ritmo.';
-
-            return {
-                title: `${index + 1}. Prioridade: ${subject.name}`,
-                message: `${reason} Estado atual: ${Math.round(priority.progress)}% concluido. Sugestao objetiva: faca ${block} hoje.`
-            };
-        });
+        const focus = options.focus === 'week' || options.focus === 'exam' ? options.focus : 'today';
+        const recs = buildRecommendationEntries(ranked, focus);
 
         const examless = ranked.find(({ subject }) => !subject.exam_date);
         if (examless) {

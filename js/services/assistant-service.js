@@ -36,9 +36,9 @@ export function createAssistantService() {
             }
         },
 
-        async getRecommendations() {
+        async getRecommendations(options = {}) {
             try {
-                const response = await withMinimumDelay(() => aiLocal.getRecommendations());
+                const response = await withMinimumDelay(() => aiLocal.getRecommendations(options));
                 const text = response.map((item) => `${item.title}: ${item.message}`).join('\n\n');
                 return { ok: true, text };
             } catch (error) {

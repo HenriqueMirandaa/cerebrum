@@ -124,6 +124,42 @@ function renderAssistantLayout() {
                     </div>
                 </div>
             </div>
+            <div class="modal hidden" id="assistantSuggestModal" aria-hidden="true">
+                <div class="modal-overlay">
+                    <div class="modal-card assistant-quiz-modal" role="dialog" aria-modal="true" aria-labelledby="assistantSuggestModalTitle">
+                        <div class="assistant-quiz-modal__header">
+                            <div>
+                                <h3 class="assistant-quiz-modal__title" id="assistantSuggestModalTitle">Sugestoes de Estudo</h3>
+                                <p class="assistant-quiz-modal__subtitle">Escolhe o foco das recomendacoes para a IA ajustar a resposta.</p>
+                            </div>
+                            <button type="button" class="assistant-quiz-modal__close" id="assistantSuggestModalClose" aria-label="Fechar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <form id="assistantSuggestForm" class="assistant-quiz-modal__body">
+                            <div class="assistant-quiz-mode assistant-suggest-mode">
+                                <button type="button" class="assistant-quiz-choice is-active" data-suggest-focus="today">
+                                    <span class="assistant-quiz-choice__title">Hoje</span>
+                                    <span class="assistant-quiz-choice__text">O que vale mais a pena estudar agora.</span>
+                                </button>
+                                <button type="button" class="assistant-quiz-choice" data-suggest-focus="week">
+                                    <span class="assistant-quiz-choice__title">Esta semana</span>
+                                    <span class="assistant-quiz-choice__text">Distribuicao de foco para os proximos dias.</span>
+                                </button>
+                                <button type="button" class="assistant-quiz-choice" data-suggest-focus="exam">
+                                    <span class="assistant-quiz-choice__title">Proxima prova</span>
+                                    <span class="assistant-quiz-choice__text">Prioridade guiada pela prova mais urgente.</span>
+                                </button>
+                            </div>
+                            <input type="hidden" id="assistantSuggestFocus" value="today">
+                            <div class="assistant-quiz-modal__actions">
+                                <button type="button" class="btn btn-secondary" id="assistantSuggestCancelBtn">Cancelar</button>
+                                <button type="submit" class="btn btn-primary" id="assistantSuggestSubmitBtn">Ver Sugestoes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </section>
     `;
 }
@@ -133,7 +169,8 @@ function getInitialState() {
         busy: false,
         quizSubjects: [],
         quizTopics: [],
-        quizPanelOpen: false
+        quizPanelOpen: false,
+        suggestPanelOpen: false
     };
 }
 
@@ -377,6 +414,10 @@ function getQuizModal() {
     return document.getElementById('assistantQuizModal');
 }
 
+function getSuggestModal() {
+    return document.getElementById('assistantSuggestModal');
+}
+
 function closeQuizModal(state) {
     const modal = getQuizModal();
     if (!modal) return;
@@ -504,6 +545,78 @@ async function askQuizPreferencesPanel(state) {
     });
 }
 
+function closeSuggestModal(state) {
+    const modal = getSuggestModal();
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.setAttribute('aria-hidden', 'true');
+    state.suggestPanelOpen = false;
+}
+
+function setSuggestFocus(focus) {
+    const hiddenFocusInput = document.getElementById('assistantSuggestFocus');
+    const choices = document.querySelectorAll('[data-suggest-focus]');
+
+    if (hiddenFocusInput) hiddenFocusInput.value = focus;
+    choices.forEach((button) => {
+        button.classList.toggle('is-active', button.dataset.suggestFocus === focus);
+    });
+}
+
+async function askSuggestionPreferencesPanel(state) {
+    const modal = getSuggestModal();
+    if (!modal) return { error: 'Nao consegui abrir o painel de sugestoes.' };
+
+    setSuggestFocus('today');
+    modal.classList.remove('hidden');
+    modal.setAttribute('aria-hidden', 'false');
+    state.suggestPanelOpen = true;
+
+    return new Promise((resolve) => {
+        const form = document.getElementById('assistantSuggestForm');
+        const cancelBtn = document.getElementById('assistantSuggestCancelBtn');
+        const closeBtn = document.getElementById('assistantSuggestModalClose');
+        const modeButtons = document.querySelectorAll('[data-suggest-focus]');
+        const focusInput = document.getElementById('assistantSuggestFocus');
+
+        if (!form || !cancelBtn || !closeBtn || !focusInput) {
+            resolve({ error: 'Nao consegui carregar o painel de sugestoes.' });
+            return;
+        }
+
+        let finished = false;
+        const cleanup = () => {
+            form.removeEventListener('submit', handleSubmit);
+            cancelBtn.removeEventListener('click', handleCancel);
+            closeBtn.removeEventListener('click', handleCancel);
+            modeButtons.forEach((button) => button.removeEventListener('click', handleFocusClick));
+            modal.removeEventListener('click', handleOverlayClick);
+        };
+        const done = (payload) => {
+            if (finished) return;
+            finished = true;
+            cleanup();
+            closeSuggestModal(state);
+            resolve(payload);
+        };
+        const handleCancel = () => done({ cancelled: true });
+        const handleOverlayClick = (event) => {
+            if (event.target === modal || event.target.classList.contains('modal-overlay')) handleCancel();
+        };
+        const handleFocusClick = (event) => setSuggestFocus(event.currentTarget.dataset.suggestFocus);
+        const handleSubmit = (event) => {
+            event.preventDefault();
+            done({ focus: focusInput.value || 'today' });
+        };
+
+        form.addEventListener('submit', handleSubmit);
+        cancelBtn.addEventListener('click', handleCancel);
+        closeBtn.addEventListener('click', handleCancel);
+        modeButtons.forEach((button) => button.addEventListener('click', handleFocusClick));
+        modal.addEventListener('click', handleOverlayClick);
+    });
+}
+
 async function handleQuickAction(action, button, state) {
     if (state.busy) return;
 
@@ -516,7 +629,16 @@ async function handleQuickAction(action, button, state) {
     try {
         let result = { ok: false, text: 'Acao nao suportada.' };
         if (action === 'analyze') result = await assistantService.analyzeProgress();
-        if (action === 'suggest') result = await assistantService.getRecommendations();
+        if (action === 'suggest') {
+            const suggestionPreferences = await askSuggestionPreferencesPanel(state);
+            if (suggestionPreferences?.cancelled) {
+                result = { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+            } else if (suggestionPreferences?.error) {
+                result = { ok: false, text: suggestionPreferences.error };
+            } else {
+                result = await assistantService.getRecommendations(suggestionPreferences);
+            }
+        }
         if (action === 'quiz') {
             const quizPreferences = await askQuizPreferencesPanel(state);
             if (quizPreferences?.cancelled) {
@@ -609,6 +731,9 @@ function bindEvents(state) {
     document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape' && state.quizPanelOpen) {
             closeQuizModal(state);
+        }
+        if (event.key === 'Escape' && state.suggestPanelOpen) {
+            closeSuggestModal(state);
         }
     });
 }

@@ -372,6 +372,10 @@ body.startup-ui {
     gap: 0.75rem;
 }
 
+.assistant-suggest-mode {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .assistant-quiz-choice {
     display: grid;
     gap: 0.35rem;
@@ -535,6 +539,10 @@ body.startup-ui {
     }
 
     .assistant-quiz-mode {
+        grid-template-columns: 1fr;
+    }
+
+    .assistant-suggest-mode {
         grid-template-columns: 1fr;
     }
 
