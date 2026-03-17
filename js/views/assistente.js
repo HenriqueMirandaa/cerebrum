@@ -263,6 +263,68 @@ async function sendMessage(text, state) {
     }
 }
 
+async function askQuizPreferences() {
+    const modeRaw = window.prompt(
+        'Quiz rapido:\n1 - Quiz especifico\n2 - Quiz aleatorio',
+        '1'
+    );
+
+    if (modeRaw === null) return { cancelled: true };
+
+    const normalizedMode = String(modeRaw).trim().toLowerCase();
+    if (normalizedMode === '2' || normalizedMode === 'aleatorio' || normalizedMode === 'aleatório') {
+        return { random: true };
+    }
+
+    const subjectResult = await assistantService.getQuizSubjects();
+    if (!subjectResult.ok) return { error: subjectResult.text };
+    if (!subjectResult.subjects.length) {
+        return { error: 'Nao encontrei materias ativas para montar um quiz especifico.' };
+    }
+
+    const subjectMenu = subjectResult.subjects
+        .map((subject, index) => `${index + 1} - ${subject.name}`)
+        .join('\n');
+    const selectedSubjectRaw = window.prompt(
+        `Escolhe a materia do quiz:\n${subjectMenu}`,
+        '1'
+    );
+
+    if (selectedSubjectRaw === null) return { cancelled: true };
+
+    const subjectIndex = Number(String(selectedSubjectRaw).trim()) - 1;
+    const selectedSubject = subjectResult.subjects[subjectIndex]
+        || subjectResult.subjects.find((subject) => subject.name.toLowerCase() === String(selectedSubjectRaw).trim().toLowerCase());
+
+    if (!selectedSubject) {
+        return { error: 'Nao consegui identificar a materia escolhida.' };
+    }
+
+    const topicsResult = assistantService.getQuizTopicSuggestions(selectedSubject.name);
+    const topicMenu = (topicsResult.topics || [])
+        .map((topic, index) => `${index + 1} - ${topic}`)
+        .join('\n');
+    const selectedTopicRaw = window.prompt(
+        `Escolhe o tema para ${selectedSubject.name}:\n${topicMenu}\n\nDeixa vazio para sortear um tema.`,
+        ''
+    );
+
+    if (selectedTopicRaw === null) return { cancelled: true };
+
+    const normalizedTopic = String(selectedTopicRaw).trim();
+    if (!normalizedTopic) {
+        return { subjectName: selectedSubject.name, random: true };
+    }
+
+    const topicIndex = Number(normalizedTopic) - 1;
+    const selectedTopic = (topicsResult.topics || [])[topicIndex] || normalizedTopic;
+
+    return {
+        subjectName: selectedSubject.name,
+        topic: selectedTopic
+    };
+}
+
 async function handleQuickAction(action, button, state) {
     if (state.busy) return;
 
@@ -276,7 +338,16 @@ async function handleQuickAction(action, button, state) {
         let result = { ok: false, text: 'Acao nao suportada.' };
         if (action === 'analyze') result = await assistantService.analyzeProgress();
         if (action === 'suggest') result = await assistantService.getRecommendations();
-        if (action === 'quiz') result = await assistantService.generateQuiz();
+        if (action === 'quiz') {
+            const quizPreferences = await askQuizPreferences();
+            if (quizPreferences?.cancelled) {
+                result = { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+            } else if (quizPreferences?.error) {
+                result = { ok: false, text: quizPreferences.error };
+            } else {
+                result = await assistantService.generateQuizWithOptions(quizPreferences);
+            }
+        }
         if (action === 'help') result = await assistantService.showHelp();
         if (action === 'add-subject') result = await assistantService.addSubjectFromPrompts();
 

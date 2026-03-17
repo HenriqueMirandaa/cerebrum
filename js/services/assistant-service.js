@@ -56,6 +56,33 @@ export function createAssistantService() {
             }
         },
 
+        async generateQuizWithOptions(options = {}) {
+            try {
+                const response = await withMinimumDelay(() => aiLocal.generateQuiz(options));
+                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                return { ok: true, text, quiz: response };
+            } catch (error) {
+                return { ok: false, text: toHumanError(error) };
+            }
+        },
+
+        async getQuizSubjects() {
+            try {
+                const response = await withMinimumDelay(() => aiLocal.getQuizSubjects(), 120);
+                return { ok: true, subjects: response };
+            } catch (error) {
+                return { ok: false, text: toHumanError(error), subjects: [] };
+            }
+        },
+
+        getQuizTopicSuggestions(subjectName) {
+            try {
+                return { ok: true, topics: aiLocal.getQuizTopicSuggestions(subjectName) };
+            } catch (error) {
+                return { ok: false, text: toHumanError(error), topics: [] };
+            }
+        },
+
         async showHelp() {
             return this.ask('comandos');
         },

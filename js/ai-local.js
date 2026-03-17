@@ -66,6 +66,40 @@ function cleanupTopicPart(value) {
         .trim();
 }
 
+function getSuggestedQuizTopics(subjectName = '') {
+    const normalized = normalizeText(subjectName);
+
+    if (normalized.includes('port')) {
+        return ['interpretacao de texto', 'gramatica', 'sintaxe', 'ortografia', 'literatura'];
+    }
+    if (normalized.includes('mat')) {
+        return ['equacoes', 'fracoes', 'geometria', 'funcoes', 'probabilidade'];
+    }
+    if (normalized.includes('hist')) {
+        return ['revolucao industrial', 'primeira guerra', 'idade media', 'imperialismo', 'brasil colonia'];
+    }
+    if (normalized.includes('geo')) {
+        return ['globalizacao', 'clima', 'relevo', 'populacao', 'cartografia'];
+    }
+    if (normalized.includes('fis')) {
+        return ['movimento', 'forca', 'energia', 'eletricidade', 'optica'];
+    }
+    if (normalized.includes('quim')) {
+        return ['atomos', 'ligacoes quimicas', 'reacoes', 'tabela periodica', 'solucoes'];
+    }
+    if (normalized.includes('bio')) {
+        return ['celula', 'genetica', 'ecologia', 'corpo humano', 'evolucao'];
+    }
+    if (normalized.includes('fil')) {
+        return ['etica', 'logica', 'politica', 'conhecimento', 'filosofos'];
+    }
+    if (normalized.includes('ing') || normalized.includes('en')) {
+        return ['vocabulary', 'reading comprehension', 'verb tenses', 'grammar', 'interpretation'];
+    }
+
+    return ['conceitos centrais', 'definicoes', 'aplicacoes', 'exercicios base', 'revisao geral'];
+}
+
 function extractQuizRequest(rawText, subjects = []) {
     const raw = String(rawText || '').trim();
     const normalized = normalizeText(raw);
@@ -91,7 +125,7 @@ function extractQuizRequest(rawText, subjects = []) {
     }
 
     if (!topic) {
-        topic = mentioned?.name || subject || 'revisao geral';
+        topic = getSuggestedQuizTopics(mentioned?.name || subject)[0] || 'revisao geral';
     }
 
     return {
@@ -847,6 +881,18 @@ async function tryCreateExamEvent({ subjectName, examDate, subjectId }) {
 }
 
 const aiLocal = {
+    async getQuizSubjects() {
+        const subjects = await safeGetSubjects();
+        return subjects.map((subject) => ({
+            id: subject.id,
+            name: subject.name
+        }));
+    },
+
+    getQuizTopicSuggestions(subjectName = '') {
+        return getSuggestedQuizTopics(subjectName);
+    },
+
     // Adiciona uma materia localmente (IndexedDB)
     async addSubject({ name, total_hours = 0, exam_date = null, color = null, icon = 'fas fa-book' } = {}) {
         if (!name || !name.trim()) throw new Error('Nome da materia obrigatorio');
@@ -977,12 +1023,23 @@ const aiLocal = {
             throw new Error('Adicione pelo menos uma materia para eu gerar um quiz com contexto util.');
         }
 
+        const requestedOptions = targetSubjectName && typeof targetSubjectName === 'object'
+            ? targetSubjectName
+            : { subjectName: targetSubjectName };
         const fallbackSubject = subjects.length
             ? [...subjects]
                 .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
                 .sort((a, b) => b.priority.score - a.priority.score)[0]?.subject
             : null;
-        const request = extractQuizRequest(targetSubjectName || fallbackSubject?.name || 'quiz de 5 perguntas', subjects);
+        const chosenSubjectName = requestedOptions.subjectName || fallbackSubject?.name || 'Estudos Gerais';
+        const topicSuggestions = getSuggestedQuizTopics(chosenSubjectName);
+        const chosenTopic =
+            requestedOptions.topic
+            || (requestedOptions.random ? topicSuggestions[Math.floor(Math.random() * topicSuggestions.length)] : null);
+        const requestText = chosenTopic
+            ? `quiz de ${chosenSubjectName} sobre ${chosenTopic}`
+            : (chosenSubjectName || 'quiz de 5 perguntas');
+        const request = extractQuizRequest(requestText || fallbackSubject?.name || 'quiz de 5 perguntas', subjects);
         const questions = buildQuizQuestions(request.subject, request.topic, request.questionCount);
         const createdAt = new Date().toISOString();
 
