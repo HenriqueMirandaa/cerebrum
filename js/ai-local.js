@@ -720,6 +720,50 @@ function buildRecommendationEntries(ranked, focus = 'today') {
     });
 }
 
+function buildPeriodStudyPlan(ranked, period = 'today') {
+    const top = ranked.slice(0, period === 'month' ? 4 : 3);
+    if (!top.length) {
+        return 'Ainda nao encontrei materias suficientes para montar esse plano.';
+    }
+
+    if (period === 'today') {
+        const lines = ['Plano de estudo para hoje:'];
+        top.forEach(({ subject, priority }, index) => {
+            const duration =
+                index === 0 ? '60 a 75 minutos'
+                    : index === 1 ? '45 a 60 minutos'
+                        : '30 a 40 minutos';
+            lines.push(`- ${subject.name}: ${duration}. Motivo: ${describeDaysLeft(priority.daysLeft)} e progresso em ${Math.round(priority.progress)}%.`);
+        });
+        lines.push('- Fecha o dia com 10 minutos de revisao ativa da materia principal.');
+        return lines.join('\n');
+    }
+
+    if (period === 'week') {
+        const lines = ['Plano de estudo para esta semana:'];
+        top.forEach(({ subject, priority }, index) => {
+            const sessions =
+                index === 0 ? '3 blocos'
+                    : index === 1 ? '2 blocos'
+                        : '1 a 2 blocos';
+            lines.push(`- ${subject.name}: ${sessions} de ${getStudyBlockSuggestion(subject, priority)}. Prioridade: ${describeDaysLeft(priority.daysLeft)}.`);
+        });
+        lines.push('- Reserva o ultimo bloco da semana para revisao e simulacao curta.');
+        return lines.join('\n');
+    }
+
+    const lines = ['Plano de estudo para este mes:'];
+    top.forEach(({ subject, priority }, index) => {
+        const weight =
+            index === 0 ? 'foco principal nas proximas 2 semanas'
+                : index === 1 ? 'foco secundario com constancia semanal'
+                    : 'manutencao e revisao progressiva';
+        lines.push(`- ${subject.name}: ${weight}. Estado atual ${Math.round(priority.progress)}% e ${describeDaysLeft(priority.daysLeft)}.`);
+    });
+    lines.push('- Reavalia o progresso no fim de cada semana e ajusta a disciplina principal se surgir uma prova mais proxima.');
+    return lines.join('\n');
+}
+
 const WEEKDAY_PATTERNS = [
     { key: 'segunda', regex: /\b(seg|segunda)\b/g },
     { key: 'terca', regex: /\b(ter|terca|terça)\b/g },
@@ -903,7 +947,9 @@ function getHelpReply() {
         '- adicionar Fisica | 24 | 2026-06-20',
         '- recomendacoes',
         '- analisar',
-        '- proxima sessao'
+        '- proxima sessao',
+        '- qual e o meu plano de estudos para hoje?',
+        '- adicione a materia Ingles com 15 horas e com exame para o dia 21/06/2026'
     ].join('\n');
 }
 
@@ -934,6 +980,27 @@ async function addSubjectFromNaturalText(rawText, explicitName = '') {
     if (examDate) details.push(`prova em ${examDate}`);
 
     return `Materia adicionada com sucesso: ${name}${details.length ? ` (${details.join(', ')})` : ''}.`;
+}
+
+async function buildTimelineStudyPlan(rawText) {
+    const subjects = await safeGetSubjects();
+    if (!subjects.length) {
+        return 'Ainda nao tens materias suficientes para eu montar um plano. Adiciona pelo menos uma disciplina primeiro.';
+    }
+
+    const normalized = normalizeText(rawText);
+    const period =
+        includesAny(normalized, ['este mes', 'esse mes', 'para o mes', 'para este mes', 'mensal'])
+            ? 'month'
+            : includesAny(normalized, ['esta semana', 'essa semana', 'semanal', 'para a semana'])
+                ? 'week'
+                : 'today';
+
+    const ranked = subjects
+        .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
+        .sort((a, b) => b.priority.score - a.priority.score);
+
+    return buildPeriodStudyPlan(ranked, period);
 }
 
 async function tryCreateExamEvent({ subjectName, examDate, subjectId }) {
@@ -1185,6 +1252,10 @@ const aiLocal = {
         return plan;
     },
 
+    async buildTimelineStudyPlan(rawText) {
+        return buildTimelineStudyPlan(rawText);
+    },
+
     // Responde mensagens por intencao em linguagem natural
     async chatResponder(text) {
         const raw = String(text || '').trim();
@@ -1235,6 +1306,14 @@ const aiLocal = {
         if (includesAny(t, ['analise', 'progresso geral', 'como estou', 'resumo do progresso'])) {
             const an = await this.analyzeProgress();
             return `${an.message}\n\n${an.plan}\n\n${an.next}`;
+        }
+
+        if (
+            includesAny(t, ['plano de estudos para hoje', 'plano de estudo para hoje', 'meu plano para hoje', 'o que estudar hoje'])
+            || includesAny(t, ['plano de estudos para a semana', 'plano de estudo para a semana', 'esta semana', 'essa semana'])
+            || includesAny(t, ['plano de estudos para este mes', 'plano de estudo para este mes', 'este mes', 'esse mes', 'mensal'])
+        ) {
+            return this.buildTimelineStudyPlan(raw);
         }
 
         if (includesAny(t, ['plano de estudo', 'plano para', 'organizar estudo', 'cronograma de estudo'])) {

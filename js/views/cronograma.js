@@ -325,10 +325,27 @@ async function saveEvent(e) {
 
     if (!title) return showToast('Título é obrigatório', 'error');
     if (!start_iso || !end_iso) return showToast('Datas são obrigatórias', 'error');
-    if (new Date(start_iso) >= new Date(end_iso)) return showToast('Início deve ser antes do término', 'error');
+
+    const startDate = new Date(start_iso);
+    let endDate = new Date(end_iso);
+
+    if (!all_day && startDate >= endDate) {
+        const sameDay =
+            startDate.getFullYear() === endDate.getFullYear()
+            && startDate.getMonth() === endDate.getMonth()
+            && startDate.getDate() === endDate.getDate();
+
+        if (sameDay) {
+            endDate.setDate(endDate.getDate() + 1);
+            const endInput = document.getElementById('eventEnd');
+            if (endInput) endInput.value = toISODateTimeLocal(endDate);
+        }
+    }
+
+    if (startDate >= endDate) return showToast('Início deve ser antes do término', 'error');
 
     try {
-        const payload = { title, materia_id, start_iso: new Date(start_iso).toISOString(), end_iso: new Date(end_iso).toISOString(), all_day, notes };
+        const payload = { title, materia_id, start_iso: startDate.toISOString(), end_iso: endDate.toISOString(), all_day, notes };
         if (id) {
             await api.updateEvent(id, payload);
             showToast('Evento atualizado', 'success');
