@@ -79,94 +79,9 @@
         updateSelector();
     }
 
-    function createSelector() {
-        const wrapper = document.createElement('div');
-        wrapper.id = 'lang-selector';
-        wrapper.style.position = 'fixed';
-        wrapper.style.right = '16px';
-        wrapper.style.top = '16px';
-        wrapper.style.zIndex = 99999;
+    function createSelector() {}
 
-        const btn = document.createElement('button');
-        btn.id = 'lang-btn';
-        btn.style.border = 'none';
-        btn.style.background = 'transparent';
-        btn.style.cursor = 'pointer';
-
-        const img = document.createElement('img');
-        img.id = 'lang-flag';
-        img.src = getFlagSrc(current);
-        img.alt = current;
-        img.style.width = '28px';
-        img.style.height = '20px';
-        img.style.objectFit = 'cover';
-        img.style.borderRadius = '3px';
-        img.style.boxShadow = '0 2px 6px rgba(0,0,0,0.15)';
-
-        btn.appendChild(img);
-        wrapper.appendChild(btn);
-
-        const list = document.createElement('div');
-        list.id = 'lang-list';
-        list.style.position = 'absolute';
-        list.style.right = '0';
-        list.style.top = '36px';
-        list.style.background = '#fff';
-        list.style.border = '1px solid #ddd';
-        list.style.borderRadius = '6px';
-        list.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
-        list.style.display = 'none';
-        list.style.padding = '6px';
-
-        ['pt','en','fr'].forEach(code => {
-            const item = document.createElement('div');
-            item.style.display = 'flex';
-            item.style.alignItems = 'center';
-            item.style.gap = '8px';
-            item.style.padding = '6px 8px';
-            item.style.cursor = 'pointer';
-            item.onmouseenter = () => item.style.background = '#f7f7f7';
-            item.onmouseleave = () => item.style.background = 'transparent';
-
-            const f = document.createElement('img');
-            f.src = getFlagSrc(code);
-            f.style.width = '24px';
-            f.style.height = '16px';
-            f.style.objectFit = 'cover';
-            f.style.borderRadius = '3px';
-
-            const label = document.createElement('div');
-            label.textContent = code === 'pt' ? 'Português' : code === 'en' ? 'English' : 'Français';
-
-            item.appendChild(f);
-            item.appendChild(label);
-            item.addEventListener('click', () => {
-                setLang(code);
-                list.style.display = 'none';
-            });
-            list.appendChild(item);
-        });
-
-        btn.addEventListener('click', () => {
-            list.style.display = list.style.display === 'none' ? 'block' : 'none';
-        });
-
-        wrapper.appendChild(list);
-        document.body.appendChild(wrapper);
-    }
-
-    function getFlagSrc(code) {
-        // Use simple inline base64 or local images; we'll use public CDN flags for simplicity
-        if (code === 'pt') return 'https://flagcdn.com/w20/pt.png';
-        if (code === 'en') return 'https://flagcdn.com/w20/gb.png';
-        if (code === 'fr') return 'https://flagcdn.com/w20/fr.png';
-        return '';
-    }
-
-    function updateSelector() {
-        const img = document.getElementById('lang-flag');
-        if (img) img.src = getFlagSrc(current);
-    }
+    function updateSelector() {}
 
     // Expose minimal API
     window.i18n = { t, setLang, current };
