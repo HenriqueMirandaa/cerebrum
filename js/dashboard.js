@@ -87,8 +87,8 @@ function renderQuizLibrary(quizzes) {
         return `
             <div class="card p-6">
                 <h3 class="text-xl font-semibold mb-3">Quizzes Gerados pela IA</h3>
-                <p class="text-gray-500">Ainda nao existem quizzes nesta biblioteca.</p>
-                <p class="text-sm text-gray-400 mt-2">Peca no assistente algo como: "Gere um quiz de 5 perguntas de Historia sobre a Revolucao Industrial".</p>
+                <p class="text-gray-500">Ainda não existem quizzes nesta biblioteca.</p>
+                <p class="text-sm text-gray-400 mt-2">Peça no assistente algo como: "Gere um quiz de 5 perguntas de História sobre a Revolução Industrial".</p>
             </div>
         `;
     }
