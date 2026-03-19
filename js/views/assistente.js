@@ -6,17 +6,17 @@ const assistantService = createAssistantService();
 const HISTORY_KEY_PREFIX = 'cerebrum_chat_history';
 const MAX_HISTORY_ITEMS = 200;
 const AI_CAPABILITIES = [
-    'Conversa natural sobre estudos (sem comandos rigidos).',
+    'Conversa natural sobre estudos (sem comandos rígidos).',
     'Entende pedidos de plano de estudo com data de exame.',
-    'Extrai nome da materia, horas e data automaticamente.',
+    'Extrai nome da matéria, horas e data automaticamente.',
     'Ajusta plano por disponibilidade real (por dia e por semana).',
-    'Calcula carga diaria/semanal e capacidade ate o exame.',
-    'Sinaliza quando a disponibilidade e insuficiente.',
-    'Gera recomendacoes personalizadas de estudo.',
-    'Faz analise de progresso geral.',
-    'Mostra status de materia especifica.',
-    'Gera quiz rapido por materia.',
-    'Consulta cronograma e proxima sessao.'
+    'Calcula carga diária/semanal e capacidade até ao exame.',
+    'Sinaliza quando a disponibilidade é insuficiente.',
+    'Gera recomendações personalizadas de estudo.',
+    'Faz análise de progresso geral.',
+    'Mostra estado de matéria específica.',
+    'Gera quiz rápido por matéria.',
+    'Consulta cronograma e próxima sessão.'
 ];
 
 function renderAssistantLayout() {
@@ -24,7 +24,7 @@ function renderAssistantLayout() {
         <section class="assistant-workspace">
             <div class="assistant-header">
                 <h2 class="assistant-title">Assistente IA</h2>
-                <p class="assistant-subtitle">Assistente local (client-side) para apoio ao estudo diario.</p>
+                <p class="assistant-subtitle">Assistente local (client-side) para apoio ao estudo diário.</p>
             </div>
             <div class="assistant-grid">
                 <article class="card assistant-panel">
@@ -57,10 +57,10 @@ function renderAssistantLayout() {
                     </div>
                 </article>
                 <aside class="card card-body assistant-actions">
-                    <h3 class="text-lg font-semibold mb-3">Acoes Rapidas</h3>
+                    <h3 class="text-lg font-semibold mb-3">Ações Rápidas</h3>
                     <div class="space-y-2" id="assistantQuickActions">
-                        <button data-action="suggest" class="btn w-full">Sugestoes de Estudo</button>
-                        <button data-action="quiz" class="btn w-full">Gerar Quiz Rapido</button>
+                        <button data-action="suggest" class="btn w-full">Sugestões de Estudo</button>
+                        <button data-action="quiz" class="btn w-full">Gerar Quiz Rápido</button>
                         <button data-action="help" class="btn w-full">Mostrar Comandos</button>
                     </div>
                     <div class="assistant-capabilities-bubble hidden" id="capabilitiesBubble" role="dialog" aria-label="Capacidades da IA">
@@ -83,7 +83,7 @@ function renderAssistantLayout() {
                     <div class="modal-card assistant-quiz-modal" role="dialog" aria-modal="true" aria-labelledby="assistantQuizModalTitle">
                         <div class="assistant-quiz-modal__header">
                             <div>
-                                <h3 class="assistant-quiz-modal__title" id="assistantQuizModalTitle">Configurar Quiz Rapido</h3>
+                                <h3 class="assistant-quiz-modal__title" id="assistantQuizModalTitle">Configurar Quiz Rápido</h3>
                                 <p class="assistant-quiz-modal__subtitle">Escolhe como queres gerar o quiz antes de enviar para a IA.</p>
                             </div>
                             <button type="button" class="assistant-quiz-modal__close" id="assistantQuizModalClose" aria-label="Fechar">
@@ -93,18 +93,18 @@ function renderAssistantLayout() {
                         <form id="assistantQuizForm" class="assistant-quiz-modal__body">
                             <div class="assistant-quiz-mode">
                                 <button type="button" class="assistant-quiz-choice is-active" data-quiz-mode="specific">
-                                    <span class="assistant-quiz-choice__title">Quiz especifico</span>
-                                    <span class="assistant-quiz-choice__text">Escolhes a materia e o tema.</span>
+                                    <span class="assistant-quiz-choice__title">Quiz específico</span>
+                                    <span class="assistant-quiz-choice__text">Escolhes a matéria e o tema.</span>
                                 </button>
                                 <button type="button" class="assistant-quiz-choice" data-quiz-mode="random">
-                                    <span class="assistant-quiz-choice__title">Quiz aleatorio</span>
+                                    <span class="assistant-quiz-choice__title">Quiz aleatório</span>
                                     <span class="assistant-quiz-choice__text">A IA sorteia um tema coerente automaticamente.</span>
                                 </button>
                             </div>
                             <input type="hidden" id="assistantQuizMode" value="specific">
                             <div class="assistant-quiz-fields" id="assistantQuizFields">
                                 <label class="assistant-quiz-field">
-                                    <span class="assistant-quiz-field__label">Materia</span>
+                                    <span class="assistant-quiz-field__label">Matéria</span>
                                     <select id="assistantQuizSubject" class="form-input"></select>
                                 </label>
                                 <label class="assistant-quiz-field">
@@ -113,7 +113,7 @@ function renderAssistantLayout() {
                                 </label>
                             </div>
                             <div class="assistant-quiz-summary hidden" id="assistantQuizSummary">
-                                No modo aleatorio, a IA escolhe uma materia prioritaria e um tema curto e coerente para revisao.
+                                No modo aleatório, a IA escolhe uma matéria prioritária e um tema curto e coerente para revisão.
                             </div>
                             <div class="assistant-quiz-modal__actions">
                                 <button type="button" class="btn btn-secondary" id="assistantQuizCancelBtn">Cancelar</button>
@@ -128,8 +128,8 @@ function renderAssistantLayout() {
                     <div class="modal-card assistant-quiz-modal" role="dialog" aria-modal="true" aria-labelledby="assistantSuggestModalTitle">
                         <div class="assistant-quiz-modal__header">
                             <div>
-                                <h3 class="assistant-quiz-modal__title" id="assistantSuggestModalTitle">Sugestoes de Estudo</h3>
-                                <p class="assistant-quiz-modal__subtitle">Escolhe o foco das recomendacoes para a IA ajustar a resposta.</p>
+                                <h3 class="assistant-quiz-modal__title" id="assistantSuggestModalTitle">Sugestões de Estudo</h3>
+                                <p class="assistant-quiz-modal__subtitle">Escolhe o foco das recomendações para a IA ajustar a resposta.</p>
                             </div>
                             <button type="button" class="assistant-quiz-modal__close" id="assistantSuggestModalClose" aria-label="Fechar">
                                 <i class="fas fa-times"></i>
@@ -143,17 +143,17 @@ function renderAssistantLayout() {
                                 </button>
                                 <button type="button" class="assistant-quiz-choice" data-suggest-focus="week">
                                     <span class="assistant-quiz-choice__title">Esta semana</span>
-                                    <span class="assistant-quiz-choice__text">Distribuicao de foco para os proximos dias.</span>
+                                    <span class="assistant-quiz-choice__text">Distribuição de foco para os próximos dias.</span>
                                 </button>
                                 <button type="button" class="assistant-quiz-choice" data-suggest-focus="exam">
-                                    <span class="assistant-quiz-choice__title">Proxima prova</span>
+                                    <span class="assistant-quiz-choice__title">Próxima prova</span>
                                     <span class="assistant-quiz-choice__text">Prioridade guiada pela prova mais urgente.</span>
                                 </button>
                             </div>
                             <input type="hidden" id="assistantSuggestFocus" value="today">
                             <div class="assistant-quiz-modal__actions">
                                 <button type="button" class="btn btn-secondary" id="assistantSuggestCancelBtn">Cancelar</button>
-                                <button type="submit" class="btn btn-primary" id="assistantSuggestSubmitBtn">Ver Sugestoes</button>
+                                <button type="submit" class="btn btn-primary" id="assistantSuggestSubmitBtn">Ver Sugestões</button>
                             </div>
                         </form>
                     </div>
@@ -258,7 +258,7 @@ function renderPlaceholderIfEmpty() {
     chatContent.innerHTML = `
         <div class="assistant-empty-state">
             <i class="fas fa-robot text-4xl mb-3 opacity-30"></i>
-            <p>Ola! Pergunte algo para comecar (ex: "recomendacoes", "analise", "quiz").</p>
+            <p>Olá! Pergunte algo para começar (ex: "recomendações", "análise", "quiz").</p>
         </div>
     `;
 }
@@ -349,7 +349,7 @@ async function sendMessage(text, state) {
 
 async function askQuizPreferences() {
     const modeRaw = window.prompt(
-        'Quiz rapido:\n1 - Quiz especifico\n2 - Quiz aleatorio',
+        'Quiz rápido:\n1 - Quiz específico\n2 - Quiz aleatório',
         '1'
     );
 
@@ -363,14 +363,14 @@ async function askQuizPreferences() {
     const subjectResult = await assistantService.getQuizSubjects();
     if (!subjectResult.ok) return { error: subjectResult.text };
     if (!subjectResult.subjects.length) {
-        return { error: 'Nao encontrei materias ativas para montar um quiz especifico.' };
+        return { error: 'Não encontrei matérias ativas para montar um quiz específico.' };
     }
 
     const subjectMenu = subjectResult.subjects
         .map((subject, index) => `${index + 1} - ${subject.name}`)
         .join('\n');
     const selectedSubjectRaw = window.prompt(
-        `Escolhe a materia do quiz:\n${subjectMenu}`,
+        `Escolhe a matéria do quiz:\n${subjectMenu}`,
         '1'
     );
 
@@ -381,7 +381,7 @@ async function askQuizPreferences() {
         || subjectResult.subjects.find((subject) => subject.name.toLowerCase() === String(selectedSubjectRaw).trim().toLowerCase());
 
     if (!selectedSubject) {
-        return { error: 'Nao consegui identificar a materia escolhida.' };
+        return { error: 'Não consegui identificar a matéria escolhida.' };
     }
 
     const topicsResult = assistantService.getQuizTopicSuggestions(selectedSubject.name);
@@ -460,13 +460,13 @@ async function openQuizModal(state) {
     const subjectResult = await assistantService.getQuizSubjects();
     if (!subjectResult.ok) return { error: subjectResult.text };
     if (!subjectResult.subjects.length) {
-        return { error: 'Nao encontrei materias ativas para montar um quiz.' };
+        return { error: 'Não encontrei matérias ativas para montar um quiz.' };
     }
 
     state.quizSubjects = subjectResult.subjects;
     const subjectSelect = document.getElementById('assistantQuizSubject');
     const modal = getQuizModal();
-    if (!subjectSelect || !modal) return { error: 'Nao consegui abrir o painel do quiz.' };
+    if (!subjectSelect || !modal) return { error: 'Não consegui abrir o painel do quiz.' };
 
     subjectSelect.innerHTML = state.quizSubjects
         .map((subject) => `<option value="${escapeHtml(subject.name)}">${escapeHtml(subject.name)}</option>`)
@@ -496,7 +496,7 @@ async function askQuizPreferencesPanel(state) {
         const modeInput = document.getElementById('assistantQuizMode');
 
         if (!modal || !form || !cancelBtn || !closeBtn || !subjectSelect || !topicSelect || !modeInput) {
-            resolve({ error: 'Nao consegui carregar o painel do quiz.' });
+            resolve({ error: 'Não consegui carregar o painel do quiz.' });
             return;
         }
 
@@ -564,7 +564,7 @@ function setSuggestFocus(focus) {
 
 async function askSuggestionPreferencesPanel(state) {
     const modal = getSuggestModal();
-    if (!modal) return { error: 'Nao consegui abrir o painel de sugestoes.' };
+    if (!modal) return { error: 'Não consegui abrir o painel de sugestões.' };
 
     setSuggestFocus('today');
     modal.classList.remove('hidden');
@@ -579,7 +579,7 @@ async function askSuggestionPreferencesPanel(state) {
         const focusInput = document.getElementById('assistantSuggestFocus');
 
         if (!form || !cancelBtn || !closeBtn || !focusInput) {
-            resolve({ error: 'Nao consegui carregar o painel de sugestoes.' });
+            resolve({ error: 'Não consegui carregar o painel de sugestões.' });
             return;
         }
 
@@ -621,17 +621,17 @@ async function handleQuickAction(action, button, state) {
 
     state.busy = true;
     setButtonLoading(button, true, 'A processar...');
-    setAssistantStatus('A processar acao...', true);
+    setAssistantStatus('A processar ação...', true);
     clearPlaceholder();
     setTypingIndicator(true);
 
     try {
-        let result = { ok: false, text: 'Acao nao suportada.' };
+        let result = { ok: false, text: 'Ação não suportada.' };
         if (action === 'analyze') result = await assistantService.analyzeProgress();
         if (action === 'suggest') {
             const suggestionPreferences = await askSuggestionPreferencesPanel(state);
             if (suggestionPreferences?.cancelled) {
-                result = { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+                result = { ok: false, cancelled: true, text: 'Operação cancelada.' };
             } else if (suggestionPreferences?.error) {
                 result = { ok: false, text: suggestionPreferences.error };
             } else {
@@ -641,7 +641,7 @@ async function handleQuickAction(action, button, state) {
         if (action === 'quiz') {
             const quizPreferences = await askQuizPreferencesPanel(state);
             if (quizPreferences?.cancelled) {
-                result = { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+                result = { ok: false, cancelled: true, text: 'Operação cancelada.' };
             } else if (quizPreferences?.error) {
                 result = { ok: false, text: quizPreferences.error };
             } else {
@@ -651,10 +651,10 @@ async function handleQuickAction(action, button, state) {
         if (action === 'help') result = await assistantService.showHelp();
         if (action === 'add-subject') result = await assistantService.addSubjectFromPrompts();
 
-        setAssistantStatus(result.ok ? 'Pronto' : 'Atencao', false);
+        setAssistantStatus(result.ok ? 'Pronto' : 'Atenção', false);
 
         if (result.cancelled) {
-            showToast('Operacao cancelada.', 'info');
+            showToast('Operação cancelada.', 'info');
             return;
         }
 
@@ -663,14 +663,14 @@ async function handleQuickAction(action, button, state) {
         persistMessage('assistant', text);
 
         if (!result.ok) {
-            showToast('Nao foi possivel concluir a acao.', 'error');
+            showToast('Não foi possível concluir a ação.', 'error');
         }
     } catch (error) {
         console.error('Quick action failed', error);
         appendChatMessage('assistant', `Erro: ${error.message || error}`);
         persistMessage('assistant', `Erro: ${error.message || error}`);
-        setAssistantStatus('Atencao', false);
-        showToast('Nao foi possivel concluir a acao.', 'error');
+        setAssistantStatus('Atenção', false);
+        showToast('Não foi possível concluir a ação.', 'error');
     } finally {
         state.busy = false;
         setTypingIndicator(false);

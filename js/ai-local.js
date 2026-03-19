@@ -83,40 +83,40 @@ function subjectMatches(subjectName = '', aliases = []) {
 
 function getSuggestedQuizTopics(subjectName = '') {
     if (subjectMatches(subjectName, ['portugues', 'português', 'lingua portuguesa', 'língua portuguesa'])) {
-        return ['interpretacao de texto', 'gramatica', 'sintaxe', 'ortografia', 'literatura'];
+        return ['interpretação de texto', 'gramática', 'sintaxe', 'ortografia', 'literatura'];
     }
     if (subjectMatches(subjectName, ['matematica', 'matemática', 'algebra', 'álgebra'])) {
-        return ['equacoes', 'fracoes', 'geometria', 'funcoes', 'probabilidade'];
+        return ['equações', 'frações', 'geometria', 'funções', 'probabilidade'];
     }
     if (subjectMatches(subjectName, ['historia', 'história'])) {
-        return ['revolucao industrial', 'primeira guerra', 'idade media', 'imperialismo', 'brasil colonia'];
+        return ['revolução industrial', 'primeira guerra', 'idade média', 'imperialismo', 'brasil colónia'];
     }
     if (subjectMatches(subjectName, ['geografia'])) {
-        return ['globalizacao', 'clima', 'relevo', 'populacao', 'cartografia'];
+        return ['globalização', 'clima', 'relevo', 'população', 'cartografia'];
     }
     if (subjectMatches(subjectName, ['fisica', 'física'])) {
-        return ['movimento', 'forca', 'energia', 'eletricidade', 'optica'];
+        return ['movimento', 'força', 'energia', 'eletricidade', 'ótica'];
     }
     if (subjectMatches(subjectName, ['quimica', 'química'])) {
-        return ['atomos', 'ligacoes quimicas', 'reacoes', 'tabela periodica', 'solucoes'];
+        return ['átomos', 'ligações químicas', 'reações', 'tabela periódica', 'soluções'];
     }
     if (subjectMatches(subjectName, ['biologia'])) {
-        return ['celula', 'genetica', 'ecologia', 'corpo humano', 'evolucao'];
+        return ['célula', 'genética', 'ecologia', 'corpo humano', 'evolução'];
     }
     if (subjectMatches(subjectName, ['ciencias naturais', 'ciências naturais', 'ciencias', 'ciências', 'science'])) {
-        return ['seres vivos', 'ecossistemas', 'corpo humano', 'ambiente', 'materia e energia'];
+        return ['seres vivos', 'ecossistemas', 'corpo humano', 'ambiente', 'matéria e energia'];
     }
     if (subjectMatches(subjectName, ['filosofia'])) {
-        return ['etica', 'logica', 'politica', 'conhecimento', 'filosofos'];
+        return ['ética', 'lógica', 'política', 'conhecimento', 'filósofos'];
     }
     if (subjectMatches(subjectName, ['ingles', 'inglês', 'english', 'lingua inglesa', 'língua inglesa'])) {
         return ['vocabulary', 'reading comprehension', 'verb tenses', 'grammar', 'interpretation'];
     }
     if (subjectMatches(subjectName, ['frances', 'francês', 'french', 'lingua francesa', 'língua francesa'])) {
-        return ['vocabulaire', 'comprehension', 'grammaire', 'verbes', 'interpretation'];
+        return ['vocabulaire', 'compréhension', 'grammaire', 'verbes', 'interprétation'];
     }
 
-    return ['conceitos centrais', 'definicoes', 'aplicacoes', 'exercicios base', 'revisao geral'];
+    return ['conceitos centrais', 'definições', 'aplicações', 'exercícios base', 'revisão geral'];
 }
 
 function extractQuizRequest(rawText, subjects = []) {
@@ -144,13 +144,13 @@ function extractQuizRequest(rawText, subjects = []) {
     }
 
     if (!topic) {
-        topic = getSuggestedQuizTopics(mentioned?.name || subject)[0] || 'revisao geral';
+        topic = getSuggestedQuizTopics(mentioned?.name || subject)[0] || 'revisão geral';
     }
 
     return {
         questionCount,
         subject: cleanupTopicPart(subject || 'Estudos Gerais'),
-        topic: cleanupTopicPart(topic || 'revisao geral')
+        topic: cleanupTopicPart(topic || 'revisão geral')
     };
 }
 
@@ -675,11 +675,11 @@ function getSubjectPriority(subject) {
 }
 
 function getStudyBlockSuggestion(subject, priority) {
-    if (priority.daysLeft !== null && priority.daysLeft <= 3) return '90 minutos focados + 20 minutos de revisao';
+    if (priority.daysLeft !== null && priority.daysLeft <= 3) return '90 minutos focados + 20 minutos de revisão';
     if (priority.daysLeft !== null && priority.daysLeft <= 10) return '60 a 75 minutos focados';
     if (priority.progress < 40) return '50 a 60 minutos com teoria e exercicios';
-    if (priority.progress < 75) return '45 minutos com revisao ativa';
-    return '30 a 40 minutos para consolidacao';
+    if (priority.progress < 75) return '45 minutos com revisão ativa';
+    return '30 a 40 minutos para consolidação';
 }
 
 function getSubjectLabel(subject, priority) {
@@ -698,24 +698,24 @@ function buildRecommendationEntries(ranked, focus = 'today') {
         const examRanked = ranked.filter(({ priority }) => priority.daysLeft !== null && priority.daysLeft >= 0);
         const source = examRanked.length ? examRanked : ranked;
         return source.slice(0, 3).map(({ subject, priority }, index) => ({
-            title: `${index + 1}. Proxima prova: ${subject.name}`,
-            message: `Prioridade por exame ${describeDaysLeft(priority.daysLeft)}. Faz ${getStudyBlockSuggestion(subject, priority)} e termina com revisao ativa de pontos fracos.`
+            title: `${index + 1}. Próxima prova: ${subject.name}`,
+            message: `Prioridade por exame ${describeDaysLeft(priority.daysLeft)}. Faz ${getStudyBlockSuggestion(subject, priority)} e termina com revisão ativa de pontos fracos.`
         }));
     }
 
     return ranked.slice(0, 3).map(({ subject, priority }, index) => {
         const reason =
             priority.daysLeft !== null && priority.daysLeft <= 10
-                ? `A prova esta proxima: ${describeDaysLeft(priority.daysLeft)}.`
+                ? `A prova está próxima: ${describeDaysLeft(priority.daysLeft)}.`
                 : priority.progress < 50
-                    ? 'O progresso ainda esta baixo e precisa de ganhar tracao.'
+                    ? 'O progresso ainda está baixo e precisa de ganhar tração.'
                     : !subject.exam_date
                         ? 'Ainda falta definir uma data de prova para planeamento mais preciso.'
-                        : 'Esta materia merece manutencao para nao perder ritmo.';
+                        : 'Esta matéria merece manutenção para não perder ritmo.';
 
         return {
             title: `${index + 1}. Prioridade de hoje: ${subject.name}`,
-            message: `${reason} Estado atual: ${Math.round(priority.progress)}% concluido. Sugestao objetiva: faca ${getStudyBlockSuggestion(subject, priority)} hoje.`
+            message: `${reason} Estado atual: ${Math.round(priority.progress)}% concluído. Sugestão objetiva: faz ${getStudyBlockSuggestion(subject, priority)} hoje.`
         };
     });
 }
@@ -723,7 +723,7 @@ function buildRecommendationEntries(ranked, focus = 'today') {
 function buildPeriodStudyPlan(ranked, period = 'today') {
     const top = ranked.slice(0, period === 'month' ? 4 : 3);
     if (!top.length) {
-        return 'Ainda nao encontrei materias suficientes para montar esse plano.';
+        return 'Ainda não encontrei matérias suficientes para montar esse plano.';
     }
 
     if (period === 'today') {
@@ -735,7 +735,7 @@ function buildPeriodStudyPlan(ranked, period = 'today') {
                         : '30 a 40 minutos';
             lines.push(`- ${subject.name}: ${duration}. Motivo: ${describeDaysLeft(priority.daysLeft)} e progresso em ${Math.round(priority.progress)}%.`);
         });
-        lines.push('- Fecha o dia com 10 minutos de revisao ativa da materia principal.');
+        lines.push('- Fecha o dia com 10 minutos de revisão ativa da matéria principal.');
         return lines.join('\n');
     }
 
@@ -748,19 +748,19 @@ function buildPeriodStudyPlan(ranked, period = 'today') {
                         : '1 a 2 blocos';
             lines.push(`- ${subject.name}: ${sessions} de ${getStudyBlockSuggestion(subject, priority)}. Prioridade: ${describeDaysLeft(priority.daysLeft)}.`);
         });
-        lines.push('- Reserva o ultimo bloco da semana para revisao e simulacao curta.');
+        lines.push('- Reserva o último bloco da semana para revisão e simulação curta.');
         return lines.join('\n');
     }
 
     const lines = ['Plano de estudo para este mes:'];
     top.forEach(({ subject, priority }, index) => {
         const weight =
-            index === 0 ? 'foco principal nas proximas 2 semanas'
+            index === 0 ? 'foco principal nas próximas 2 semanas'
                 : index === 1 ? 'foco secundario com constancia semanal'
-                    : 'manutencao e revisao progressiva';
+                    : 'manutenção e revisão progressiva';
         lines.push(`- ${subject.name}: ${weight}. Estado atual ${Math.round(priority.progress)}% e ${describeDaysLeft(priority.daysLeft)}.`);
     });
-    lines.push('- Reavalia o progresso no fim de cada semana e ajusta a disciplina principal se surgir uma prova mais proxima.');
+    lines.push('- Reavalia o progresso no fim de cada semana e ajusta a disciplina principal se surgir uma prova mais próxima.');
     return lines.join('\n');
 }
 
@@ -866,8 +866,8 @@ function buildPlanText({ subjectName, examDate, daysLeft, totalHours, availabili
     const lines = [
         `Plano de estudo para ${subjectName}:`,
         `- Exame: ${examDate} (${daysLeft} dias restantes)`,
-        `- Carga sugerida: ${formatHoursWithMinutes(safeHours)} ate o exame`,
-        `- Ritmo diario: ~${formatHoursWithMinutes(dailyHours)} por dia`,
+        `- Carga sugerida: ${formatHoursWithMinutes(safeHours)} até ao exame`,
+        `- Ritmo diário: ~${formatHoursWithMinutes(dailyHours)} por dia`,
         `- Ritmo semanal: ~${formatHoursWithMinutes(weeklyHours)} por semana`
     ];
 
@@ -876,22 +876,22 @@ function buildPlanText({ subjectName, examDate, daysLeft, totalHours, availabili
     }
 
     if (typeof capacityUntilExam === 'number') {
-        lines.push(`- Capacidade total ate o exame: ~${formatHoursWithMinutes(capacityUntilExam)}`);
+        lines.push(`- Capacidade total até ao exame: ~${formatHoursWithMinutes(capacityUntilExam)}`);
     }
 
     lines.push(
         '',
-        'Distribuicao recomendada:',
+        'Distribuição recomendada:',
         `- Teoria: ${formatHoursWithMinutes(theoryHours)}`,
         `- Exercicios: ${formatHoursWithMinutes(practiceHours)}`,
-        `- Revisao: ${formatHoursWithMinutes(reviewHours)}`,
+        `- Revisão: ${formatHoursWithMinutes(reviewHours)}`,
         '',
-        `Execucao pratica (semanal):`,
-        `- ${baseSessionsPerWeek} sessoes por semana`,
-        `- ${sessionMinutes} minutos por sessao`,
-        '- 1 bloco final de revisao ativa + simulacao curta',
+        `Execução prática (semanal):`,
+        `- ${baseSessionsPerWeek} sessões por semana`,
+        `- ${sessionMinutes} minutos por sessão`,
+        '- 1 bloco final de revisão ativa + simulação curta',
         '',
-        'Se quiser, eu ajusto esse plano para o teu horario real (dias/horas disponiveis).'
+        'Se quiseres, eu ajusto esse plano ao teu horário real (dias/horas disponíveis).'
     );
 
     return lines.join('\n');
@@ -914,22 +914,22 @@ function findMentionedSubject(rawText, subjects) {
 }
 
 function getGreetingReply() {
-    return 'Ola! Posso te ajudar com plano de estudo, progresso, quiz ou cadastro de materia. Me diz o que voce precisa.';
+    return 'Olá! Posso ajudar-te com plano de estudo, progresso, quiz ou cadastro de matéria. Diz-me o que precisas.';
 }
 
 function getCapabilityReply() {
     return [
         'Posso ajudar em quatro frentes principais:',
-        '- organizacao: adicionar materias, montar plano e sugerir foco',
+        '- organização: adicionar matérias, montar plano e sugerir foco',
         '- acompanhamento: analisar progresso geral ou por disciplina',
-        '- revisao: gerar quiz rapido com tema coerente',
-        '- rotina: consultar cronograma e proxima sessao',
+        '- revisão: gerar quiz rápido com tema coerente',
+        '- rotina: consultar cronograma e próxima sessão',
         '',
         'Exemplos naturais:',
-        '- "quero adicionar materia de fisica com 30 horas e prova em 2026-06-20"',
-        '- "como esta meu progresso geral?"',
+        '- "quero adicionar matéria de Física com 30 horas e prova em 2026-06-20"',
+        '- "como está o meu progresso geral?"',
         '- "o que devo estudar esta semana?"',
-        '- "gera um quiz de matematica sobre funcoes"'
+        '- "gera um quiz de matemática sobre funções"'
     ].join('\n');
 }
 
@@ -937,19 +937,19 @@ function getHelpReply() {
     return [
         'Podes escrever de forma natural ou usar pedidos curtos como estes:',
         '',
-        '- recomendacoes: devolve prioridades de estudo com foco em hoje, esta semana ou proxima prova',
-        '- analisar: faz um resumo do teu progresso, riscos e proximo passo',
-        '- quiz: abre o painel para escolher materia e tema do quiz',
-        '- proxima sessao: mostra o proximo estudo agendado no cronograma',
-        '- adicionar <Nome> | <horas> | <AAAA-MM-DD>: adiciona materia rapidamente',
+        '- recomendações: devolve prioridades de estudo com foco em hoje, esta semana ou próxima prova',
+        '- analisar: faz um resumo do teu progresso, riscos e próximo passo',
+        '- quiz: abre o painel para escolher matéria e tema do quiz',
+        '- próxima sessão: mostra o próximo estudo agendado no cronograma',
+        '- adicionar <Nome> | <horas> | <AAAA-MM-DD>: adiciona matéria rapidamente',
         '',
         'Exemplos:',
         '- adicionar Fisica | 24 | 2026-06-20',
-        '- recomendacoes',
+        '- recomendações',
         '- analisar',
-        '- proxima sessao',
-        '- qual e o meu plano de estudos para hoje?',
-        '- adicione a materia Ingles com 15 horas e com exame para o dia 21/06/2026'
+        '- próxima sessão',
+        '- qual é o meu plano de estudos para hoje?',
+        '- adicione a matéria Inglês com 15 horas e com exame para o dia 21/06/2026'
     ].join('\n');
 }
 
@@ -957,7 +957,7 @@ async function addSubjectFromNaturalText(rawText, explicitName = '') {
     const name = cleanExtractedName(explicitName || extractSubjectName(rawText));
     if (!name) {
         chatState.awaitingSubjectName = true;
-        return 'Perfeito. Qual e o nome da materia que voce quer adicionar?';
+        return 'Perfeito. Qual é o nome da matéria que queres adicionar?';
     }
 
     const totalHours = extractHours(rawText) || 0;
@@ -979,13 +979,13 @@ async function addSubjectFromNaturalText(rawText, explicitName = '') {
     if (totalHours > 0) details.push(`${formatHoursWithMinutes(totalHours)} planejadas`);
     if (examDate) details.push(`prova em ${examDate}`);
 
-    return `Materia adicionada com sucesso: ${name}${details.length ? ` (${details.join(', ')})` : ''}.`;
+    return `Matéria adicionada com sucesso: ${name}${details.length ? ` (${details.join(', ')})` : ''}.`;
 }
 
 async function buildTimelineStudyPlan(rawText) {
     const subjects = await safeGetSubjects();
     if (!subjects.length) {
-        return 'Ainda nao tens materias suficientes para eu montar um plano. Adiciona pelo menos uma disciplina primeiro.';
+        return 'Ainda não tens matérias suficientes para eu montar um plano. Adiciona pelo menos uma disciplina primeiro.';
     }
 
     const normalized = normalizeText(rawText);
@@ -1018,7 +1018,7 @@ async function tryCreateExamEvent({ subjectName, examDate, subjectId }) {
         await api.createEvent(payload);
         return { ok: true };
     } catch (error) {
-        console.warn('Nao foi possivel criar evento de exame no cronograma', error);
+        console.warn('Não foi possível criar evento de exame no cronograma', error);
         return { ok: false };
     }
 }
@@ -1038,7 +1038,7 @@ const aiLocal = {
 
     // Adiciona uma materia localmente (IndexedDB)
     async addSubject({ name, total_hours = 0, exam_date = null, color = null, icon = 'fas fa-book' } = {}) {
-        if (!name || !name.trim()) throw new Error('Nome da materia obrigatorio');
+        if (!name || !name.trim()) throw new Error('Nome da matéria obrigatório');
         const subj = { name: String(name).trim(), total_hours: Number(total_hours) || 0, exam_date: exam_date || null, color, icon, progress: 0 };
         try {
             const id = await db.addSubject(subj);
@@ -1051,14 +1051,14 @@ const aiLocal = {
         }
     },
 
-    // Retorna lista de recomendacoes curtas
+    // Retorna lista de recomendações curtas
     async getRecommendations(options = {}) {
         const subjects = await safeGetSubjects();
         if (!subjects.length) {
             return [
                 {
-                    title: 'Comece pelas materias',
-                    message: 'Ainda nao encontrei materias ativas. Adicione pelo menos uma disciplina com data de prova para eu priorizar o estudo corretamente.'
+                    title: 'Começa pelas matérias',
+                    message: 'Ainda não encontrei matérias ativas. Adiciona pelo menos uma disciplina com data de prova para eu priorizar o estudo corretamente.'
                 }
             ];
         }
@@ -1073,27 +1073,27 @@ const aiLocal = {
         if (examless) {
             recs.push({
                 title: 'Ajuste de planeamento',
-                message: `Define a data de prova de ${examless.subject.name} para eu distribuir carga semanal e cronograma com mais precisao.`
+                message: `Define a data de prova de ${examless.subject.name} para eu distribuir carga semanal e cronograma com mais precisão.`
             });
         } else {
             recs.push({
-                title: 'Execucao',
-                message: 'Fecha o dia com revisao ativa de 10 a 15 minutos e 3 perguntas-chave da materia principal.'
+                title: 'Execução',
+                message: 'Fecha o dia com revisão ativa de 10 a 15 minutos e 3 perguntas-chave da matéria principal.'
             });
         }
 
         return recs;
     },
 
-    // Retorna analise simples do progresso e plano de acao
+    // Retorna análise simples do progresso e plano de ação
     async analyzeProgress() {
         const subjects = await safeGetSubjects();
         const sessions = await safeGetSessions();
         if (!subjects.length) {
             return {
-                message: 'Ainda nao ha dados suficientes para analisar o progresso.',
-                plan: 'Adicione materias e atualize o progresso para eu conseguir apontar prioridades reais.',
-                next: 'Proximo passo: cadastrar disciplinas, data de prova e carga horaria.'
+                message: 'Ainda não há dados suficientes para analisar o progresso.',
+                plan: 'Adiciona matérias e atualiza o progresso para eu conseguir apontar prioridades reais.',
+                next: 'Próximo passo: cadastrar disciplinas, data de prova e carga horária.'
             };
         }
 
@@ -1112,34 +1112,34 @@ const aiLocal = {
             .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
 
         const messageParts = [
-            `Materias ativas: ${total}.`,
-            `Progresso medio: ${avg}%.`,
-            `Sessoes concluidas: ${completed}.`
+            `Matérias ativas: ${total}.`,
+            `Progresso médio: ${avg}%.`,
+            `Sessões concluídas: ${completed}.`
         ];
         if (strongest) messageParts.push(`Melhor estado atual: ${getSubjectLabel(strongest.subject, strongest.priority)}.`);
         if (weakest) messageParts.push(`Maior risco: ${getSubjectLabel(weakest.subject, weakest.priority)}.`);
 
         const planParts = [];
         if (urgentExam) {
-            planParts.push(`Prioridade imediata: reforcar ${urgentExam.subject.name} porque a prova esta em ${Math.max(urgentExam.priority.daysLeft, 0)} dia(s).`);
+            planParts.push(`Prioridade imediata: reforçar ${urgentExam.subject.name} porque a prova está em ${Math.max(urgentExam.priority.daysLeft, 0)} dia(s).`);
         }
         if (weakest && (!urgentExam || urgentExam.subject.id !== weakest.subject.id)) {
-            planParts.push(`Recuperacao: reservar um bloco forte para ${weakest.subject.name} e subir o progresso acima de 50%.`);
+            planParts.push(`Recuperação: reservar um bloco forte para ${weakest.subject.name} e subir o progresso acima de 50%.`);
         }
         const missingExam = ranked.filter(({ subject }) => !subject.exam_date).slice(0, 2);
         if (missingExam.length) {
             planParts.push(`Planeamento pendente: definir data de prova para ${missingExam.map(({ subject }) => subject.name).join(' e ')}.`);
         }
         if (!planParts.length) {
-            planParts.push('Plano sugerido: manter 3 blocos semanais para as materias prioritarias e fechar cada bloco com revisao ativa.');
+            planParts.push('Plano sugerido: manter 3 blocos semanais para as matérias prioritárias e fechar cada bloco com revisão ativa.');
         }
 
-        let nextInfo = 'Sem proximas sessoes agendadas.';
+        let nextInfo = 'Sem próximas sessões agendadas.';
         if (next) {
             const nextLabel = next.name || next.title || next.subject_id || 'Sessao de estudo';
-            nextInfo = `Proxima sessao: ${nextLabel} em ${new Date(next.start_time).toLocaleString()}.`;
+            nextInfo = `Próxima sessão: ${nextLabel} em ${new Date(next.start_time).toLocaleString()}.`;
         } else if (urgentExam) {
-            nextInfo = `Acao seguinte: agendar hoje um bloco para ${urgentExam.subject.name}.`;
+            nextInfo = `Ação seguinte: agendar hoje um bloco para ${urgentExam.subject.name}.`;
         }
 
         return { message: messageParts.join(' '), plan: planParts.join(' '), next: nextInfo };
@@ -1148,7 +1148,7 @@ const aiLocal = {
     async generateQuiz(targetSubjectName = null) {
         const subjects = await safeGetSubjects();
         if (!subjects.length && !targetSubjectName) {
-            throw new Error('Adicione pelo menos uma materia para eu gerar um quiz com contexto util.');
+            throw new Error('Adicione pelo menos uma matéria para eu gerar um quiz com contexto útil.');
         }
 
         const requestedOptions = targetSubjectName && typeof targetSubjectName === 'object'
@@ -1189,17 +1189,17 @@ const aiLocal = {
 
     async getSubjectStatus(subjectNameText) {
         const subjects = await safeGetSubjects();
-        if (!subjects.length) return 'Voce ainda nao tem materias cadastradas.';
+        if (!subjects.length) return 'Você ainda não tem matérias cadastradas.';
 
         const matched = findMentionedSubject(subjectNameText, subjects);
-        if (!matched) return 'Nao consegui identificar a materia. Escreva o nome exato para eu analisar.';
+        if (!matched) return 'Não consegui identificar a matéria. Escreva o nome exato para eu analisar.';
 
         const progress = Number(matched.progress || 0);
         const hours = Number(matched.total_hours || 0);
         const exam = matched.exam_date ? `Prova em ${matched.exam_date}.` : 'Sem data de prova definida.';
         chatState.lastSubjectId = matched.id;
 
-        return `Materia: ${matched.name}. Progresso atual: ${progress}%. Carga planejada: ${formatHoursWithMinutes(hours)}. ${exam}`;
+        return `Matéria: ${matched.name}. Progresso atual: ${progress}%. Carga planeada: ${formatHoursWithMinutes(hours)}. ${exam}`;
     },
 
     async buildStudyPlanFromPrompt(rawText) {
@@ -1216,7 +1216,7 @@ const aiLocal = {
 
         const daysLeft = daysBetweenTodayAnd(examDate);
         if (daysLeft <= 0) {
-            return `A data ${examDate} ja passou ou e hoje. Envia uma nova data de exame futura para eu montar o plano.`;
+            return `A data ${examDate} já passou ou é hoje. Envia uma nova data de exame futura para eu montar o plano.`;
         }
 
         const targetLoadHours = extractTargetLoadHours(rawText);
@@ -1242,11 +1242,11 @@ const aiLocal = {
         if (eventResult.ok) {
             plan += `\n\nA data do exame (${examDate}) foi adicionada ao cronograma com sucesso.`;
         } else {
-            plan += `\n\nNao consegui adicionar automaticamente no cronograma, mas o plano ja esta pronto.`;
+            plan += `\n\nNão consegui adicionar automaticamente no cronograma, mas o plano já está pronto.`;
         }
 
         if (typeof capacityUntilExam === 'number' && capacityUntilExam < totalHours) {
-            return `${plan}\n\nAlerta: com a disponibilidade informada, pode faltar tempo para cobrir as ${formatHoursWithMinutes(totalHours)}. Posso te sugerir uma versao otimizada por prioridade de topicos.`;
+            return `${plan}\n\nAlerta: com a disponibilidade informada, pode faltar tempo para cobrir as ${formatHoursWithMinutes(totalHours)}. Posso sugerir-te uma versão otimizada por prioridade de tópicos.`;
         }
 
         return plan;
@@ -1260,13 +1260,13 @@ const aiLocal = {
     async chatResponder(text) {
         const raw = String(text || '').trim();
         const t = normalizeText(raw);
-        if (!t) return 'Me diz o que voce precisa e eu te ajudo.';
+        if (!t) return 'Diz-me o que precisas e eu ajudo.';
 
         if (chatState.awaitingSubjectName) {
             try {
                 return await addSubjectFromNaturalText(raw, raw);
             } catch (e) {
-                return `Falha ao adicionar materia: ${e.message || e}`;
+                return `Falha ao adicionar matéria: ${e.message || e}`;
             }
         }
 
@@ -1290,12 +1290,12 @@ const aiLocal = {
             try {
                 return await addSubjectFromNaturalText(raw);
             } catch (e) {
-                return `Falha ao adicionar materia: ${e.message || e}`;
+                return `Falha ao adicionar matéria: ${e.message || e}`;
             }
         }
 
         if (includesAny(t, ['pomodoro'])) {
-            return 'Pomodoro: 25 minutos de estudo focado + 5 minutos de pausa. A cada 4 ciclos, faca uma pausa longa de 15-30 minutos.';
+            return 'Pomodoro: 25 minutos de estudo focado + 5 minutos de pausa. A cada 4 ciclos, faz uma pausa longa de 15 a 30 minutos.';
         }
 
         if (includesAny(t, ['recomend', 'sugere', 'sugestao', 'o que estudar hoje'])) {
@@ -1326,7 +1326,7 @@ const aiLocal = {
 
         if (includesAny(t, ['quiz', 'pergunta de revisao', 'teste rapido'])) {
             const q = await this.generateQuiz(raw);
-            return `Criei um quiz de ${q.questionCount} perguntas de ${q.subject} sobre ${q.topic}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                return `Criei um quiz de ${q.questionCount} perguntas de ${q.subject} sobre ${q.topic}. Ele já está disponível em Ferramentas > Quizzes.`;
         }
 
         if (includesAny(t, ['cronograma', 'proxima sessao', 'proxima revisao', 'sessoes'])) {
@@ -1336,9 +1336,9 @@ const aiLocal = {
                 .sort((a, b) => new Date(a.start_time) - new Date(b.start_time))[0];
             if (next) {
                 const nextLabel = next.name || next.title || next.subject_id || 'Sessao de estudo';
-                return `A tua proxima sessao e ${nextLabel}, em ${new Date(next.start_time).toLocaleString()}, com duracao prevista de ${formatHours(next.duration || 0)}.`;
+                return `A tua próxima sessão é ${nextLabel}, em ${new Date(next.start_time).toLocaleString()}, com duração prevista de ${formatHours(next.duration || 0)}.`;
             }
-            return 'Nao encontrei sessoes futuras no cronograma. Se quiseres, posso ajudar-te a montar um plano de estudo ou priorizar o que estudar hoje.';
+            return 'Não encontrei sessões futuras no cronograma. Se quiseres, posso ajudar-te a montar um plano de estudo ou priorizar o que estudar hoje.';
         }
 
         const subjects = await safeGetSubjects();
@@ -1346,10 +1346,10 @@ const aiLocal = {
         if (subjectMention) {
             const progress = Number(subjectMention.progress || 0);
             chatState.lastSubjectId = subjectMention.id;
-            return `Entendi que voce quer falar sobre ${subjectMention.name}. Progresso atual: ${progress}%. Se quiser, eu posso gerar um quiz ou sugerir um plano curto para essa materia.`;
+            return `Entendi que queres falar sobre ${subjectMention.name}. Progresso atual: ${progress}%. Se quiseres, posso gerar um quiz ou sugerir um plano curto para essa matéria.`;
         }
 
-        return 'Entendi. Posso ajudar com recomendacoes, analise de progresso, quiz, cronograma ou cadastro de materia. Se quiser, escreve "ajuda" e eu mostro exemplos mais uteis.';
+        return 'Entendi. Posso ajudar com recomendações, análise de progresso, quiz, cronograma ou cadastro de matéria. Se quiseres, escreve "ajuda" e eu mostro exemplos mais úteis.';
     }
 };
 

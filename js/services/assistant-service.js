@@ -49,7 +49,7 @@ export function createAssistantService() {
         async generateQuiz() {
             try {
                 const response = await withMinimumDelay(() => aiLocal.generateQuiz());
-                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
                 return { ok: true, text };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
@@ -59,7 +59,7 @@ export function createAssistantService() {
         async generateQuizWithOptions(options = {}) {
             try {
                 const response = await withMinimumDelay(() => aiLocal.generateQuiz(options));
-                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
                 return { ok: true, text, quiz: response };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
@@ -89,8 +89,8 @@ export function createAssistantService() {
 
         async addSubjectFromPrompts() {
             try {
-                const name = prompt('Nome da materia (ex: Calculo)');
-                if (!name) return { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+                const name = prompt('Nome da matéria (ex: Cálculo)');
+                if (!name) return { ok: false, cancelled: true, text: 'Operação cancelada.' };
 
                 const hoursRaw = prompt('Horas totais planejadas (ex: 40)');
                 const hours = hoursRaw ? Number(hoursRaw.replace(',', '.')) : 0;
@@ -100,7 +100,7 @@ export function createAssistantService() {
                     aiLocal.addSubject({ name, total_hours: hours, exam_date: examDate || null })
                 );
 
-                return { ok: true, text: `Materia adicionada: ${created.name} (ID: ${created.id})` };
+                return { ok: true, text: `Matéria adicionada: ${created.name} (ID: ${created.id})` };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
             }
