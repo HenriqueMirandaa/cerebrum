@@ -306,7 +306,7 @@ class Dashboard {
                 return;
             }
 
-            body.classList.remove('sidebar-desktop-hidden');
+            body.classList.remove('sidebar-desktop-collapsed');
             setMenuState(true);
         };
 
@@ -317,7 +317,7 @@ class Dashboard {
                 return;
             }
 
-            body.classList.add('sidebar-desktop-hidden');
+            body.classList.add('sidebar-desktop-collapsed');
             setMenuState(false);
         };
 
@@ -336,7 +336,7 @@ class Dashboard {
 
         const handleMediaChange = (event) => {
             body.classList.remove('sidebar-open');
-            setMenuState(!event.matches && !body.classList.contains('sidebar-desktop-hidden'));
+            setMenuState(!event.matches && !body.classList.contains('sidebar-desktop-collapsed'));
         };
 
         if (typeof this.mobileSidebarMedia.addEventListener === 'function') {
