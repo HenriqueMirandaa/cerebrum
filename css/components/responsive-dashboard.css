@@ -1,8 +1,4 @@
 ﻿/* Responsive layout for dashboard and dynamic views */
-.mobile-only {
-    display: none;
-}
-
 .dashboard-header {
     display: flex;
     align-items: center;
@@ -53,11 +49,23 @@
     flex: 0 0 auto;
 }
 
+.mobile-menu-btn {
+    display: none;
+}
+
 .mobile-sidebar-close {
     position: absolute;
     right: 0.85rem;
     top: 0.85rem;
     z-index: 2;
+}
+
+body.sidebar-desktop-hidden .sidebar {
+    display: none !important;
+}
+
+body.sidebar-desktop-hidden > .flex-1 .mobile-menu-btn {
+    display: inline-flex;
 }
 
 .dashboard-sidebar-overlay {
@@ -194,10 +202,6 @@
         display: block;
     }
 
-    .mobile-only {
-        display: inline-flex !important;
-    }
-
     .sidebar {
         position: fixed !important;
         left: 0 !important;
@@ -211,6 +215,10 @@
         transition: transform 0.28s ease !important;
         overflow-y: auto;
         z-index: 50 !important;
+    }
+
+    .mobile-menu-btn {
+        display: inline-flex;
     }
 
     body.sidebar-open .sidebar {

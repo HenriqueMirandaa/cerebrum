@@ -293,18 +293,38 @@ class Dashboard {
         const menuBtn = document.getElementById('mobileMenuBtn');
         const closeBtn = document.getElementById('mobileSidebarClose');
         const overlay = document.getElementById('dashboardSidebarOverlay');
+        const setMenuState = (expanded) => {
+            if (!menuBtn) return;
+            menuBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+            menuBtn.setAttribute('aria-label', expanded ? 'Menu aberto' : 'Abrir menu');
+        };
 
         const openSidebar = () => {
-            if (!this.mobileSidebarMedia.matches) return;
-            body.classList.add('sidebar-open');
+            if (this.mobileSidebarMedia.matches) {
+                body.classList.add('sidebar-open');
+                setMenuState(true);
+                return;
+            }
+
+            body.classList.remove('sidebar-desktop-hidden');
+            setMenuState(true);
         };
 
         const closeSidebar = () => {
-            body.classList.remove('sidebar-open');
+            if (this.mobileSidebarMedia.matches) {
+                body.classList.remove('sidebar-open');
+                setMenuState(false);
+                return;
+            }
+
+            body.classList.add('sidebar-desktop-hidden');
+            setMenuState(false);
         };
 
         this.openMobileSidebar = openSidebar;
         this.closeMobileSidebar = closeSidebar;
+
+        setMenuState(false);
 
         if (menuBtn) menuBtn.addEventListener('click', openSidebar);
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
@@ -315,7 +335,8 @@ class Dashboard {
         });
 
         const handleMediaChange = (event) => {
-            if (!event.matches) closeSidebar();
+            body.classList.remove('sidebar-open');
+            setMenuState(!event.matches && !body.classList.contains('sidebar-desktop-hidden'));
         };
 
         if (typeof this.mobileSidebarMedia.addEventListener === 'function') {
