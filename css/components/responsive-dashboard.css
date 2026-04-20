@@ -96,7 +96,8 @@
 
 body > .sidebar + .dashboard-main {
     min-width: 0;
-    width: auto !important;
+    width: calc(100% - var(--dashboard-sidebar-width)) !important;
+    max-width: calc(100% - var(--dashboard-sidebar-width));
     margin-left: 0 !important;
     transition:
         width var(--dashboard-shell-transition),
@@ -117,6 +118,11 @@ body.sidebar-desktop-collapsed .sidebar > * {
     opacity: 0;
     pointer-events: none;
     transform: translateX(-0.85rem);
+}
+
+body.sidebar-desktop-collapsed > .dashboard-main {
+    width: 100% !important;
+    max-width: 100%;
 }
 
 body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
