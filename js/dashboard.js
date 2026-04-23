@@ -171,15 +171,15 @@ function renderMateriaCard(materia, options = {}) {
             ${showHistory ? renderSessionHistory(materia) : ''}
             <div class="flex gap-2">
                 ${ completed ? `
-                    <button onclick="dashboard.removerMateria(${idLiteral})" class="btn-secondary text-sm py-2 px-3">
+                    <button onclick='dashboard.removerMateria(${idLiteral})' class="btn-secondary text-sm py-2 px-3">
                         <i class="fas fa-trash"></i>
                     </button>
                 ` : `
-                    <button onclick="dashboard.atualizarProgresso(${idLiteral})" class="btn-primary flex-1 text-sm py-2">
+                    <button onclick='dashboard.atualizarProgresso(${idLiteral})' class="btn-primary flex-1 text-sm py-2">
                         <i class="fas fa-edit mr-1"></i>
                         Progresso
                     </button>
-                    <button onclick="dashboard.removerMateria(${idLiteral})" class="btn-secondary text-sm py-2 px-3">
+                    <button onclick='dashboard.removerMateria(${idLiteral})' class="btn-secondary text-sm py-2 px-3">
                         <i class="fas fa-trash"></i>
                     </button>
                 `}
