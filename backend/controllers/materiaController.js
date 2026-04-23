@@ -32,6 +32,21 @@ function parseHoursIncrement(input) {
     return 0;
 }
 
+function parseJsonMeta(meta) {
+    if (!meta) return null;
+    if (typeof meta === 'object') return meta;
+    try {
+        return JSON.parse(meta);
+    } catch (error) {
+        return null;
+    }
+}
+
+function normalizeSessionText(input) {
+    const text = String(input || '').replace(/\r\n/g, '\n').trim();
+    return text.slice(0, 2000);
+}
+
 const materiaController = {
     // Admin: Gerenciar disciplinas
     async getAllMaterias(req, res) {
@@ -128,12 +143,45 @@ const materiaController = {
                 }
             }
 
+            let sessionHistoryBySubject = {};
+            if (subjectIds.length > 0) {
+                try {
+                    const placeholders = subjectIds.map(() => '?').join(',');
+                    const [sessionRows] = await pool.execute(
+                        `SELECT description, meta, created_at
+                         FROM activity_logs
+                         WHERE user_id = ?
+                           AND type = 'study_session'
+                           AND JSON_EXTRACT(meta, '$.subject_id') IN (${placeholders})
+                         ORDER BY created_at DESC`,
+                        [req.user.id, ...subjectIds]
+                    );
+
+                    for (const row of sessionRows) {
+                        const parsed = parseJsonMeta(row.meta) || {};
+                        const sid = parsed.subject_id != null ? String(parsed.subject_id) : null;
+                        if (!sid) continue;
+                        if (!sessionHistoryBySubject[sid]) sessionHistoryBySubject[sid] = [];
+                        if (sessionHistoryBySubject[sid].length >= 5) continue;
+
+                        sessionHistoryBySubject[sid].push({
+                            texto: normalizeSessionText(parsed.topics || row.description || ''),
+                            duracaoMinutos: Math.round((Number(parsed.hours_increment || 0) || 0) * 60),
+                            data: row.created_at || null
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Erro ao buscar histórico de sessões:', e && (e.message || e));
+                }
+            }
+
             for (const r of rows) {
                 const metaParsed = latestMetaBySubject[String(r.id)] || {};
                 const exam_date = metaParsed.exam_date || null;
                 const total_hours = (metaParsed.total_hours != null) ? metaParsed.total_hours : null;
                 const metas = metaParsed.metas || [];
                 const color = metaParsed.color || metaParsed.cor || null;
+                const sessoes = sessionHistoryBySubject[String(r.id)] || [];
 
                 enriched.push({
                     id: String(r.id),
@@ -144,6 +192,7 @@ const materiaController = {
                     metas: Array.isArray(metas) ? metas : (metas ? [metas] : []),
                     exam_date,
                     total_hours,
+                    sessoes,
                     // include both property names so front-end can read either
                     color: color,
                     cor: color
@@ -235,7 +284,7 @@ const materiaController = {
 
     async atualizarProgresso(req, res) {
         try {
-            const { subject_id, hours_increment, last_studied } = req.body;
+            const { subject_id, hours_increment, last_studied, session_topics } = req.body;
             const subjectId = Number.parseInt(subject_id, 10);
             if (!Number.isInteger(subjectId) || subjectId <= 0) {
                 return res.status(400).json({ error: 'subject_id inválido.' });
@@ -243,6 +292,10 @@ const materiaController = {
 
             const increment = parseHoursIncrement(hours_increment);
             const lastStudiedMySql = toMySqlDateTime(last_studied);
+            const sessionTopics = normalizeSessionText(session_topics);
+            if (increment <= 0 && !sessionTopics) {
+                return res.status(400).json({ error: 'Informe o tempo estudado ou os tópicos da sessão.' });
+            }
 
             // Increment hours_studied
             const [updateResult] = await pool.execute(
@@ -273,6 +326,22 @@ const materiaController = {
                 console.warn('Não foi possível recalcular progresso automaticamente:', e.message || e);
             }
 
+            try {
+                const sessionMeta = {
+                    subject_id: subjectId,
+                    hours_increment: increment,
+                    topics: sessionTopics,
+                    last_studied: lastStudiedMySql
+                };
+                await pool.execute(
+                    `INSERT INTO activity_logs (user_id, type, description, meta, created_at)
+                     VALUES (?, 'study_session', ?, ?, NOW())`,
+                    [req.user.id, sessionTopics || 'Sessão de estudo', JSON.stringify(sessionMeta)]
+                );
+            } catch (e) {
+                console.warn('NÃ£o foi possÃ­vel guardar a sessão de estudo:', e.message || e);
+            }
+
             res.json({ message: 'Progresso atualizado com sucesso!' });
         } catch (error) {
             console.error('Erro ao atualizar progresso:', error);
@@ -286,6 +355,7 @@ const materiaController = {
             await pool.execute('DELETE FROM user_progress WHERE user_id = ? AND subject_id = ?', [req.user.id, subject_id]);
             // Remove related activity_logs entries of type 'subject_meta' for this subject
             await pool.execute('DELETE FROM activity_logs WHERE user_id = ? AND type = ? AND JSON_EXTRACT(meta, "$.subject_id") = ?', [req.user.id, 'subject_meta', subject_id]);
+            await pool.execute('DELETE FROM activity_logs WHERE user_id = ? AND type = ? AND JSON_EXTRACT(meta, "$.subject_id") = ?', [req.user.id, 'study_session', subject_id]);
             res.json({ message: 'Matéria removida com sucesso!' });
         } catch (error) {
             console.error('Erro ao remover matéria:', error);

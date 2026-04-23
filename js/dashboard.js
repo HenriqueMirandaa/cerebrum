@@ -82,6 +82,112 @@ function renderDescriptionText(description) {
     return text || '';
 }
 
+function formatSessionDuration(minutes) {
+    const total = Number(minutes) || 0;
+    if (total <= 0) return 'Tempo não informado';
+    const hours = Math.floor(total / 60);
+    const mins = total % 60;
+    if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
+    if (hours > 0) return `${hours}h`;
+    return `${mins}min`;
+}
+
+function formatSessionDateTime(value) {
+    if (!value) return 'Sessão anterior';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sessão anterior';
+    return date.toLocaleString('pt-PT', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function renderSessionHistory(materia) {
+    const sessions = Array.isArray(materia.sessoes) ? materia.sessoes.filter(Boolean) : [];
+    if (!sessions.length) return '';
+
+    return `
+        <details class="subject-sessions mb-4">
+            <summary>
+                <span><i class="fas fa-history mr-1"></i>Sessões anteriores</span>
+                <span class="subject-sessions-count">${sessions.length}</span>
+            </summary>
+            <div class="subject-sessions-list">
+                ${sessions.map((sessao) => `
+                    <article class="subject-session-item">
+                        <div class="subject-session-head">
+                            <span>${formatSessionDateTime(sessao.data)}</span>
+                            <span>${formatSessionDuration(sessao.duracaoMinutos)}</span>
+                        </div>
+                        <p>${escapeHtml(sessao.texto || 'Sem tópicos registados.')}</p>
+                    </article>
+                `).join('')}
+            </div>
+        </details>
+    `;
+}
+
+function renderMateriaCard(materia, options = {}) {
+    const completed = (Number(materia.progresso) || 0) >= 100;
+    const cardClasses = `subject-card card p-6 border-l-4 ${completed ? 'completed-subject' : ''}`;
+    const totalHoursText = renderTotalHoursText(materia.horas_totais);
+    const showHistory = options.showHistory !== false;
+    const idLiteral = JSON.stringify(String(materia.id));
+
+    return `
+        <div class="${cardClasses}" style="border-left-color: ${materia.cor}">
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center">
+                    <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white mr-3" style="background: ${materia.cor}">
+                        <i class="${materia.icone}"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold">${escapeHtml(materia.nome)}</div>
+                        ${totalHoursText ? `<div class="text-sm text-gray-500">${escapeHtml(totalHoursText)}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-1">
+                    <span>Progresso</span>
+                    <span>${materia.progresso}%</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${materia.progresso}%"></div>
+                </div>
+            </div>
+            <div class="dashboard-subject-meta text-sm text-gray-600 mb-4">
+                <div>
+                    <i class="fas fa-clock mr-1"></i>
+                    ${formatHours(materia.horas_estudadas)} estudadas
+                </div>
+                <div>
+                    ${materia.data_exame ? `Prova: ${formatDate(materia.data_exame)}` : 'Sem data'}
+                </div>
+            </div>
+            ${showHistory ? renderSessionHistory(materia) : ''}
+            <div class="flex gap-2">
+                ${ completed ? `
+                    <button onclick="dashboard.removerMateria(${idLiteral})" class="btn-secondary text-sm py-2 px-3">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                ` : `
+                    <button onclick="dashboard.atualizarProgresso(${idLiteral})" class="btn-primary flex-1 text-sm py-2">
+                        <i class="fas fa-edit mr-1"></i>
+                        Progresso
+                    </button>
+                    <button onclick="dashboard.removerMateria(${idLiteral})" class="btn-secondary text-sm py-2 px-3">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `}
+            </div>
+        </div>
+    `;
+}
+
 function renderQuizLibrary(quizzes) {
     if (!quizzes.length) {
         return `
@@ -481,57 +587,7 @@ class Dashboard {
                 <p class="text-gray-600">Gerencie seu progresso nas disciplinas.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="materiasGrid">
-                ${this.minhasDisciplinas.map(materia => {
-                    const completed = (Number(materia.progresso) || 0) >= 100;
-                    const cardClasses = `subject-card card p-6 border-l-4 ${completed ? 'completed-subject' : ''}`;
-                    return `
-                    <div class="${cardClasses}" style="border-left-color: ${materia.cor}">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center">
-                                <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white mr-3" style="background: ${materia.cor}">
-                                    <i class="${materia.icone}"></i>
-                                </div>
-                                <div>
-                                    <div class="font-semibold">${materia.nome}</div>
-                                    <div class="text-sm text-gray-500">${formatHours(materia.horas_totais)} totais</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Progresso</span>
-                                <span>${materia.progresso}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${materia.progresso}%"></div>
-                            </div>
-                        </div>
-                        <div class="dashboard-subject-meta text-sm text-gray-600 mb-4">
-                            <div>
-                                <i class="fas fa-clock mr-1"></i>
-                                ${formatHours(materia.horas_estudadas)} estudadas
-                            </div>
-                            <div>
-                                ${materia.data_exame ? `Prova: ${formatDate(materia.data_exame)}` : 'Sem data'}
-                            </div>
-                        </div>
-                        <div class="flex gap-2">
-                            ${ completed ? `
-                                <button onclick="dashboard.removerMateria(${materia.id})" class="btn-secondary text-sm py-2 px-3">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            ` : `
-                                <button onclick="dashboard.atualizarProgresso(${materia.id})" class="btn-primary flex-1 text-sm py-2">
-                                    <i class="fas fa-edit mr-1"></i>
-                                    Progresso
-                                </button>
-                                <button onclick="dashboard.removerMateria(${materia.id})" class="btn-secondary text-sm py-2 px-3">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            `}
-                        </div>
-                    </div>
-                `}).join('')}
+                ${this.minhasDisciplinas.map(materia => renderMateriaCard(materia)).join('')}
                 ${this.minhasDisciplinas.length === 0 ? `
                     <div class="col-span-3 text-center py-12 text-gray-500">
                         <i class="fas fa-book-open text-4xl mb-3 opacity-30"></i>
@@ -1145,6 +1201,7 @@ class Dashboard {
                 horas_estudadas: (s.tempoEstudado != null) ? (Number(s.tempoEstudado) / 60) : (s.hours_studied != null ? Number(s.hours_studied) : 0),
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
+                sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
                 cor: s.color || s.cor || '#6366f1',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
@@ -1176,6 +1233,7 @@ class Dashboard {
                 horas_estudadas: (s.tempoEstudado != null) ? (Number(s.tempoEstudado) / 60) : (s.hours_studied != null ? Number(s.hours_studied) : 0),
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
+                sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
                 cor: s.color || s.cor || '#6366f1',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
@@ -1249,7 +1307,8 @@ class Dashboard {
                 return;
             }
 
-            let hours = null;
+            let hours = 0;
+            let sessionTopics = '';
             if (window.showHoursPrompt && typeof window.showHoursPrompt === 'function') {
                 const res = await window.showHoursPrompt({ label: 'Quanto tempo você estudou nesta sessão?', defaultValue: '' });
                 if (res === null) return; // cancelled
@@ -1271,6 +1330,78 @@ class Dashboard {
             await this.loadMinhasMaterias();
 
             // celebrate if reached completion and not already celebrated
+            const updated = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
+            const reached = updated && Number(updated.progresso || 0) >= 100;
+            const key = `__completed_celebrated_${subjectId}`;
+            if (reached && !localStorage.getItem(key)) {
+                try {
+                    localStorage.setItem(key, '1');
+                    startConfetti(3500, { colors: ['rgba(16,185,129,0.95)', 'rgba(124,58,237,0.95)'] });
+                } catch(e){ console.warn('confetti failed', e); }
+            }
+
+            this.showSuccess('Progresso atualizado');
+            this.showView('minhas-materias');
+        } catch (error) {
+            console.error('atualizarProgresso failed', error);
+            this.showError('Erro ao atualizar progresso');
+        }
+    }
+
+    async atualizarProgresso(subjectId) {
+        try {
+            const subj = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
+            if (subj && Number(subj.progresso || 0) >= 100) {
+                this.showError('Disciplina concluÃ­da â€” progresso bloqueado');
+                return;
+            }
+
+            let hours = 0;
+            let sessionTopics = '';
+            if (window.showHoursPrompt && typeof window.showHoursPrompt === 'function') {
+                const res = await window.showHoursPrompt({
+                    label: 'Quanto tempo vocÃª estudou nesta sessÃ£o?',
+                    defaultValue: '',
+                    includeTopics: true,
+                    defaultTopics: ''
+                });
+                if (res === null) return;
+                if (typeof res === 'object') {
+                    hours = Number(res.hours) || 0;
+                    sessionTopics = String(res.topics || '').trim();
+                } else {
+                    hours = Number(res) || 0;
+                }
+            } else {
+                const val = prompt('Quanto tempo vocÃª estudou nesta sessÃ£o? (HH:MM)');
+                if (val === null) return;
+                if (val.indexOf(':') !== -1) {
+                    const parts = val.split(':').map(s => s.trim());
+                    const h = parseInt(parts[0], 10) || 0;
+                    const m = parseInt(parts[1], 10) || 0;
+                    hours = h + (Math.max(0, Math.min(59, m)) / 60);
+                } else {
+                    hours = parseFloat(val) || 0;
+                }
+
+                const topicsPrompt = prompt('Quais tópicos estudou nesta sessão?');
+                if (topicsPrompt === null) return;
+                sessionTopics = String(topicsPrompt || '').trim();
+            }
+
+            if (hours <= 0 && !sessionTopics) {
+                this.showError('Informe o tempo estudado ou os tópicos da sessão');
+                return;
+            }
+
+            await api.atualizarProgresso({
+                subject_id: subjectId,
+                hours_increment: hours,
+                session_topics: sessionTopics,
+                last_studied: new Date().toISOString()
+            });
+            await this.loadMinhasMaterias();
+
             const updated = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
             const reached = updated && Number(updated.progresso || 0) >= 100;
             const key = `__completed_celebrated_${subjectId}`;
@@ -1385,48 +1516,7 @@ class Dashboard {
                 return;
             }
 
-            grid.innerHTML = list.map(materia => `
-                <div class="subject-card card p-6 border-l-4" style="border-left-color: ${materia.cor}">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center">
-                            <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white mr-3" style="background: ${materia.cor}">
-                                <i class="${materia.icone}"></i>
-                            </div>
-                            <div>
-                                <div class="font-semibold">${materia.nome}</div>
-                                ${renderTotalHoursText(materia.horas_totais) ? `<div class="text-sm text-gray-500">${renderTotalHoursText(materia.horas_totais)}</div>` : ''}
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <div class="flex justify-between text-sm mb-1">
-                            <span>Progresso</span>
-                            <span>${materia.progresso}%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: ${materia.progresso}%"></div>
-                        </div>
-                    </div>
-                    <div class="dashboard-subject-meta text-sm text-gray-600 mb-4">
-                        <div>
-                            <i class="fas fa-clock mr-1"></i>
-                            ${formatHours(materia.horas_estudadas)} estudadas
-                        </div>
-                        <div>
-                            ${materia.data_exame ? `Prova: ${formatDate(materia.data_exame)}` : 'Sem data'}
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="dashboard.atualizarProgresso(${materia.id})" class="btn-primary flex-1 text-sm py-2">
-                            <i class="fas fa-edit mr-1"></i>
-                            Progresso
-                        </button>
-                        <button onclick="dashboard.removerMateria(${materia.id})" class="btn-secondary text-sm py-2 px-3">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </div>
-            `).join('');
+            grid.innerHTML = list.map(materia => renderMateriaCard(materia)).join('');
         } catch (err) { console.warn('_applySearchToGrid failed', err); }
     }
 

@@ -142,6 +142,17 @@ function createApiService() {
                 const data = JSON.parse(options.body || '{}');
                 // expect payload { subject_id, hours_increment, last_studied }
                 const inc = typeof data.hours_increment !== 'undefined' ? Number(data.hours_increment) : (typeof data.progress !== 'undefined' ? Number(data.progress) : 0);
+                if (inc > 0 || String(data.session_topics || '').trim()) {
+                    try {
+                        await db.addSession({
+                            subject_id: data.subject_id,
+                            duration: Math.round((inc || 0) * 60),
+                            topics: String(data.session_topics || '').trim(),
+                            completed: true,
+                            start_time: data.last_studied || new Date().toISOString()
+                        });
+                    } catch (e) { /* ignore */ }
+                }
                 return db.updateProgress(data.subject_id, inc);
             }
 
