@@ -190,16 +190,76 @@
 #react-enhance-root .accent-popover {
   position: fixed;
   z-index: 9999;
-  min-width: 220px;
-  padding: 12px;
-  border-radius: 16px;
+  min-width: 264px;
+  padding: 14px;
+  border-radius: 20px;
   background: linear-gradient(180deg, rgba(11,15,28,0.96), rgba(18,12,35,0.96));
   border: 1px solid rgba(var(--brand-rgb), 0.34);
   box-shadow: 0 24px 60px rgba(2,6,23,0.48), 0 0 0 1px rgba(255,255,255,0.03) inset;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
+  animation: accentPopoverIn 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  transform-origin: top right;
 }
 #react-enhance-root .accent-popover * { color: #efe9ff !important; }
+#react-enhance-root .accent-popover-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+#react-enhance-root .accent-popover-title { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.02em; }
+#react-enhance-root .accent-popover-subtitle { font-size: 0.74rem; color: rgba(239,233,255,0.68) !important; margin-bottom: 12px; }
+#react-enhance-root .accent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+#react-enhance-root .accent-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 8px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+#react-enhance-root .accent-swatch:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(var(--brand-rgb), 0.4);
+  box-shadow: 0 12px 24px rgba(2,6,23,0.3);
+  background: rgba(255,255,255,0.06);
+}
+#react-enhance-root .accent-swatch.is-active {
+  border-color: rgba(var(--brand-rgb), 0.65);
+  box-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.28) inset, 0 14px 28px rgba(var(--brand-rgb), 0.22);
+  background: rgba(var(--brand-rgb), 0.08);
+}
+#react-enhance-root .accent-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.92);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.26);
+}
+#react-enhance-root .accent-label { font-size: 0.75rem; font-weight: 600; }
+#react-enhance-root .accent-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+#react-enhance-root .accent-custom-label { font-size: 0.78rem; color: rgba(239,233,255,0.76) !important; }
+#react-enhance-root .accent-custom input[type="color"] {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--brand-rgb), 0.35) !important;
+  background: transparent !important;
+  padding: 0;
+  cursor: pointer;
+}
+@keyframes accentPopoverIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 
 /* Cronograma specific overrides: ensure calendar uses the dark surface colors
    even when the particle canvas is hidden. Targets internal grid cells and

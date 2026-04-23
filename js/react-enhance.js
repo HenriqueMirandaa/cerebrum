@@ -160,24 +160,34 @@
         className: 'accent-popover',
         style: { top: `${position.top}px`, left: `${position.left}px` }
       },
-        e('div', { style: { marginBottom: '8px', fontSize: '0.82rem', fontWeight: 700, letterSpacing: '0.02em' } }, 'Tema do site'),
-        e('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '10px' } },
+        e('div', { className: 'accent-popover-header' },
+          e('div', { className: 'accent-popover-title' }, 'Tema do site')
+        ),
+        e('div', { className: 'accent-popover-subtitle' }, 'Escolhe uma cor e o menu, detalhes e fundo seguem juntos.'),
+        e('div', { className: 'accent-grid' },
           ...PRESET_COLORS.map((color) => e('button', {
             key: color.value,
             type: 'button',
-            className: 'w-8 h-8 rounded-full',
-            style: {
-              background: color.value,
-              outline: accent.toLowerCase() === color.value.toLowerCase() ? '2px solid rgba(255,255,255,0.9)' : 'none',
-              outlineOffset: '2px'
-            },
+            className: `accent-swatch${accent.toLowerCase() === color.value.toLowerCase() ? ' is-active' : ''}`,
             onClick: () => {
               setAccent(color.value);
               setOpen(false);
             },
             title: color.label,
             'aria-label': color.label
-          }))
+          },
+            e('span', { className: 'accent-dot', style: { background: color.value } }),
+            e('span', { className: 'accent-label' }, color.label)
+          ))
+        ),
+        e('label', { className: 'accent-custom' },
+          e('span', { className: 'accent-custom-label' }, 'Cor personalizada'),
+          e('input', {
+            type: 'color',
+            value: accent,
+            onChange: (event) => setAccent(event.target.value),
+            'aria-label': 'Escolher cor personalizada'
+          })
         )
       ),
       document.body

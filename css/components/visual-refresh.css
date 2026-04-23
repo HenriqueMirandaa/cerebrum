@@ -1,6 +1,6 @@
 :root {
-    --brand-glow-soft: rgba(124, 58, 237, 0.14);
-    --brand-glow-strong: rgba(124, 58, 237, 0.3);
+    --brand-glow-soft: rgba(var(--brand-rgb), 0.14);
+    --brand-glow-strong: rgba(var(--brand-rgb), 0.3);
     --surface-dark: rgba(8, 12, 22, 0.72);
     --surface-dark-elev: rgba(12, 17, 30, 0.78);
 }
@@ -11,7 +11,7 @@
 }
 
 .auth-card {
-    border: 1px solid rgba(124, 58, 237, 0.16);
+    border: 1px solid rgba(var(--brand-rgb), 0.16);
     box-shadow:
         0 28px 70px rgba(2, 6, 23, 0.65),
         0 0 0 1px rgba(255, 255, 255, 0.03) inset,
@@ -39,24 +39,24 @@
 }
 
 .tab-btn.active {
-    box-shadow: 0 8px 20px rgba(124, 58, 237, 0.2);
+    box-shadow: 0 8px 20px rgba(var(--brand-rgb), 0.2);
 }
 
 .input-group {
     background: linear-gradient(180deg, #05050a, #090611);
-    border-color: rgba(124, 58, 237, 0.22);
+    border-color: rgba(var(--brand-rgb), 0.22);
 }
 
 .input-group:focus-within {
     box-shadow:
-        0 14px 34px rgba(124, 58, 237, 0.2),
-        0 0 0 4px rgba(124, 58, 237, 0.12);
+        0 14px 34px rgba(var(--brand-rgb), 0.2),
+        0 0 0 4px rgba(var(--brand-rgb), 0.12);
 }
 
 .auth-btn {
     box-shadow:
-        0 12px 28px rgba(109, 40, 217, 0.28),
-        0 0 26px rgba(124, 58, 237, 0.18);
+        0 12px 28px rgba(var(--brand-rgb), 0.28),
+        0 0 26px rgba(var(--brand-rgb), 0.18);
 }
 
 .auth-btn:hover {
@@ -66,14 +66,14 @@
 /* Dashboard refinements */
 html.dark body {
     background:
-        radial-gradient(900px 420px at 2% -2%, rgba(124, 58, 237, 0.18), transparent 52%),
-        radial-gradient(900px 420px at 102% 18%, rgba(139, 92, 246, 0.14), transparent 50%),
+        radial-gradient(900px 420px at 2% -2%, rgba(var(--brand-rgb), 0.18), transparent 52%),
+        radial-gradient(900px 420px at 102% 18%, rgba(var(--brand-rgb), 0.14), transparent 50%),
         linear-gradient(160deg, #050712 0%, #13091f 50%, #070313 100%);
 }
 
 html.dark .sidebar {
     background: linear-gradient(180deg, rgba(5, 9, 20, 0.9) 0%, rgba(7, 13, 28, 0.86) 100%);
-    border-right: 1px solid rgba(124, 58, 237, 0.16);
+    border-right: 1px solid rgba(var(--brand-rgb), 0.16);
     box-shadow:
         10px 0 40px rgba(2, 6, 23, 0.5),
         inset -1px 0 0 rgba(255, 255, 255, 0.03);
@@ -81,12 +81,12 @@ html.dark .sidebar {
 
 html.dark .glass {
     background: linear-gradient(180deg, var(--surface-dark-elev), var(--surface-dark));
-    border-color: rgba(124, 58, 237, 0.14);
+    border-color: rgba(var(--brand-rgb), 0.14);
     box-shadow: 0 10px 32px rgba(2, 6, 23, 0.5);
 }
 
 html.dark .app-title {
-    text-shadow: 0 0 26px rgba(124, 58, 237, 0.25);
+    text-shadow: 0 0 26px rgba(var(--brand-rgb), 0.25);
 }
 
 html.dark .nav-item {
@@ -94,14 +94,14 @@ html.dark .nav-item {
 }
 
 html.dark .nav-item:hover {
-    background: linear-gradient(90deg, rgba(124, 58, 237, 0.18), rgba(109, 40, 217, 0.14));
-    border-color: rgba(124, 58, 237, 0.22);
+    background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.18), rgba(var(--brand-rgb), 0.14));
+    border-color: rgba(var(--brand-rgb), 0.22);
 }
 
 html.dark .nav-item.active {
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.96), rgba(109, 40, 217, 0.9));
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
     box-shadow:
-        0 10px 22px rgba(124, 58, 237, 0.32),
+        0 10px 22px rgba(var(--brand-rgb), 0.32),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -111,7 +111,7 @@ html.dark .subject-card,
 html.dark .chat-area,
 html.dark .chat-input-container {
     background: linear-gradient(180deg, rgba(12, 17, 30, 0.84), rgba(8, 12, 22, 0.84));
-    border: 1px solid rgba(124, 58, 237, 0.14);
+    border: 1px solid rgba(var(--brand-rgb), 0.14);
     box-shadow:
         0 16px 34px rgba(2, 6, 23, 0.45),
         inset 0 1px 0 rgba(255, 255, 255, 0.03);
@@ -124,7 +124,7 @@ html.dark .chat-area {
 html.dark .ai-bubble {
     background: linear-gradient(180deg, rgba(18, 25, 40, 0.95), rgba(14, 21, 34, 0.95));
     color: #dbe6ff;
-    border: 1px solid rgba(124, 58, 237, 0.16);
+    border: 1px solid rgba(var(--brand-rgb), 0.16);
 }
 
 html.dark .user-bubble {
@@ -249,8 +249,8 @@ html.dark .sidebar::after {
 
 html.dark .sidebar > .p-6,
 html.dark .sidebar > .p-4 {
-    border-color: rgba(168, 85, 247, 0.2) !important;
-    background: linear-gradient(180deg, rgba(124, 58, 237, 0.08), rgba(124, 58, 237, 0.01));
+    border-color: rgba(var(--brand-rgb), 0.2) !important;
+    background: linear-gradient(180deg, rgba(var(--brand-rgb), 0.08), rgba(var(--brand-rgb), 0.01));
 }
 
 html.dark .sidebar nav {
@@ -258,29 +258,29 @@ html.dark .sidebar nav {
     padding: 10px !important;
     border-radius: 18px;
     background: rgba(8, 10, 22, 0.35);
-    border: 1px solid rgba(168, 85, 247, 0.12);
+    border: 1px solid rgba(var(--brand-rgb), 0.12);
 }
 
 html.dark .sidebar .nav-item {
     border-radius: 14px;
     margin: 0.3rem 0.25rem;
-    background: rgba(124, 58, 237, 0.06);
-    border: 1px solid rgba(168, 85, 247, 0.12);
+    background: rgba(var(--brand-rgb), 0.06);
+    border: 1px solid rgba(var(--brand-rgb), 0.12);
     transition: transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease;
 }
 
 html.dark .sidebar .nav-item:hover {
     transform: translateX(8px) scale(1.015);
-    box-shadow: 0 10px 24px rgba(124, 58, 237, 0.25);
-    background: linear-gradient(90deg, rgba(124, 58, 237, 0.2), rgba(109, 40, 217, 0.14));
+    box-shadow: 0 10px 24px rgba(var(--brand-rgb), 0.25);
+    background: linear-gradient(90deg, rgba(var(--brand-rgb), 0.2), rgba(var(--brand-rgb), 0.14));
 }
 
 html.dark .sidebar .nav-item.active {
     transform: translateX(10px) scale(1.02);
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.96), rgba(109, 40, 217, 0.88));
-    border-color: rgba(196, 181, 253, 0.35);
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-color: rgba(var(--brand-rgb), 0.35);
     box-shadow:
-        0 12px 26px rgba(124, 58, 237, 0.34),
+        0 12px 26px rgba(var(--brand-rgb), 0.34),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
@@ -288,8 +288,8 @@ html.dark .sidebar .nav-item.active::after {
     right: -6px;
     width: 8px;
     border-radius: 999px;
-    background: #c4b5fd;
-    box-shadow: -2px 0 12px rgba(196, 181, 253, 0.75);
+    background: var(--primary-light);
+    box-shadow: -2px 0 12px rgba(var(--brand-rgb), 0.75);
 }
 
 /* Preserve content layout with fixed floating sidebar */

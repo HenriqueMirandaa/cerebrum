@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cerebrum — Plataforma de Estudos</title>
+    <title>Cerebrum - Plataforma de Estudos</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/uiverse.css">
     <link rel="stylesheet" href="css/components/visual-refresh.css">
-    <!-- Background canvas styles -->
     <style>
-        /* background canvas full-bleed atrás da área de autenticação */
         #login-bg-canvas {
             position: fixed;
             inset: 0;
@@ -20,120 +18,425 @@
             height: 100%;
             z-index: 0;
             pointer-events: none;
-            background: radial-gradient(ellipse at 10% 10%, rgba(124,58,237,0.06), transparent 6%),
-                        radial-gradient(ellipse at 90% 90%, rgba(168,85,247,0.06), transparent 8%),
-                        #05010a; /* deeper base */
+            background:
+                radial-gradient(circle at 12% 16%, rgba(var(--brand-rgb), 0.18), transparent 24%),
+                radial-gradient(circle at 86% 20%, rgba(var(--brand-rgb), 0.14), transparent 22%),
+                radial-gradient(circle at 50% 100%, rgba(var(--brand-rgb), 0.1), transparent 30%),
+                linear-gradient(145deg, #04030b 0%, #0b0614 42%, #14081e 100%);
         }
 
-        /* remove any decorative/top highlight that may appear above the card */
-        #login-auth-card::before, #login-auth-card::after { display:none !important; }
+        #login-auth-container {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 32px;
+            width: 100% !important;
+            max-width: none !important;
+            margin: 0 !important;
+        }
 
-        /* colocar o conteúdo interativo acima do background e centralizado */
-        #login-auth-container { position: relative; z-index: 2; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:28px; box-sizing:border-box; width:100% !important; max-width:none !important; margin:0 !important; }
-
-        /* painel principal - dark, distribuído e com profundidade */
         #login-auth-card {
             width: 100%;
-            max-width: 980px !important;
-            border-radius: 14px !important;
-            padding: 24px !important;
-            box-sizing: border-box;
-            color: #e6eef8 !important;
-            background: linear-gradient(180deg, rgba(12,8,22,0.92), rgba(6,4,15,0.9)) !important;
-            border: 1px solid rgba(124,58,237,0.04) !important;
-            box-shadow: 0 18px 50px rgba(6,4,12,0.7), 0 6px 28px rgba(124,58,237,0.04) !important;
-            backdrop-filter: blur(6px);
+            max-width: 1220px !important;
+            padding: 18px !important;
+            border-radius: 32px !important;
             display: grid !important;
-            gap: 18px;
-            align-items: start;
-            /* single-column layout so aside appears under forms (not to the right) */
-            grid-template-columns: 1fr !important;
+            grid-template-columns: minmax(0, 1.08fr) minmax(420px, 0.92fr) !important;
+            gap: 0;
+            color: #f2ebff !important;
+            background: linear-gradient(180deg, rgba(19, 11, 33, 0.9), rgba(8, 6, 18, 0.94)) !important;
+            border: 1px solid rgba(var(--brand-rgb), 0.18) !important;
+            box-shadow:
+                0 38px 100px rgba(2, 6, 23, 0.72),
+                0 0 0 1px rgba(255, 255, 255, 0.03) inset,
+                0 0 84px rgba(var(--brand-rgb), 0.14) !important;
+            backdrop-filter: blur(18px) saturate(130%);
+            position: relative;
             overflow: visible !important;
         }
 
-        /* header / branding (use Poppins for title for a refined look) */
-        .auth-header { display:flex; gap:14px; align-items:center; padding:2px 6px; }
-        .branding .logo-icon.large { width:54px; height:54px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; background: linear-gradient(180deg,#2b076e,#471a9f); color:#fff; box-shadow: 0 6px 18px rgba(124,58,237,0.12); }
-        .brand-text .auth-title { margin:0; font-size:1.4rem; color:#fff; font-family: 'Poppins', Inter, system-ui, sans-serif; }
-        .brand-text .auth-subtitle { margin:0; color:#b9c4da; font-size:0.95rem; font-family: Inter, system-ui, sans-serif; }
+        #login-auth-card::before,
+        #login-auth-card::after {
+            display: none !important;
+        }
 
-        /* tabs */
-        .auth-tabs { display:flex; gap:8px; padding:8px; align-items:center; background: rgba(8,4,12,0.75); /* dark pill */
+        .auth-showcase {
+            position: relative;
+            min-height: 100%;
+            padding: 42px 34px 34px;
+            border-radius: 26px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background:
+                radial-gradient(circle at top left, rgba(var(--brand-rgb), 0.32), transparent 34%),
+                radial-gradient(circle at 84% 18%, rgba(var(--brand-rgb), 0.16), transparent 22%),
+                linear-gradient(180deg, rgba(26, 16, 45, 0.9), rgba(12, 9, 24, 0.88));
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        }
+
+        .auth-showcase::before,
+        .auth-showcase::after {
+            content: "";
+            position: absolute;
+            border-radius: 999px;
+            pointer-events: none;
+            filter: blur(10px);
+        }
+
+        .auth-showcase::before {
+            width: 220px;
+            height: 220px;
+            right: -70px;
+            top: -60px;
+            background: rgba(var(--brand-rgb), 0.18);
+        }
+
+        .auth-showcase::after {
+            width: 180px;
+            height: 180px;
+            left: -50px;
+            bottom: -40px;
+            background: rgba(255, 255, 255, 0.06);
+        }
+
+        .showcase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            width: fit-content;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #efe9ff;
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 22px;
+        }
+
+        .showcase-badge i {
+            color: var(--primary-light);
+        }
+
+        .showcase-title {
+            margin: 0 0 14px;
+            max-width: 9ch;
+            font-family: "Poppins", Inter, system-ui, sans-serif;
+            font-size: clamp(2.45rem, 4vw, 4.1rem);
+            line-height: 0.95;
+            letter-spacing: -0.05em;
+            color: #fff;
+        }
+
+        .showcase-title span {
+            color: var(--primary-light);
+            text-shadow: 0 0 32px rgba(var(--brand-rgb), 0.3);
+        }
+
+        .showcase-copy {
+            max-width: 520px;
+            margin: 0;
+            color: #cbbfe8;
+            font-size: 1rem;
+            line-height: 1.72;
+        }
+
+        .showcase-grid {
+            margin-top: 30px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .showcase-stat {
+            padding: 18px 16px;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+        }
+
+        .showcase-stat strong {
+            display: block;
+            margin-bottom: 4px;
+            font-family: "Poppins", Inter, system-ui, sans-serif;
+            font-size: 1.3rem;
+            color: #fff;
+        }
+
+        .showcase-stat span {
+            display: block;
+            color: #cdbff0;
+            font-size: 0.88rem;
+            line-height: 1.4;
+        }
+
+        .showcase-stack {
+            margin-top: 28px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .showcase-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 15px 16px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.03));
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .showcase-card i {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 42px;
+            border-radius: 14px;
+            background: rgba(var(--brand-rgb), 0.18);
+            color: #f3ecff;
+            box-shadow: 0 10px 24px rgba(var(--brand-rgb), 0.18);
+        }
+
+        .showcase-card strong {
+            display: block;
+            margin-bottom: 3px;
+            color: #fff;
+            font-size: 0.98rem;
+        }
+
+        .showcase-card span {
+            color: #c7bbdf;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .showcase-footer {
+            margin-top: 34px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #dcd2f2;
+            font-size: 0.92rem;
+        }
+
+        .showcase-avatars {
+            display: flex;
+            align-items: center;
+        }
+
+        .showcase-avatars span {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: -10px;
+            border-radius: 999px;
+            border: 2px solid rgba(14, 10, 26, 0.95);
+            background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.92), rgba(255, 255, 255, 0.2));
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .showcase-avatars span:first-child {
+            margin-left: 0;
+        }
+
+        .auth-panel {
+            padding: 32px 28px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 0;
+            margin-bottom: 22px;
+        }
+
+        .branding {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .branding .logo-icon.large {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 18px;
+            font-size: 22px;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            box-shadow: 0 18px 36px rgba(var(--brand-rgb), 0.3);
+        }
+
+        .brand-text .auth-title {
+            margin: 0 0 3px;
+            font-family: "Poppins", Inter, system-ui, sans-serif;
+            font-size: 1.95rem;
+            color: #fff;
+            letter-spacing: -0.03em;
+        }
+
+        .brand-text .auth-subtitle {
+            margin: 0;
+            color: #aa9fc5;
+            font-size: 0.98rem;
+            line-height: 1.5;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 8px;
+            align-items: center;
+            margin-bottom: 14px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(var(--brand-rgb), 0.16);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px 14px;
             border-radius: 12px;
-            border: 1px solid rgba(124,58,237,0.06); }
-        .tab-btn { padding:8px 12px; border-radius:8px; color: #bfa1ff; /* muted purple for inactive */
             background: transparent;
             border: 1px solid transparent;
-            font-weight: 600; }
-        .tab-btn.active { background: rgba(124,58,237,0.12); /* subtle purple highlight */
-            color: #c084fc;                     /* prominent purple text */
-            border-color: rgba(124,58,237,0.14); }
+            color: #bfa1ff;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
 
-        /* forms area spacing */
-        .auth-form { margin-top:6px; padding: 8px 2px; }
-        .form-actions { margin-top:12px; display:flex; gap:8px; }
-        .form-actions.wrap { flex-wrap: wrap; }
-        .auth-inline-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 10px; }
-        .auth-text-link { background: transparent; border: none; color: #c084fc; cursor: pointer; padding: 0; font: inherit; text-decoration: underline; text-underline-offset: 3px; }
-        .auth-text-link:hover { color: #ddd6fe; }
-        .auth-form-note { margin-top: 10px; color: #9aa3bf; font-size: 0.92rem; line-height: 1.5; }
-        .auth-form-title { margin: 0 0 6px; color: #fff; font-size: 1.05rem; font-family: 'Poppins', Inter, system-ui, sans-serif; }
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.24), rgba(var(--brand-rgb), 0.12));
+            color: #f5efff;
+            border-color: rgba(var(--brand-rgb), 0.24);
+            box-shadow: 0 12px 26px rgba(var(--brand-rgb), 0.16);
+        }
 
-        /* ensure label groups keep normal flow */
+        .tab-btn:not(.active):hover {
+            color: #e6dcff;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .auth-form {
+            margin-top: 6px;
+            padding: 8px 2px 0;
+        }
+
+        .form-actions {
+            margin-top: 16px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-actions.wrap {
+            flex-wrap: wrap;
+        }
+
+        .auth-inline-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 10px;
+        }
+
+        .auth-text-link {
+            background: transparent;
+            border: none;
+            padding: 0;
+            color: #c084fc;
+            cursor: pointer;
+            font: inherit;
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .auth-text-link:hover {
+            color: #ddd6fe;
+        }
+
+        .auth-form-note {
+            margin-top: 10px;
+            color: #9aa3bf;
+            font-size: 0.92rem;
+            line-height: 1.5;
+        }
+
+        .auth-form-title {
+            margin: 0 0 6px;
+            color: #fff;
+            font-size: 1.05rem;
+            font-family: "Poppins", Inter, system-ui, sans-serif;
+        }
+
         .form-group {
-            position: relative;         /* positioning context */
-            margin-bottom: 14px;
+            position: relative;
+            margin-bottom: 16px;
             padding-left: 0;
         }
 
         .form-label {
             display: block;
-            margin-bottom: 6px;
-            font-size: 0.78rem;
+            margin-bottom: 7px;
+            font-size: 0.76rem;
             font-weight: 600;
-            letter-spacing: .04em;
-            color: #9aa3bf;
+            letter-spacing: 0.12em;
+            color: #9388b3;
             text-transform: uppercase;
-            font-family: Inter, system-ui, sans-serif;
         }
 
-        /* INPUT GROUP: shift the black rectangle right and reduce its width so icons are fully visible */
         .input-group {
-            position: relative;                         /* create positioning context for icon */
+            position: relative;
             display: flex;
             align-items: center;
             gap: 12px;
-            background: #000;
-            border: 1px solid rgba(124,58,237,0.08);
-            padding: 10px 12px;
-            border-radius: 10px;
-            transition: box-shadow .18s ease, border-color .18s ease, transform .06s ease;
-            margin-left: 56px;                           /* reserve space for the icon on the left */
-            width: calc(100% - 56px);                   /* make rectangle narrower so the icon is not cut */
+            min-height: 60px;
+            padding: 6px 14px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(10, 8, 18, 0.92), rgba(7, 6, 14, 0.98));
+            border: 1px solid rgba(var(--brand-rgb), 0.14);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease, background-color 0.18s ease;
             box-sizing: border-box;
         }
 
-        /* ICON: absolute inside input-group but shifted left (outside the black rectangle) */
         .input-group > .input-icon,
         .input-icon {
-            position: absolute;
-            left: -56px;           /* matches the reserved space so icon aligns fully visible */
-            top: 50%;
-            transform: translateY(-50%);
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            border-radius: 9px;
-            background: transparent;
-            color: #c084fc;
-            z-index: 6;
+            flex: 0 0 40px;
+            border-radius: 12px;
+            background: rgba(var(--brand-rgb), 0.12);
+            color: #e9ddff;
+            font-size: 0.98rem;
             pointer-events: none;
-            font-size: 1.05rem;
         }
 
-        /* inputs: purple text on black rectangle (ensure specificity) */
         .form-input,
         input.form-input,
         select.form-input,
@@ -141,241 +444,430 @@
         input[type="email"],
         input[type="password"],
         input[type="text"] {
-            color: #c084fc;
+            width: 100%;
+            min-height: 46px;
+            padding: 12px 2px;
             background: transparent;
             border: none;
             outline: none;
-            padding: 6px 4px;
+            color: #f5efff;
+            font-size: 0.98rem;
             font-family: Inter, system-ui, sans-serif;
         }
 
-        /* placeholder color */
         .form-input::placeholder,
         input::placeholder,
         select::placeholder {
-            color: #b9a3ff;
-            opacity: 0.85;
+            color: #8e82af;
+            opacity: 0.92;
         }
 
         .input-group:focus-within {
-            box-shadow: 0 10px 28px rgba(124,58,237,0.16), 0 0 0 6px rgba(124,58,237,0.08);
-            border-color: rgba(124,58,237,0.6);
+            box-shadow: 0 18px 38px rgba(var(--brand-rgb), 0.18), 0 0 0 5px rgba(var(--brand-rgb), 0.09);
+            border-color: rgba(var(--brand-rgb), 0.54);
             transform: translateY(-1px);
+            background: linear-gradient(180deg, rgba(14, 10, 24, 0.96), rgba(8, 6, 16, 0.99));
         }
 
-        .password-toggle { background: transparent; border: none; padding: 6px; color: #c8b6ff; cursor: pointer; border-radius: 6px; }
-        .password-toggle:hover { background: rgba(255,255,255,0.02); }
+        .password-toggle {
+            width: 38px;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(255, 255, 255, 0.04);
+            color: #c8b6ff;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .password-toggle:hover {
+            background: rgba(var(--brand-rgb), 0.12);
+            border-color: rgba(var(--brand-rgb), 0.2);
+            color: #f3ebff;
+        }
 
         .auth-btn {
+            width: 100%;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background: linear-gradient(90deg, #7c3aed, #6d28d9);
+            padding: 15px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(var(--brand-rgb), 0.24);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: #fff;
-            padding: 10px 14px;
-            border-radius: 10px;
-            border: none;
+            font-family: "Poppins", Inter, system-ui, sans-serif;
             font-weight: 700;
-            box-shadow: 0 8px 24px rgba(99,39,255,0.09);
-            font-family: 'Poppins', Inter, system-ui, sans-serif;
+            letter-spacing: 0.01em;
+            box-shadow: 0 20px 34px rgba(var(--brand-rgb), 0.24);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
         }
 
-        /* aside info moved below forms: refined typography and spacing */
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.04);
+            box-shadow: 0 24px 42px rgba(var(--brand-rgb), 0.3);
+        }
+
         .auth-info {
-            margin-top: 8px;
-            background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.00));
-            border-radius: 10px;
-            padding: 16px 14px;
-            border: 1px solid rgba(255,255,255,0.02);
+            margin-top: 20px;
+            padding: 18px 16px;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+            border: 1px solid rgba(255, 255, 255, 0.06);
             color: #dbe6ff;
             font-size: 0.95rem;
-            display:flex;
-            flex-direction:column;
-            gap:10px;
-            align-self:stretch;
-            font-family: 'Poppins', Inter, system-ui, sans-serif;
         }
-        .auth-info .info-item { display:flex; gap:10px; align-items:center; color:#cbd5e1; }
-        .auth-info .info-item i { width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; background: rgba(124,58,237,0.06); border-radius:8px; color:#e4d9ff; flex: 0 0 34px; }
 
-        /* ensure interactive elements are above canvas */
-        button, input, select { position: relative; z-index: 3; }
+        .auth-info .info-item {
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            padding: 10px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            color: #cbd5e1;
+        }
 
-        /* responsive tweaks */
-        @media (max-width: 640px) {
-            #login-auth-card { padding: 18px !important; border-radius: 12px !important; }
-            .branding .logo-icon.large { width:46px; height:46px; }
-            .auth-info { display:flex; } /* keep visible on mobile (now it's below forms) */
+        .auth-info .info-item i {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 36px;
+            border-radius: 12px;
+            background: rgba(var(--brand-rgb), 0.1);
+            color: #e4d9ff;
+        }
+
+        .auth-info .info-item strong {
+            display: block;
+            color: #fff;
+            font-size: 0.88rem;
+            margin-bottom: 3px;
+        }
+
+        .auth-info .info-item span {
+            display: block;
+            color: #a99ebf;
+            font-size: 0.8rem;
+            line-height: 1.45;
+        }
+
+        .auth-footnote {
+            margin-top: 16px;
+            text-align: center;
+            color: #8e82af;
+            font-size: 0.84rem;
+        }
+
+        button,
+        input,
+        select {
+            position: relative;
+            z-index: 3;
+        }
+
+        @media (max-width: 1080px) {
+            #login-auth-card {
+                grid-template-columns: 1fr !important;
+                max-width: 760px !important;
+            }
+
+            .auth-showcase {
+                min-height: auto;
+            }
+
+            .showcase-title {
+                max-width: 12ch;
+            }
+
+            .auth-panel {
+                padding-top: 24px;
+            }
+        }
+
+        @media (max-width: 760px) {
+            #login-auth-container {
+                padding: 16px;
+                align-items: flex-start;
+            }
+
+            #login-auth-card {
+                padding: 12px !important;
+                border-radius: 26px !important;
+            }
+
+            .auth-showcase,
+            .auth-panel {
+                padding: 24px 18px;
+            }
+
+            .auth-showcase {
+                display: none;
+            }
+
+            .branding .logo-icon.large {
+                width: 52px;
+                height: 52px;
+                border-radius: 16px;
+            }
+
+            .brand-text .auth-title {
+                font-size: 1.65rem;
+            }
+
+            .auth-info {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body class="auth-body">
-    <!-- animated background canvas -->
     <canvas id="login-bg-canvas" aria-hidden="true"></canvas>
 
     <div class="auth-container" id="login-auth-container">
-        <div class="auth-card" id="login-auth-card" role="region" aria-label="Área de autenticação">
-            <!-- Branding: logo + mascot -->
-            <header class="auth-header" aria-hidden="false">
-                <div class="branding">
-                    <div class="logo-wrap">
-                        <div class="logo-icon large" aria-hidden="true"><i class="fas fa-brain"></i></div>
+        <div class="auth-card" id="login-auth-card" role="region" aria-label="Area de autenticacao">
+            <section class="auth-showcase" aria-hidden="true">
+                <div>
+                    <div class="showcase-badge"><i class="fas fa-sparkles"></i><span>Ambiente de foco</span></div>
+                    <h2 class="showcase-title">Estuda com mais <span>clareza</span> todos os dias.</h2>
+                    <p class="showcase-copy">Planeia disciplinas, regista sessoes, acompanha horas estudadas e mantem o teu progresso sempre visivel num espaco mais elegante e calmo.</p>
+
+                    <div class="showcase-grid">
+                        <div class="showcase-stat">
+                            <strong>+120h</strong>
+                            <span>sessoes organizadas com historico detalhado</span>
+                        </div>
+                        <div class="showcase-stat">
+                            <strong>24/7</strong>
+                            <span>assistente disponivel para apoiar o estudo</span>
+                        </div>
+                        <div class="showcase-stat">
+                            <strong>1 lugar</strong>
+                            <span>disciplinas, metas e progresso no mesmo painel</span>
+                        </div>
                     </div>
-                    <div class="brand-text">
-                        <h1 class="auth-title" data-i18n="brand.title">Cerebrum</h1>
-                        <p class="auth-subtitle" data-i18n="brand.subtitle">Sua plataforma inteligente de estudos</p>
-                    </div>
-                </div>
-            </header>
 
-            <!-- Tabs Login/Registo (accessible) -->
-            <nav class="auth-tabs" role="tablist" aria-label="Login e registo">
-                <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true" aria-controls="loginForm" data-i18n="tab.login">Entrar</button>
-                <button class="tab-btn" data-tab="register" role="tab" aria-selected="false" aria-controls="registerForm" data-i18n="tab.register">Registar</button>
-            </nav>
-
-            <!-- Formulário de Login -->
-            <form id="loginForm" class="auth-form active" novalidate aria-live="polite">
-                <div class="form-group">
-                    <label for="loginEmail" class="form-label" data-i18n="label.email">E-mail</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                        <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required aria-required="true" aria-describedby="loginEmailHelp">
-                    </div>
-                    <div id="loginEmailHelp" class="field-help" aria-hidden="true"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="loginPassword" class="form-label" data-i18n="label.password">Senha</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha" data-i18n-attr="placeholder" data-i18n="placeholder.password" required aria-required="true" aria-describedby="loginPasswordHelp">
-                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
-                    </div>
-                    <div id="loginPasswordHelp" class="field-help" aria-hidden="true"></div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="auth-btn" id="loginBtn" aria-live="polite">
-                        <span class="btn-text" data-i18n="btn.login">Entrar</span>
-                        <span class="btn-loading hidden" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                </div>
-
-                <div class="auth-inline-row">
-                    <span class="auth-form-note">Acede com o email da tua conta.</span>
-                    <button type="button" class="auth-text-link" id="showForgotPasswordBtn">Esqueci a senha</button>
-                </div>
-
-                <div id="loginMessage" class="auth-message" role="status" aria-live="polite"></div>
-            </form>
-
-            <!-- Formulário de Registo (preservado para compatibilidade) -->
-            <form id="registerForm" class="auth-form" novalidate aria-hidden="true">
-                <div class="form-group">
-                    <label for="registerName" class="form-label" data-i18n="label.name">Nome Completo</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
-                        <input type="text" id="registerName" class="form-input" placeholder="Seu nome completo" data-i18n-attr="placeholder" data-i18n="placeholder.name" required>
+                    <div class="showcase-stack">
+                        <div class="showcase-card">
+                            <i class="fas fa-layer-group"></i>
+                            <div>
+                                <strong>Planeamento visual</strong>
+                                <span>Organiza materias e cronogramas com uma interface mais limpa e memoravel.</span>
+                            </div>
+                        </div>
+                        <div class="showcase-card">
+                            <i class="fas fa-wave-square"></i>
+                            <div>
+                                <strong>Progresso real</strong>
+                                <span>Guarda sessoes, topicos estudados e acompanha evolucao sem perder contexto.</span>
+                            </div>
+                        </div>
+                        <div class="showcase-card">
+                            <i class="fas fa-stars"></i>
+                            <div>
+                                <strong>Experiencia premium</strong>
+                                <span>Um login com mais presenca, contraste e profundidade para combinar com o resto do site.</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="registerEmail" class="form-label" data-i18n="label.email">E-mail</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                        <input type="email" id="registerEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required>
+                <div class="showcase-footer">
+                    <div class="showcase-avatars">
+                        <span>AI</span>
+                        <span>PT</span>
+                        <span>UX</span>
                     </div>
+                    <div>Feito para estudo consistente, com foco e identidade visual forte.</div>
                 </div>
+            </section>
 
-                <div class="form-group">
-                    <label for="registerPassword" class="form-label" data-i18n="label.password">Senha</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="registerPassword" class="form-input" placeholder="Mínimo 6 caracteres" data-i18n-attr="placeholder" data-i18n="placeholder.password" required>
-                        <button type="button" class="password-toggle" aria-label="Mostrar senha"><i class="fas fa-eye"></i></button>
+            <section class="auth-panel">
+                <header class="auth-header">
+                    <div class="branding">
+                        <div class="logo-wrap">
+                            <div class="logo-icon large" aria-hidden="true"><i class="fas fa-brain"></i></div>
+                        </div>
+                        <div class="brand-text">
+                            <h1 class="auth-title" data-i18n="brand.title">Cerebrum</h1>
+                            <p class="auth-subtitle" data-i18n="brand.subtitle">Entra na tua area de estudos com tudo sincronizado.</p>
+                        </div>
                     </div>
-                </div>
+                </header>
 
-                <div class="form-actions">
-                    <button type="submit" class="auth-btn" id="registerBtn">
-                        <span class="btn-text" data-i18n="btn.create">Criar Conta</span>
-                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                </div>
+                <nav class="auth-tabs" role="tablist" aria-label="Login e registo">
+                    <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true" aria-controls="loginForm" data-i18n="tab.login">Entrar</button>
+                    <button class="tab-btn" data-tab="register" role="tab" aria-selected="false" aria-controls="registerForm" data-i18n="tab.register">Registar</button>
+                </nav>
 
-                <div id="registerMessage" class="auth-message" role="status" aria-live="polite"></div>
-            </form>
-
-            <form id="forgotPasswordForm" class="auth-form" novalidate aria-hidden="true">
-                <div class="auth-form-title">Recuperar acesso</div>
-                <p class="auth-form-note">Indica o teu email e, se existir conta associada, enviamos um link para redefinir a senha.</p>
-
-                <div class="form-group">
-                    <label for="forgotEmail" class="form-label">E-mail</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                        <input type="email" id="forgotEmail" class="form-input" placeholder="seu@email.com" required>
+                <form id="loginForm" class="auth-form active" novalidate aria-live="polite">
+                    <div class="form-group">
+                        <label for="loginEmail" class="form-label" data-i18n="label.email">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required aria-required="true" aria-describedby="loginEmailHelp">
+                        </div>
+                        <div id="loginEmailHelp" class="field-help" aria-hidden="true"></div>
                     </div>
-                </div>
 
-                <div class="form-actions wrap">
-                    <button type="submit" class="auth-btn" id="forgotPasswordBtn">
-                        <span class="btn-text">Enviar link</span>
-                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                    <button type="button" class="auth-text-link" id="backToLoginBtn">Voltar para login</button>
-                </div>
-
-                <div id="forgotPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
-            </form>
-
-            <form id="resetPasswordForm" class="auth-form" novalidate aria-hidden="true">
-                <div class="auth-form-title">Definir nova senha</div>
-                <p class="auth-form-note">Escolhe uma nova senha para a tua conta. O link do email so pode ser usado uma vez.</p>
-                <input type="hidden" id="resetToken">
-
-                <div class="form-group">
-                    <label for="resetPassword" class="form-label">Nova senha</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="resetPassword" class="form-input" placeholder="Minimo 6 caracteres" required>
-                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                    <div class="form-group">
+                        <label for="loginPassword" class="form-label" data-i18n="label.password">Senha</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha" data-i18n-attr="placeholder" data-i18n="placeholder.password" required aria-required="true" aria-describedby="loginPasswordHelp">
+                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                        </div>
+                        <div id="loginPasswordHelp" class="field-help" aria-hidden="true"></div>
                     </div>
-                </div>
 
-                <div class="form-group">
-                    <label for="resetPasswordConfirm" class="form-label">Confirmar senha</label>
-                    <div class="input-group">
-                        <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                        <input type="password" id="resetPasswordConfirm" class="form-input" placeholder="Repete a nova senha" required>
-                        <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                    <div class="form-actions">
+                        <button type="submit" class="auth-btn" id="loginBtn" aria-live="polite">
+                            <span class="btn-text" data-i18n="btn.login">Entrar</span>
+                            <span class="btn-loading hidden" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></span>
+                        </button>
                     </div>
-                </div>
 
-                <div class="form-actions wrap">
-                    <button type="submit" class="auth-btn" id="resetPasswordBtn">
-                        <span class="btn-text">Guardar nova senha</span>
-                        <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
-                    </button>
-                    <button type="button" class="auth-text-link" id="cancelResetBtn">Cancelar</button>
-                </div>
+                    <div class="auth-inline-row">
+                        <span class="auth-form-note">Acede com o email da tua conta para continuar de onde paraste.</span>
+                        <button type="button" class="auth-text-link" id="showForgotPasswordBtn">Esqueci a senha</button>
+                    </div>
 
-                <div id="resetPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
-            </form>
+                    <div id="loginMessage" class="auth-message" role="status" aria-live="polite"></div>
+                </form>
 
-            <!-- INFO: moved below forms so it no longer overlaps labels -->
-            <aside class="auth-info" aria-hidden="true">
-                <div class="info-item"><i class="fas fa-graduation-cap" aria-hidden="true"></i><span>Organize seus estudos</span></div>
-                <div class="info-item"><i class="fas fa-chart-line" aria-hidden="true"></i><span>Acompanhe seu progresso</span></div>
-                <div class="info-item"><i class="fas fa-robot" aria-hidden="true"></i><span>Assistente IA integrado</span></div>
-            </aside>
+                <form id="registerForm" class="auth-form" novalidate aria-hidden="true">
+                    <div class="form-group">
+                        <label for="registerName" class="form-label" data-i18n="label.name">Nome Completo</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
+                            <input type="text" id="registerName" class="form-input" placeholder="Seu nome completo" data-i18n-attr="placeholder" data-i18n="placeholder.name" required>
+                        </div>
+                    </div>
 
+                    <div class="form-group">
+                        <label for="registerEmail" class="form-label" data-i18n="label.email">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="registerEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword" class="form-label" data-i18n="label.password">Senha</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="registerPassword" class="form-input" placeholder="Minimo 6 caracteres" data-i18n-attr="placeholder" data-i18n="placeholder.password" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="auth-btn" id="registerBtn">
+                            <span class="btn-text" data-i18n="btn.create">Criar Conta</span>
+                            <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                        </button>
+                    </div>
+
+                    <div id="registerMessage" class="auth-message" role="status" aria-live="polite"></div>
+                </form>
+
+                <form id="forgotPasswordForm" class="auth-form" novalidate aria-hidden="true">
+                    <div class="auth-form-title">Recuperar acesso</div>
+                    <p class="auth-form-note">Indica o teu email e, se existir conta associada, enviamos um link para redefinir a senha.</p>
+
+                    <div class="form-group">
+                        <label for="forgotEmail" class="form-label">E-mail</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
+                            <input type="email" id="forgotEmail" class="form-input" placeholder="seu@email.com" required>
+                        </div>
+                    </div>
+
+                    <div class="form-actions wrap">
+                        <button type="submit" class="auth-btn" id="forgotPasswordBtn">
+                            <span class="btn-text">Enviar link</span>
+                            <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                        </button>
+                        <button type="button" class="auth-text-link" id="backToLoginBtn">Voltar para login</button>
+                    </div>
+
+                    <div id="forgotPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
+                </form>
+
+                <form id="resetPasswordForm" class="auth-form" novalidate aria-hidden="true">
+                    <div class="auth-form-title">Definir nova senha</div>
+                    <p class="auth-form-note">Escolhe uma nova senha para a tua conta. O link do email so pode ser usado uma vez.</p>
+                    <input type="hidden" id="resetToken">
+
+                    <div class="form-group">
+                        <label for="resetPassword" class="form-label">Nova senha</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="resetPassword" class="form-input" placeholder="Minimo 6 caracteres" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resetPasswordConfirm" class="form-label">Confirmar senha</label>
+                        <div class="input-group">
+                            <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
+                            <input type="password" id="resetPasswordConfirm" class="form-input" placeholder="Repete a nova senha" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions wrap">
+                        <button type="submit" class="auth-btn" id="resetPasswordBtn">
+                            <span class="btn-text">Guardar nova senha</span>
+                            <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
+                        </button>
+                        <button type="button" class="auth-text-link" id="cancelResetBtn">Cancelar</button>
+                    </div>
+
+                    <div id="resetPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
+                </form>
+
+                <aside class="auth-info" aria-hidden="true">
+                    <div class="info-item">
+                        <i class="fas fa-graduation-cap" aria-hidden="true"></i>
+                        <div>
+                            <strong>Organiza estudos</strong>
+                            <span>Reune disciplinas, tempos e historico num unico fluxo.</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-chart-line" aria-hidden="true"></i>
+                        <div>
+                            <strong>Acompanha progresso</strong>
+                            <span>Visualiza o que ja estudaste e o que ainda falta atacar.</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <i class="fas fa-robot" aria-hidden="true"></i>
+                        <div>
+                            <strong>IA integrada</strong>
+                            <span>Usa apoio inteligente sem sair do ambiente principal.</span>
+                        </div>
+                    </div>
+                </aside>
+
+                <div class="auth-footnote">Design renovado para combinar com a paleta e a atmosfera do restante site.</div>
+            </section>
         </div>
     </div>
 
-    <!-- Base configuration -->
     <script>
         function detectBasePath() {
             const p = window.location.pathname || '/';
@@ -387,33 +879,28 @@
             return p;
         }
 
-        // Configure base path automatically so it works in XAMPP subfolders and root domains.
         if (typeof window.BASE_PATH === 'undefined') {
             window.BASE_PATH = detectBasePath();
         }
 
-        // Configure BASE_URL from detected base path.
         window.BASE_URL = `${window.location.protocol}//${window.location.host}${window.BASE_PATH === '/' ? '' : window.BASE_PATH}`;
 
-        // If not provided, in local development point API to local Node backend on :3001.
         if (!window.API_ORIGIN && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
             window.API_ORIGIN = `${window.location.protocol}//${window.location.hostname}:3001`;
         }
 
-        // If the page is opened via file://, show a clear banner explaining how to run via HTTP
         (function checkFileProtocol() {
             if (window.location.protocol === 'file:') {
                 try {
                     const banner = document.createElement('div');
                     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fffbeb;color:#92400e;padding:12px 16px;z-index:9999;border-bottom:1px solid #fef3c7;font-family:Inter,system-ui,sans-serif;';
-                    banner.innerHTML = '<strong>Atenção:</strong> você abriu este arquivo localmente (file://). Para que módulos e requisições funcionem corretamente, sirva o projeto via HTTP (ex: http://localhost/pap2326/). Abra o XAMPP/Apache ou execute um servidor estático (ex: <code>npx http-server -p 8080</code>).';
+                    banner.innerHTML = '<strong>Atencao:</strong> voce abriu este arquivo localmente (file://). Para que modulos e requisicoes funcionem corretamente, sirva o projeto via HTTP (ex: http://localhost/pap2326/). Abra o XAMPP/Apache ou execute um servidor estatico (ex: <code>npx http-server -p 8080</code>).';
                     document.addEventListener('DOMContentLoaded', function () { document.body.prepend(banner); });
-                } catch (e) { /* ignore in very old browsers */ }
+                } catch (e) {}
             }
         })();
     </script>
-    
-    <!-- lightweight particle network script (keeps performance in mind) -->
+
     <script>
     (function(){
       const canvas = document.getElementById('login-bg-canvas');
@@ -468,7 +955,6 @@
         smoothMouse.x += (mouse.x - smoothMouse.x) * 0.16;
         smoothMouse.y += (mouse.y - smoothMouse.y) * 0.16;
         ctx.clearRect(0,0,width,height);
-        // draw links
         for(let i=0;i<particles.length;i++){
           const a = particles[i];
           for(let j=i+1;j<particles.length;j++){
@@ -488,7 +974,6 @@
           }
         }
         ctx.globalAlpha = 1;
-        // draw particles
         for(const p of particles){
           ctx.beginPath();
           const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * (p.glow || 4));
@@ -499,7 +984,6 @@
           ctx.arc(p.x, p.y, p.r * (p.follow ? 3.2 : 2.5), 0, Math.PI*2);
           ctx.fill();
         }
-        // move
         for(const p of particles){
           const dxm = smoothMouse.x - p.x;
           const dym = smoothMouse.y - p.y;
@@ -521,7 +1005,6 @@
 
           p.x += p.vx;
           p.y += p.vy;
-          // gentle wrap-around
           if (p.x < -20) p.x = width + 20;
           if (p.x > width + 20) p.x = -20;
           if (p.y < -20) p.y = height + 20;
@@ -547,12 +1030,10 @@
       });
 
       window.addEventListener('resize', () => {
-        // throttle resize events
         clearTimeout(window.__loginBgResize);
         window.__loginBgResize = setTimeout(()=>{ resize(); initParticles(); }, 120);
       });
 
-      // start when DOM ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', start);
       } else {
@@ -561,10 +1042,6 @@
     })();
     </script>
 
-    <!-- Application scripts -->
     <script type="module" src="js/auth.js?v=4"></script>
 </body>
 </html>
-
-
-

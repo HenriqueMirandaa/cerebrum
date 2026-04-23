@@ -33,6 +33,23 @@
     }
 
     function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+    function normalizedToRgb(arr){
+        return {
+            r: Math.round(clamp((arr && arr[0] != null ? arr[0] : 0.54) * 255, 0, 255)),
+            g: Math.round(clamp((arr && arr[1] != null ? arr[1] : 0.36) * 255, 0, 255)),
+            b: Math.round(clamp((arr && arr[2] != null ? arr[2] : 0.95) * 255, 0, 255))
+        };
+    }
+    function rgbaFrom(rgb, alpha){
+        return `rgba(${rgb.r},${rgb.g},${rgb.b},${alpha})`;
+    }
+    function mixRgb(a, b, t){
+        return {
+            r: Math.round(a.r + (b.r - a.r) * t),
+            g: Math.round(a.g + (b.g - a.g) * t),
+            b: Math.round(a.b + (b.b - a.b) * t)
+        };
+    }
 
     // Small helper for creating shader material
     const vertexShader = `
@@ -109,6 +126,10 @@
             // increase default cursor force so particles noticeably chase the pointer
             cursorForce: 8.5,
             colors: { a: [0.54,0.36,0.95], b: [0.82,0.58,1.0] }
+        };
+        this._overlayPalette = {
+            primary: normalizedToRgb(this.params.colors.a),
+            secondary: normalizedToRgb(this.params.colors.b)
         };
 
         // Three.js setup
@@ -242,8 +263,11 @@
 
     ThreeParticles.prototype._drawConnections = function(){
         const ctx = this._overlayCtx; const w = this._overlay.width; const h = this._overlay.height;
+        const primary = this._overlayPalette.primary;
+        const secondary = this._overlayPalette.secondary;
+        const mid = mixRgb(primary, secondary, 0.45);
         ctx.clearRect(0,0,w,h);
-        ctx.lineWidth = 1.05; ctx.strokeStyle = 'rgba(168,126,255,0.2)';
+        ctx.lineWidth = 1.05; ctx.strokeStyle = rgbaFrom(mid, 0.2);
         const sample = this.config.connectionSample;
         const positions = this._samplePositions;
         for (let i=0;i<sample;i++){
@@ -271,7 +295,7 @@
                 const d2 = dx*dx + dy*dy;
                 if (d2 < cursorRadius2) {
                     const alpha = 0.34 * (1 - d2 / cursorRadius2);
-                    ctx.strokeStyle = `rgba(190,150,255,${alpha.toFixed(3)})`;
+                    ctx.strokeStyle = rgbaFrom(secondary, alpha.toFixed(3));
                     ctx.beginPath();
                     ctx.moveTo(cursorX, cursorY);
                     ctx.lineTo(x, y);
@@ -280,8 +304,8 @@
             }
 
             const halo = ctx.createRadialGradient(cursorX, cursorY, 6, cursorX, cursorY, 120);
-            halo.addColorStop(0, 'rgba(188,142,255,0.20)');
-            halo.addColorStop(0.6, 'rgba(162,104,255,0.06)');
+            halo.addColorStop(0, rgbaFrom(secondary, 0.20));
+            halo.addColorStop(0.6, rgbaFrom(primary, 0.06));
             halo.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = halo;
             ctx.beginPath();
@@ -349,7 +373,15 @@
 
     ThreeParticles.prototype.setSpeed = function(mult){ this.params.speedMult = clamp(mult, 0.1, 6.0); };
     ThreeParticles.prototype.setMode = function(mode){ if (mode==='energized'){ this.setSpeed(this.params.speedMult * this.config.energizedMultiplier); this.material.uniforms.uSize.value = this.config.baseSize * 1.6; } else { this.setSpeed(Math.max(0.2, this.params.speedMult * this.config.calmMultiplier)); this.material.uniforms.uSize.value = this.config.baseSize; } this.params.mode = mode; };
-    ThreeParticles.prototype.setColorScheme = function(a,b){ this.material.uniforms.uColorA.value.setArray(a); this.material.uniforms.uColorB.value.setArray(b); };
+    ThreeParticles.prototype.setColorScheme = function(a,b){
+        this.params.colors = { a, b };
+        this._overlayPalette = {
+            primary: normalizedToRgb(a),
+            secondary: normalizedToRgb(b)
+        };
+        this.material.uniforms.uColorA.value.setArray(a);
+        this.material.uniforms.uColorB.value.setArray(b);
+    };
 
     // instantiate and wire to global
     function initGlobal(){
@@ -398,6 +430,8 @@
                 this.speedMult = 1.0;
                 this.mode = 'calm';
                 this.cursor = { x: -9999, y: -9999 };
+                this.colorA = { r: 138, g: 92, b: 242 };
+                this.colorB = { r: 209, g: 148, b: 255 };
                 this._init();
             }
             Simple2DFallback.prototype._init = function(){
@@ -422,8 +456,10 @@
                 try { ctx.clearRect(0,0,w,h); } catch (e){ this.stop(); return; }
                 // subtle gradient background
                 const g = ctx.createLinearGradient(0,0,w,h);
-                if (this.mode === 'energized') { g.addColorStop(0, '#12041f'); g.addColorStop(1, '#1f0936'); }
-                else { g.addColorStop(0, '#0a0418'); g.addColorStop(1, '#16072a'); }
+                const bgStart = mixRgb(this.colorA, { r: 5, g: 4, b: 18 }, this.mode === 'energized' ? 0.32 : 0.18);
+                const bgEnd = mixRgb(this.colorB, { r: 8, g: 5, b: 20 }, this.mode === 'energized' ? 0.26 : 0.16);
+                g.addColorStop(0, rgbaFrom(bgStart, 1));
+                g.addColorStop(1, rgbaFrom(bgEnd, 1));
                 ctx.fillStyle = g; ctx.fillRect(0,0,w,h);
 
                 // center offset
@@ -452,16 +488,17 @@
                     const fx = x + p.vx * 60; const fy = y + p.vy * 60;
                     // color by speed
                     const speedVis = Math.min(1, (Math.abs(p.vx)+Math.abs(p.vy))*3);
-                    const rcol = Math.floor(138 + speedVis*72);
-                    const gcol = Math.floor(92 + speedVis*48);
-                    const bcol = Math.floor(230 + speedVis*24);
+                    const tint = mixRgb(this.colorA, this.colorB, speedVis);
+                    const rcol = tint.r;
+                    const gcol = tint.g;
+                    const bcol = tint.b;
                     ctx.fillStyle = `rgba(${rcol},${gcol},${bcol},0.88)`;
                     // draw followers larger for stronger visual emphasis
                     const drawSize = p.size * (p.isFollower ? 2.0 : 1.0);
                     ctx.beginPath(); ctx.arc(fx, fy, drawSize, 0, Math.PI*2); ctx.fill();
                 }
                 // lightweight connections
-                ctx.strokeStyle = 'rgba(168,126,255,0.14)'; ctx.lineWidth = 0.95;
+                ctx.strokeStyle = rgbaFrom(mixRgb(this.colorA, this.colorB, 0.4), 0.14); ctx.lineWidth = 0.95;
                 for (let i=0;i<120;i+=6){
                     const p = this.particles[i];
                     const x1 = cx + Math.cos(p.ang + p.phase) * p.r * 0.6;
@@ -481,7 +518,10 @@
             Simple2DFallback.prototype.setSpeed = function(m){ this.speedMult = Math.max(0.1, Math.min(6, m)); };
             Simple2DFallback.prototype.setMode = function(mode){ this.mode = mode; if (mode==='energized') this.setSpeed(2.2); else this.setSpeed(1.0); };
             Simple2DFallback.prototype.setDensity = function(n){ /* not implemented runtime */ };
-            Simple2DFallback.prototype.setColorScheme = function(a,b){};
+            Simple2DFallback.prototype.setColorScheme = function(a,b){
+                this.colorA = normalizedToRgb(a);
+                this.colorB = normalizedToRgb(b);
+            };
 
             const fb = new Simple2DFallback(canvas);
             window.ThreeParticles = { start: ()=>fb.start(), stop: ()=>fb.stop(), setDensity: (n)=>fb.setDensity(n), setSpeed: (m)=>fb.setSpeed(m), setMode: (m)=>fb.setMode(m), setColorScheme: (a,b)=>fb.setColorScheme(a,b), _instance: fb };
