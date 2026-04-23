@@ -1,4 +1,4 @@
-import './i18n.js';
+import '../public/js/i18n.js';
 import api from './api.js';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -259,7 +259,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.warn('[Auth] welcome email via EmailJS failed', emailError);
                 welcomeSuffix = ' Conta criada, mas o email de boas-vindas nao foi enviado.';
             }
-            showMessage(registerMessage, `${res.message || 'Cadastro realizado com sucesso!'}${welcomeSuffix}`, 'success');
+            showMessage(registerMessage, `${res.message || 'Registo realizado com sucesso!'}${welcomeSuffix}`, 'success');
             setTimeout(() => {
                 switchForm('loginForm', 'login');
                 registerForm.reset();
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1400);
         } catch (error) {
             console.error('[Auth] handleRegister error', error);
-            showMessage(registerMessage, error.message || 'Erro ao cadastrar', 'error');
+            showMessage(registerMessage, error.message || 'Erro ao registar', 'error');
         } finally {
             hideLoading(registerBtn);
         }

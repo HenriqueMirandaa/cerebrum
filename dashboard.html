@@ -161,10 +161,6 @@
                     <div class="status-dot"></div>
                     <span id="userInfo">Utilizador: Carregando...</span>
                 </div>
-                <button id="logoutBtn" class="btn-secondary w-full text-sm py-2">
-                    <i class="fas fa-sign-out-alt mr-2"></i>
-                    Sair
-                </button>
             </div>
         </div>
     </aside>
@@ -178,23 +174,29 @@
                     <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Abrir menu">
                         <i class="fas fa-bars"></i>
                     </button>
-                <div>
-                    <h1 class="app-title">Cerebrum</h1>
-                    <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
+                    <div>
+                        <h1 class="app-title">Cerebrum</h1>
+                        <div class="app-subtitle" id="headerSubtitle">Sua plataforma de estudos</div>
+                    </div>
                 </div>
-                </div>
-                <div class="dashboard-header-right">
-                    <div class="dashboard-search-wrap" style="min-width:260px;">
-                        <div style="position:relative">
-                            <input id="globalSearch" class="form-input dashboard-search-input" placeholder="Buscar disciplinas..." style="width:260px;padding-right:38px;" />
-                            <i class="fas fa-search dashboard-search-icon" style="position:absolute;right:10px;top:10px;color:var(--gray-400)"></i>
+                <div class="dashboard-header-center">
+                    <div class="dashboard-search-wrap">
+                        <div class="dashboard-search-field">
+                            <input id="globalSearch" class="form-input dashboard-search-input" placeholder="Buscar disciplinas..." />
+                            <i class="fas fa-search dashboard-search-icon"></i>
                         </div>
                     </div>
-                    <!-- Tema fixo: modo escuro (botão de alternar tema removido) -->
+                </div>
+                <div class="dashboard-header-right">
                     <div class="user-info">
                         <i class="fas fa-user-circle text-gray-400"></i>
                         <span class="user-name" id="headerUserName">Carregando...</span>
                     </div>
+                    <div id="headerQuickActions" class="header-quick-actions" aria-label="Acoes da conta"></div>
+                    <button id="logoutBtn" class="btn-secondary header-logout-btn text-sm py-2" type="button">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sair</span>
+                    </button>
                 </div>
             </div>
         </header>

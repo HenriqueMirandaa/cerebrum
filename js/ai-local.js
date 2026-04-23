@@ -914,7 +914,7 @@ function findMentionedSubject(rawText, subjects) {
 }
 
 function getGreetingReply() {
-    return 'Olá! Posso ajudar-te com plano de estudo, progresso, quiz ou cadastro de matéria. Diz-me o que precisas.';
+    return 'Olá! Posso ajudar-te com plano de estudo, progresso, quiz ou registo de matéria. Diz-me o que precisas.';
 }
 
 function getCapabilityReply() {
@@ -1093,7 +1093,7 @@ const aiLocal = {
             return {
                 message: 'Ainda não há dados suficientes para analisar o progresso.',
                 plan: 'Adiciona matérias e atualiza o progresso para eu conseguir apontar prioridades reais.',
-                next: 'Próximo passo: cadastrar disciplinas, data de prova e carga horária.'
+                next: 'Próximo passo: registar disciplinas, data de prova e carga horária.'
             };
         }
 
@@ -1189,7 +1189,7 @@ const aiLocal = {
 
     async getSubjectStatus(subjectNameText) {
         const subjects = await safeGetSubjects();
-        if (!subjects.length) return 'Você ainda não tem matérias cadastradas.';
+        if (!subjects.length) return 'Você ainda não tem matérias registadas.';
 
         const matched = findMentionedSubject(subjectNameText, subjects);
         if (!matched) return 'Não consegui identificar a matéria. Escreva o nome exato para eu analisar.';
@@ -1349,7 +1349,7 @@ const aiLocal = {
             return `Entendi que queres falar sobre ${subjectMention.name}. Progresso atual: ${progress}%. Se quiseres, posso gerar um quiz ou sugerir um plano curto para essa matéria.`;
         }
 
-        return 'Entendi. Posso ajudar com recomendações, análise de progresso, quiz, cronograma ou cadastro de matéria. Se quiseres, escreve "ajuda" e eu mostro exemplos mais úteis.';
+        return 'Entendi. Posso ajudar com recomendações, análise de progresso, quiz, cronograma ou registo de matéria. Se quiseres, escreve "ajuda" e eu mostro exemplos mais úteis.';
     }
 };
 

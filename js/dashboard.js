@@ -535,7 +535,7 @@ class Dashboard {
                 ${this.minhasDisciplinas.length === 0 ? `
                     <div class="col-span-3 text-center py-12 text-gray-500">
                         <i class="fas fa-book-open text-4xl mb-3 opacity-30"></i>
-                        <p class="text-lg mb-2">Nenhuma disciplina cadastrada</p>
+                        <p class="text-lg mb-2">Nenhuma disciplina registada</p>
                         <p class="text-sm mb-4">Comece adicionando suas primeiras disciplinas para organizar seus estudos.</p>
                         <a href="#" onclick="dashboard.showView('adicionar-materias')" class="btn-primary">
                             <i class="fas fa-plus mr-2"></i>

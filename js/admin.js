@@ -145,7 +145,7 @@ async function loadSubjects() {
 
 function renderSubjects(subjects) {
     const container = document.getElementById('subjects-container');
-    if (!subjects || subjects.length === 0) { container.innerHTML = `<div class="text-center py-8 text-gray-500">Nenhuma disciplina cadastrada</div>`; return; }
+    if (!subjects || subjects.length === 0) { container.innerHTML = `<div class="text-center py-8 text-gray-500">Nenhuma disciplina registada</div>`; return; }
     container.innerHTML = subjects.map(s => `<div class="bg-white border p-4 rounded">...` ).join('');
 }
 

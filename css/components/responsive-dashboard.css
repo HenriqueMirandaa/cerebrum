@@ -12,6 +12,7 @@
 }
 
 .dashboard-header-left,
+.dashboard-header-center,
 .dashboard-header-right {
     display: flex;
     align-items: center;
@@ -19,10 +20,24 @@
     min-width: 0;
 }
 
+.dashboard-header-left,
+.dashboard-header-right {
+    flex: 0 1 auto;
+}
+
+.dashboard-header-center {
+    flex: 1 1 320px;
+    justify-content: center;
+}
+
 .dashboard-search-wrap {
     position: relative;
-    width: min(320px, 36vw);
+    width: min(420px, 100%);
     min-width: 220px;
+}
+
+.dashboard-search-field {
+    position: relative;
 }
 
 .dashboard-search-input {
@@ -37,6 +52,23 @@
     transform: translateY(-50%);
     color: var(--gray-400);
     pointer-events: none;
+}
+
+.header-quick-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-quick-actions > * {
+    flex: 0 0 auto;
+}
+
+.header-logout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
 }
 
 .mobile-menu-btn,
@@ -320,9 +352,14 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     }
 
     .dashboard-header-left,
+    .dashboard-header-center,
     .dashboard-header-right {
         width: 100%;
         justify-content: space-between;
+    }
+
+    .dashboard-header-center {
+        justify-content: stretch;
     }
 
     .dashboard-header-right {
@@ -331,8 +368,8 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     }
 
     .dashboard-search-wrap {
-        flex: 1 1 240px;
-        width: auto;
+        flex: 1 1 100%;
+        width: 100%;
         min-width: 0;
     }
 
@@ -341,6 +378,11 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     }
 
     .user-info {
+        margin-left: 0;
+    }
+
+    .header-quick-actions,
+    .header-logout-btn {
         margin-left: auto;
     }
 
@@ -392,7 +434,8 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     }
 
     .dashboard-header-right .user-info {
-        width: 100%;
+        min-width: 0;
+        flex: 1 1 auto;
         justify-content: flex-start;
     }
 
@@ -401,6 +444,10 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .header-logout-btn span {
+        display: none;
     }
 
     #view .text-3xl {
