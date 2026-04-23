@@ -84,7 +84,7 @@ function renderDescriptionText(description) {
 
 function formatSessionDuration(minutes) {
     const total = Number(minutes) || 0;
-    if (total <= 0) return 'Tempo não informado';
+    if (total <= 0) return 'Tempo n\u00e3o informado';
     const hours = Math.floor(total / 60);
     const mins = total % 60;
     if (hours > 0 && mins > 0) return `${hours}h ${mins}min`;
@@ -93,9 +93,9 @@ function formatSessionDuration(minutes) {
 }
 
 function formatSessionDateTime(value) {
-    if (!value) return 'Sessão anterior';
+    if (!value) return 'Sess\u00e3o anterior';
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Sessão anterior';
+    if (Number.isNaN(date.getTime())) return 'Sess\u00e3o anterior';
     return date.toLocaleString('pt-PT', {
         day: '2-digit',
         month: '2-digit',
@@ -112,7 +112,7 @@ function renderSessionHistory(materia) {
     return `
         <details class="subject-sessions mb-4">
             <summary>
-                <span><i class="fas fa-history mr-1"></i>Sessões anteriores</span>
+                <span><i class="fas fa-history mr-1"></i>Sess\u00f5es anteriores</span>
                 <span class="subject-sessions-count">${sessions.length}</span>
             </summary>
             <div class="subject-sessions-list">
@@ -122,7 +122,7 @@ function renderSessionHistory(materia) {
                             <span>${formatSessionDateTime(sessao.data)}</span>
                             <span>${formatSessionDuration(sessao.duracaoMinutos)}</span>
                         </div>
-                        <p>${escapeHtml(sessao.texto || 'Sem tópicos registados.')}</p>
+                        <p>${escapeHtml(sessao.texto || 'Sem t\u00f3picos registados.')}</p>
                     </article>
                 `).join('')}
             </div>
@@ -193,8 +193,8 @@ function renderQuizLibrary(quizzes) {
         return `
             <div class="card p-6">
                 <h3 class="text-xl font-semibold mb-3">Quizzes Gerados pela IA</h3>
-                <p class="text-gray-500">Ainda não existem quizzes nesta biblioteca.</p>
-                <p class="text-sm text-gray-400 mt-2">Peça no assistente algo como: "Gere um quiz de 5 perguntas de História sobre a Revolução Industrial".</p>
+                <p class="text-gray-500">Ainda nÃƒÂ£o existem quizzes nesta biblioteca.</p>
+                <p class="text-sm text-gray-400 mt-2">PeÃƒÂ§a no assistente algo como: "Gere um quiz de 5 perguntas de HistÃƒÂ³ria sobre a RevoluÃƒÂ§ÃƒÂ£o Industrial".</p>
             </div>
         `;
     }
@@ -276,7 +276,7 @@ class Dashboard {
             this.user = result.user || {};
             this.updateUserInfo();
         } catch (error) {
-            // se não autenticado, redireciona para login
+            // se nÃƒÂ£o autenticado, redireciona para login
             console.warn('[Dashboard] checkAuth failed:', error);
             // Already attempted token-based fetch first; if we reach here, both token and session methods failed.
             // Instead of redirecting automatically, show a persistent banner and allow the user to logout manually.
@@ -305,8 +305,8 @@ class Dashboard {
         banner.style.justifyContent = 'space-between';
         banner.innerHTML = `
             <div style="display:flex;gap:12px;align-items:center;">
-                <strong>Você não está autenticado.</strong>
-                <span>Se deseja continuar, faça login novamente. Para voltar ao login, clique em Sair.</span>
+                <strong>VocÃƒÂª nÃƒÂ£o estÃƒÂ¡ autenticado.</strong>
+                <span>Se deseja continuar, faÃƒÂ§a login novamente. Para voltar ao login, clique em Sair.</span>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
                 <button id="unauth-retry" class="btn-secondary" style="padding:6px 10px;border-radius:6px;border:1px solid #d0c08a;background:#fff;">Tentar novamente</button>
@@ -346,7 +346,7 @@ class Dashboard {
     setupEventListeners() {
         this.setupMobileSidebar();
 
-        // Navegação
+        // NavegaÃƒÂ§ÃƒÂ£o
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -458,7 +458,7 @@ class Dashboard {
         const username = userObj.username || userObj.email || '';
 
         const elWelcome = document.getElementById('userWelcome');
-        if (elWelcome) elWelcome.textContent = `Olá, ${displayName}`;
+        if (elWelcome) elWelcome.textContent = `OlÃƒÂ¡, ${displayName}`;
 
         const elUserInfo = document.getElementById('userInfo');
         if (elUserInfo) elUserInfo.textContent = `Utilizador: ${username}`;
@@ -519,7 +519,7 @@ class Dashboard {
             }
         } catch (error) {
             console.error('Erro ao carregar view:', error);
-            this.showError('Erro ao carregar a página');
+            this.showError('Erro ao carregar a pÃƒÂ¡gina');
         } finally {
             if (viewRegion) {
                 setRegionLoading(viewRegion, false);
@@ -538,7 +538,7 @@ class Dashboard {
                 <div class="hero-main">
                     <div class="card-badge" style="background:linear-gradient(135deg,var(--primary),var(--secondary));">${(displayName||'U').slice(0,1)}</div>
                     <div>
-                        <div class="title section-title">Olá, ${displayName}</div>
+                        <div class="title section-title">OlÃƒÂ¡, ${displayName}</div>
                         <div class="subtitle section-subtitle">Continue sua jornada de aprendizado com o Cerebrum</div>
                     </div>
                 </div>
@@ -564,7 +564,7 @@ class Dashboard {
                     <div class="progress-bar mb-2">
                         <div class="progress-fill" style="width: ${stats.progressoGeral}%"></div>
                     </div>
-                    <div class="text-sm text-gray-500 section-subtitle">média de conclusão</div>
+                    <div class="text-sm text-gray-500 section-subtitle">mÃƒÂ©dia de conclusÃƒÂ£o</div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between mb-4">
@@ -641,7 +641,7 @@ class Dashboard {
                 ${this.materiasDisponiveis.length === 0 ? `
                     <div class="col-span-3 text-center py-12 text-gray-500">
                         <i class="fas fa-check-circle text-4xl mb-3 opacity-30"></i>
-                        <p class="text-lg">Você já adicionou todas as disciplinas disponíveis!</p>
+                        <p class="text-lg">VocÃƒÂª jÃƒÂ¡ adicionou todas as disciplinas disponÃƒÂ­veis!</p>
                         <p class="text-sm mt-2">Continue estudando para melhorar seu progresso.</p>
                     </div>
                 ` : ''}
@@ -673,7 +673,7 @@ class Dashboard {
 
         document.getElementById('view').innerHTML = `
             <div class="mb-8">
-                <h2 class="text-3xl font-bold mb-2 section-title">Estatísticas</h2>
+                <h2 class="text-3xl font-bold mb-2 section-title">EstatÃƒÂ­sticas</h2>
                 <p class="text-gray-600">Acompanhe seu desempenho geral.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -691,7 +691,7 @@ class Dashboard {
                         <i class="fas fa-chart-line text-green-500"></i>
                     </div>
                     <div class="text-3xl font-bold mb-2">${stats.progressoGeral}%</div>
-                    <div class="text-sm text-gray-500">médio</div>
+                    <div class="text-sm text-gray-500">mÃƒÂ©dio</div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between mb-4">
@@ -1187,7 +1187,7 @@ class Dashboard {
         }
     }
 
-    // Métodos auxiliares
+    // MÃƒÂ©todos auxiliares
     async loadMateriasData() {
         try {
             const resp1 = await api.getMinhasMaterias();
@@ -1217,7 +1217,7 @@ class Dashboard {
                 icone: s.icon || 'fas fa-book'
             }));
         } catch (error) {
-            console.error('Erro ao carregar matérias', error);
+            console.error('Erro ao carregar matÃƒÂ©rias', error);
         }
     }
 
@@ -1238,13 +1238,13 @@ class Dashboard {
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
         } catch (error) {
-            console.error('Erro ao carregar minhas matérias', error);
+            console.error('Erro ao carregar minhas matÃƒÂ©rias', error);
         }
     }
 
     async loadMateriasDisponiveis() {
         try {
-            // Use a fixed list of core subjects for the "Adicionar Matérias" view.
+            // Use a fixed list of core subjects for the "Adicionar MatÃƒÂ©rias" view.
             // We'll try to fetch available subjects from the backend and, when a
             // fixed subject name already exists server-side, replace the fixed
             // string id with the numeric id from the backend so we use the
@@ -1259,13 +1259,13 @@ class Dashboard {
             }
 
             const fixed = [
-                { id: 'fixed-portugues', nome: 'Português', descricao: '', horas_totais: null, cor: '#f97316', icone: 'fas fa-book-open' },
-                { id: 'fixed-matematica', nome: 'Matemática', descricao: '', horas_totais: null, cor: '#6366f1', icone: 'fas fa-square-root-alt' },
-                { id: 'fixed-ingles', nome: 'Inglês', descricao: '', horas_totais: null, cor: '#06b6d4', icone: 'fas fa-language' },
-                { id: 'fixed-historia', nome: 'História', descricao: '', horas_totais: null, cor: '#ef4444', icone: 'fas fa-landmark' },
+                { id: 'fixed-portugues', nome: 'PortuguÃƒÂªs', descricao: '', horas_totais: null, cor: '#f97316', icone: 'fas fa-book-open' },
+                { id: 'fixed-matematica', nome: 'MatemÃƒÂ¡tica', descricao: '', horas_totais: null, cor: '#6366f1', icone: 'fas fa-square-root-alt' },
+                { id: 'fixed-ingles', nome: 'InglÃƒÂªs', descricao: '', horas_totais: null, cor: '#06b6d4', icone: 'fas fa-language' },
+                { id: 'fixed-historia', nome: 'HistÃƒÂ³ria', descricao: '', horas_totais: null, cor: '#ef4444', icone: 'fas fa-landmark' },
                 { id: 'fixed-geografia', nome: 'Geografia', descricao: '', horas_totais: null, cor: '#10b981', icone: 'fas fa-globe-americas' },
-                { id: 'fixed-ciencias', nome: 'Ciências Naturais', descricao: '', horas_totais: null, cor: '#8b5cf6', icone: 'fas fa-flask' },
-                { id: 'fixed-fisica-quimica', nome: 'Física e Química', descricao: '', horas_totais: null, cor: '#ef9a9a', icone: 'fas fa-atom' },
+                { id: 'fixed-ciencias', nome: 'CiÃƒÂªncias Naturais', descricao: '', horas_totais: null, cor: '#8b5cf6', icone: 'fas fa-flask' },
+                { id: 'fixed-fisica-quimica', nome: 'FÃƒÂ­sica e QuÃƒÂ­mica', descricao: '', horas_totais: null, cor: '#ef9a9a', icone: 'fas fa-atom' },
                 { id: 'fixed-biologia', nome: 'Biologia', descricao: '', horas_totais: null, cor: '#22c55e', icone: 'fas fa-dna' }
             ];
 
@@ -1287,7 +1287,7 @@ class Dashboard {
 
             this.materiasDisponiveis = mapped;
         } catch (error) {
-            console.error('Erro ao carregar matérias disponíveis', error);
+            console.error('Erro ao carregar matÃƒÂ©rias disponÃƒÂ­veis', error);
         }
     }
 
@@ -1297,62 +1297,12 @@ class Dashboard {
         const progressoGeral = this.minhasDisciplinas.length === 0 ? 0 : Math.round(this.minhasDisciplinas.reduce((s, m) => s + (m.progresso || 0), 0) / this.minhasDisciplinas.length);
         return { materiasAtivas, horasEstudadas, progressoGeral };
     }
-
-    async atualizarProgresso(subjectId) {
-        try {
-            // block if already completed
-            const subj = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
-            if (subj && Number(subj.progresso || 0) >= 100) {
-                this.showError('Disciplina concluída — progresso bloqueado');
-                return;
-            }
-
-            let hours = 0;
-            let sessionTopics = '';
-            if (window.showHoursPrompt && typeof window.showHoursPrompt === 'function') {
-                const res = await window.showHoursPrompt({ label: 'Quanto tempo você estudou nesta sessão?', defaultValue: '' });
-                if (res === null) return; // cancelled
-                hours = Number(res) || 0;
-            } else {
-                const val = prompt('Quanto tempo você estudou nesta sessão? (HH:MM)');
-                if (val === null) return;
-                if (val.indexOf(':') !== -1) {
-                    const parts = val.split(':').map(s => s.trim());
-                    const h = parseInt(parts[0], 10) || 0;
-                    const m = parseInt(parts[1], 10) || 0;
-                    hours = h + (Math.max(0, Math.min(59, m)) / 60);
-                } else {
-                    hours = parseFloat(val) || 0;
-                }
-            }
-
-            await api.atualizarProgresso({ subject_id: subjectId, hours_increment: hours, last_studied: new Date().toISOString() });
-            await this.loadMinhasMaterias();
-
-            // celebrate if reached completion and not already celebrated
-            const updated = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
-            const reached = updated && Number(updated.progresso || 0) >= 100;
-            const key = `__completed_celebrated_${subjectId}`;
-            if (reached && !localStorage.getItem(key)) {
-                try {
-                    localStorage.setItem(key, '1');
-                    startConfetti(3500, { colors: ['rgba(16,185,129,0.95)', 'rgba(124,58,237,0.95)'] });
-                } catch(e){ console.warn('confetti failed', e); }
-            }
-
-            this.showSuccess('Progresso atualizado');
-            this.showView('minhas-materias');
-        } catch (error) {
-            console.error('atualizarProgresso failed', error);
-            this.showError('Erro ao atualizar progresso');
-        }
-    }
-
+
     async atualizarProgresso(subjectId) {
         try {
             const subj = (this.minhasDisciplinas || []).find(s => String(s.id) === String(subjectId));
             if (subj && Number(subj.progresso || 0) >= 100) {
-                this.showError('Disciplina concluÃ­da â€” progresso bloqueado');
+                this.showError('Disciplina conclu\u00edda - progresso bloqueado');
                 return;
             }
 
@@ -1360,7 +1310,7 @@ class Dashboard {
             let sessionTopics = '';
             if (window.showHoursPrompt && typeof window.showHoursPrompt === 'function') {
                 const res = await window.showHoursPrompt({
-                    label: 'Quanto tempo vocÃª estudou nesta sessÃ£o?',
+                    label: 'Quanto tempo voc\u00ea estudou nesta sess\u00e3o?',
                     defaultValue: '',
                     includeTopics: true,
                     defaultTopics: ''
@@ -1373,7 +1323,7 @@ class Dashboard {
                     hours = Number(res) || 0;
                 }
             } else {
-                const val = prompt('Quanto tempo vocÃª estudou nesta sessÃ£o? (HH:MM)');
+                const val = prompt('Quanto tempo voc\u00ea estudou nesta sess\u00e3o? (HH:MM)');
                 if (val === null) return;
                 if (val.indexOf(':') !== -1) {
                     const parts = val.split(':').map(s => s.trim());
@@ -1384,13 +1334,13 @@ class Dashboard {
                     hours = parseFloat(val) || 0;
                 }
 
-                const topicsPrompt = prompt('Quais tópicos estudou nesta sessão?');
+                const topicsPrompt = prompt('Quais t\u00f3picos estudou nesta sess\u00e3o?');
                 if (topicsPrompt === null) return;
                 sessionTopics = String(topicsPrompt || '').trim();
             }
 
             if (hours <= 0 && !sessionTopics) {
-                this.showError('Informe o tempo estudado ou os tópicos da sessão');
+                this.showError('Informe o tempo estudado ou os t\u00f3picos da sess\u00e3o');
                 return;
             }
 
@@ -1470,7 +1420,7 @@ class Dashboard {
         }
         try {
             await api.removerMateria(subjectId);
-            // Reload and re-render the Minhas Matérias view so the UI reflects the deletion immediately.
+            // Reload and re-render the Minhas MatÃƒÂ©rias view so the UI reflects the deletion immediately.
             // showView('minhas-materias') will call renderMinhasMaterias which loads fresh data.
             await this.showView('minhas-materias');
             this.showSuccess('Disciplina removida');
@@ -1479,11 +1429,11 @@ class Dashboard {
         }
     }
     
-    // Apply a global search query to Minhas Matérias view.
+    // Apply a global search query to Minhas MatÃƒÂ©rias view.
     async applySearch(query) {
         try {
             this.lastSearch = String(query || '').trim();
-            // If we're not on the Minhas Matérias view, navigate there first
+            // If we're not on the Minhas MatÃƒÂ©rias view, navigate there first
             if (this.currentView !== 'minhas-materias') {
                 await this.showView('minhas-materias');
                 // ensure DOM updated then apply filter
@@ -1520,7 +1470,7 @@ class Dashboard {
         } catch (err) { console.warn('_applySearchToGrid failed', err); }
     }
 
-    // Open a lightweight modal to add a new matéria (or select existing)
+    // Open a lightweight modal to add a new matÃƒÂ©ria (or select existing)
     // Accepts optional options: { preselectId, exam_date, total_hours }
     async openAddModal(options = {}) {
         try {
@@ -1544,7 +1494,7 @@ class Dashboard {
                 </div>
                 <div class="add-materia-form-grid">
                     <div>
-                        <label class="label-muted">Escolher disciplina disponível</label>
+                        <label class="label-muted">Escolher disciplina disponÃƒÂ­vel</label>
                             <select id="add-select-existing" class="form-input">
                             <option value="">-- Nenhuma (criar nova) --</option>
                             ${(this.materiasDisponiveis || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
@@ -1615,7 +1565,7 @@ class Dashboard {
 
                 try {
                     if (existing) {
-                        // add existing by id — pass exam_date, total_hours and color so backend persists metadata
+                        // add existing by id Ã¢â‚¬â€ pass exam_date, total_hours and color so backend persists metadata
                         await this.adicionarMateria(existing, exam_date || null, typeof hours !== 'undefined' ? hours : null, color || null);
                     } else if (name) {
                         // create new via API (or offline fallback)
