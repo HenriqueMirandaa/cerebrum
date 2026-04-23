@@ -5,6 +5,7 @@
     --primary-light: #471a9f; /* secondary purple */
     --secondary: #7c3aed;
     --accent: #6d28d9; /* button gradient partner */
+    --brand-rgb: 124, 58, 237;
     --light: #f8fafc;
     --dark: #1e293b;
     --success: #10b981;
@@ -832,6 +833,7 @@ html.dark {
     --primary-dark: #5b48e6;
     --secondary: #6b46ff;
     --accent: #8b5cf6;
+    --brand-rgb: 124, 108, 255;
     --light: #0b1220;
     --dark: #e6eef8;
     --success: #10b981;

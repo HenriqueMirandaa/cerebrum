@@ -175,7 +175,7 @@
 .modal.closing .modal-container, .modal.closing .modal-card { animation: popOut 520ms ease forwards; }
 
 /* Ensure react-enhance controls are readable in both light and dark modes */
-#react-enhance-root { --rea-text: #0b1220; --rea-bg: rgba(15,23,42,0.06); --rea-border: rgba(2,6,23,0.06); }
+#react-enhance-root { --rea-text: #0b1220; --rea-bg: rgba(15,23,42,0.06); --rea-border: rgba(2,6,23,0.06); position: relative; z-index: 80; overflow: visible; }
 #react-enhance-root * { color: var(--rea-text) !important; }
 #react-enhance-root input { color: var(--rea-text) !important; background: transparent !important; border: none !important; }
 #react-enhance-root .p-2, #react-enhance-root .rounded-md { background: var(--rea-bg) !important; border: 1px solid var(--rea-border) !important; }
@@ -187,6 +187,19 @@
 /* Make sure the small accent picker buttons remain visible */
 #react-enhance-root .w-8.h-8, #react-enhance-root .w-8, #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(2,6,23,0.12); border: 1px solid rgba(0,0,0,0.08); }
 .dark #react-enhance-root .w-8.h-8, .dark #react-enhance-root .w-8, .dark #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(124,58,237,0.12); border: 1px solid rgba(255,255,255,0.04); }
+#react-enhance-root .accent-popover {
+  position: fixed;
+  z-index: 9999;
+  min-width: 220px;
+  padding: 12px;
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(11,15,28,0.96), rgba(18,12,35,0.96));
+  border: 1px solid rgba(var(--brand-rgb), 0.34);
+  box-shadow: 0 24px 60px rgba(2,6,23,0.48), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+#react-enhance-root .accent-popover * { color: #efe9ff !important; }
 
 /* Cronograma specific overrides: ensure calendar uses the dark surface colors
    even when the particle canvas is hidden. Targets internal grid cells and

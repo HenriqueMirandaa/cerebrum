@@ -104,7 +104,7 @@ const materiaController = {
         }
     },
 
-    // Utilizador: Matérias disponíveis e progresso
+    // Utilizador: Mat\u00e9rias dispon\u00edveis e progresso
     async getMinhasMaterias(req, res) {
         try {
             const [rows] = await pool.execute(
@@ -171,7 +171,7 @@ const materiaController = {
                         });
                     }
                 } catch (e) {
-                    console.warn('Erro ao buscar histórico de sessões:', e && (e.message || e));
+                    console.warn('Erro ao buscar hist\u00f3rico de sess\u00f5es:', e && (e.message || e));
                 }
             }
 
@@ -203,7 +203,7 @@ const materiaController = {
             return res.json({ subjects: enriched });
 
         } catch (error) {
-            console.error('Erro ao buscar matérias do utilizador:', error);
+            console.error('Erro ao buscar mat\u00e9rias do utilizador:', error);
             res.status(500).json({ error: 'Erro interno do servidor.' });
         }
     },
@@ -216,7 +216,7 @@ const materiaController = {
             );
             res.json({ subjects: rows });
         } catch (error) {
-            console.error('Erro ao buscar matérias disponíveis:', error);
+            console.error('Erro ao buscar mat\u00e9rias dispon\u00edveis:', error);
             res.status(500).json({ error: 'Erro interno do servidor.' });
         }
     },
@@ -271,13 +271,13 @@ const materiaController = {
                         );
                     }
                 } catch (e) {
-                    console.warn('Não foi possível criar evento de prova automaticamente:', e && (e.message || e));
+                    console.warn('N\u00e3o foi poss\u00edvel criar evento de prova automaticamente:', e && (e.message || e));
                 }
             }
 
-            res.json({ message: 'Matéria adicionada com sucesso!' });
+            res.json({ message: 'Mat\u00e9ria adicionada com sucesso!' });
         } catch (error) {
-            console.error('Erro ao adicionar matéria:', error);
+            console.error('Erro ao adicionar mat\u00e9ria:', error);
             res.status(500).json({ error: 'Erro interno do servidor.' });
         }
     },
@@ -287,14 +287,14 @@ const materiaController = {
             const { subject_id, hours_increment, last_studied, session_topics } = req.body;
             const subjectId = Number.parseInt(subject_id, 10);
             if (!Number.isInteger(subjectId) || subjectId <= 0) {
-                return res.status(400).json({ error: 'subject_id inválido.' });
+                return res.status(400).json({ error: 'subject_id inv\u00e1lido.' });
             }
 
             const increment = parseHoursIncrement(hours_increment);
             const lastStudiedMySql = toMySqlDateTime(last_studied);
             const sessionTopics = normalizeSessionText(session_topics);
             if (increment <= 0 && !sessionTopics) {
-                return res.status(400).json({ error: 'Informe o tempo estudado ou os tópicos da sessão.' });
+                return res.status(400).json({ error: 'Informe o tempo estudado ou os t\u00f3picos da sess\u00e3o.' });
             }
 
             // Increment hours_studied
@@ -303,7 +303,7 @@ const materiaController = {
                 [increment, lastStudiedMySql, req.user.id, subjectId]
             );
             if (!updateResult || !updateResult.affectedRows) {
-                return res.status(404).json({ error: 'Matéria não encontrada para este utilizador.' });
+                return res.status(404).json({ error: 'Mat\u00e9ria n\u00e3o encontrada para este utilizador.' });
             }
 
             // After increment, recompute progress if total_hours is present in metadata
@@ -323,7 +323,7 @@ const materiaController = {
                     }
                 }
             } catch (e) {
-                console.warn('Não foi possível recalcular progresso automaticamente:', e.message || e);
+                console.warn('N\u00e3o foi poss\u00edvel recalcular progresso automaticamente:', e.message || e);
             }
 
             try {
@@ -336,10 +336,10 @@ const materiaController = {
                 await pool.execute(
                     `INSERT INTO activity_logs (user_id, type, description, meta, created_at)
                      VALUES (?, 'study_session', ?, ?, NOW())`,
-                    [req.user.id, sessionTopics || 'Sessão de estudo', JSON.stringify(sessionMeta)]
+                    [req.user.id, sessionTopics || 'Sess\u00e3o de estudo', JSON.stringify(sessionMeta)]
                 );
             } catch (e) {
-                console.warn('NÃ£o foi possÃ­vel guardar a sessão de estudo:', e.message || e);
+                console.warn('N\u00e3o foi poss\u00edvel guardar a sess\u00e3o de estudo:', e.message || e);
             }
 
             res.json({ message: 'Progresso atualizado com sucesso!' });
@@ -356,9 +356,9 @@ const materiaController = {
             // Remove related activity_logs entries of type 'subject_meta' for this subject
             await pool.execute('DELETE FROM activity_logs WHERE user_id = ? AND type = ? AND JSON_EXTRACT(meta, "$.subject_id") = ?', [req.user.id, 'subject_meta', subject_id]);
             await pool.execute('DELETE FROM activity_logs WHERE user_id = ? AND type = ? AND JSON_EXTRACT(meta, "$.subject_id") = ?', [req.user.id, 'study_session', subject_id]);
-            res.json({ message: 'Matéria removida com sucesso!' });
+            res.json({ message: 'Mat\u00e9ria removida com sucesso!' });
         } catch (error) {
-            console.error('Erro ao remover matéria:', error);
+            console.error('Erro ao remover mat\u00e9ria:', error);
             res.status(500).json({ error: 'Erro interno do servidor.' });
         }
     }
@@ -368,7 +368,7 @@ const materiaController = {
     async sugerirMateria(req, res) {
         try {
             const { name, description, exam_date, total_hours, metas } = req.body;
-            if (!name) return res.status(400).json({ error: 'Nome da matéria é obrigatório' });
+            if (!name) return res.status(400).json({ error: 'Nome da mat\u00e9ria \u00e9 obrigat\u00f3rio' });
 
             // Check if subject exists
             const [[existing]] = await pool.execute('SELECT id FROM subjects WHERE name = ? LIMIT 1', [name]);
@@ -410,14 +410,14 @@ const materiaController = {
                         );
                     }
                 } catch (e) {
-                    console.warn('Não foi possível criar evento de prova automaticamente (sugerir):', e && (e.message || e));
+                    console.warn('N\u00e3o foi poss\u00edvel criar evento de prova automaticamente (sugerir):', e && (e.message || e));
                 }
             }
 
-            res.json({ message: 'Matéria sugerida e adicionada com sucesso!', subject_id: subjectId });
+            res.json({ message: 'Mat\u00e9ria sugerida e adicionada com sucesso!', subject_id: subjectId });
         } catch (err) {
-            console.error('Erro ao sugerir matéria:', err);
-            res.status(500).json({ error: 'Erro interno ao sugerir matéria.' });
+            console.error('Erro ao sugerir mat\u00e9ria:', err);
+            res.status(500).json({ error: 'Erro interno ao sugerir mat\u00e9ria.' });
         }
     },
 

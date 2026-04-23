@@ -193,8 +193,8 @@ function renderQuizLibrary(quizzes) {
         return `
             <div class="card p-6">
                 <h3 class="text-xl font-semibold mb-3">Quizzes Gerados pela IA</h3>
-                <p class="text-gray-500">Ainda nÃƒÂ£o existem quizzes nesta biblioteca.</p>
-                <p class="text-sm text-gray-400 mt-2">PeÃƒÂ§a no assistente algo como: "Gere um quiz de 5 perguntas de HistÃƒÂ³ria sobre a RevoluÃƒÂ§ÃƒÂ£o Industrial".</p>
+                <p class="text-gray-500">Ainda n\u00e3o existem quizzes nesta biblioteca.</p>
+                <p class="text-sm text-gray-400 mt-2">Pe\u00e7a no assistente algo como: "Gere um quiz de 5 perguntas de Hist\u00f3ria sobre a Revolu\u00e7\u00e3o Industrial".</p>
             </div>
         `;
     }
@@ -276,7 +276,7 @@ class Dashboard {
             this.user = result.user || {};
             this.updateUserInfo();
         } catch (error) {
-            // se nÃƒÂ£o autenticado, redireciona para login
+            // se n\u00e3o autenticado, redireciona para login
             console.warn('[Dashboard] checkAuth failed:', error);
             // Already attempted token-based fetch first; if we reach here, both token and session methods failed.
             // Instead of redirecting automatically, show a persistent banner and allow the user to logout manually.
@@ -305,8 +305,8 @@ class Dashboard {
         banner.style.justifyContent = 'space-between';
         banner.innerHTML = `
             <div style="display:flex;gap:12px;align-items:center;">
-                <strong>VocÃƒÂª nÃƒÂ£o estÃƒÂ¡ autenticado.</strong>
-                <span>Se deseja continuar, faÃƒÂ§a login novamente. Para voltar ao login, clique em Sair.</span>
+                <strong>Voc\u00ea n\u00e3o est\u00e1 autenticado.</strong>
+                <span>Se deseja continuar, fa\u00e7a login novamente. Para voltar ao login, clique em Sair.</span>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
                 <button id="unauth-retry" class="btn-secondary" style="padding:6px 10px;border-radius:6px;border:1px solid #d0c08a;background:#fff;">Tentar novamente</button>
@@ -346,7 +346,7 @@ class Dashboard {
     setupEventListeners() {
         this.setupMobileSidebar();
 
-        // NavegaÃƒÂ§ÃƒÂ£o
+        // Navega\u00e7\u00e3o
         document.querySelectorAll('.nav-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -458,7 +458,7 @@ class Dashboard {
         const username = userObj.username || userObj.email || '';
 
         const elWelcome = document.getElementById('userWelcome');
-        if (elWelcome) elWelcome.textContent = `OlÃƒÂ¡, ${displayName}`;
+        if (elWelcome) elWelcome.textContent = `Ol\u00e1, ${displayName}`;
 
         const elUserInfo = document.getElementById('userInfo');
         if (elUserInfo) elUserInfo.textContent = `Utilizador: ${username}`;
@@ -519,7 +519,7 @@ class Dashboard {
             }
         } catch (error) {
             console.error('Erro ao carregar view:', error);
-            this.showError('Erro ao carregar a pÃƒÂ¡gina');
+            this.showError('Erro ao carregar a p\u00e1gina');
         } finally {
             if (viewRegion) {
                 setRegionLoading(viewRegion, false);
@@ -538,7 +538,7 @@ class Dashboard {
                 <div class="hero-main">
                     <div class="card-badge" style="background:linear-gradient(135deg,var(--primary),var(--secondary));">${(displayName||'U').slice(0,1)}</div>
                     <div>
-                        <div class="title section-title">OlÃƒÂ¡, ${displayName}</div>
+                        <div class="title section-title">Ol\u00e1, ${displayName}</div>
                         <div class="subtitle section-subtitle">Continue sua jornada de aprendizado com o Cerebrum</div>
                     </div>
                 </div>
@@ -564,7 +564,7 @@ class Dashboard {
                     <div class="progress-bar mb-2">
                         <div class="progress-fill" style="width: ${stats.progressoGeral}%"></div>
                     </div>
-                    <div class="text-sm text-gray-500 section-subtitle">mÃƒÂ©dia de conclusÃƒÂ£o</div>
+                    <div class="text-sm text-gray-500 section-subtitle">m\u00e9dia de conclus\u00e3o</div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between mb-4">
@@ -641,7 +641,7 @@ class Dashboard {
                 ${this.materiasDisponiveis.length === 0 ? `
                     <div class="col-span-3 text-center py-12 text-gray-500">
                         <i class="fas fa-check-circle text-4xl mb-3 opacity-30"></i>
-                        <p class="text-lg">VocÃƒÂª jÃƒÂ¡ adicionou todas as disciplinas disponÃƒÂ­veis!</p>
+                        <p class="text-lg">Voc\u00ea j\u00e1 adicionou todas as disciplinas dispon\u00edveis!</p>
                         <p class="text-sm mt-2">Continue estudando para melhorar seu progresso.</p>
                     </div>
                 ` : ''}
@@ -673,7 +673,7 @@ class Dashboard {
 
         document.getElementById('view').innerHTML = `
             <div class="mb-8">
-                <h2 class="text-3xl font-bold mb-2 section-title">EstatÃƒÂ­sticas</h2>
+                <h2 class="text-3xl font-bold mb-2 section-title">Estat\u00edsticas</h2>
                 <p class="text-gray-600">Acompanhe seu desempenho geral.</p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
@@ -691,7 +691,7 @@ class Dashboard {
                         <i class="fas fa-chart-line text-green-500"></i>
                     </div>
                     <div class="text-3xl font-bold mb-2">${stats.progressoGeral}%</div>
-                    <div class="text-sm text-gray-500">mÃƒÂ©dio</div>
+                    <div class="text-sm text-gray-500">m\u00e9dio</div>
                 </div>
                 <div class="stat-card">
                     <div class="flex items-center justify-between mb-4">
@@ -1187,7 +1187,7 @@ class Dashboard {
         }
     }
 
-    // MÃƒÂ©todos auxiliares
+    // M\u00e9todos auxiliares
     async loadMateriasData() {
         try {
             const resp1 = await api.getMinhasMaterias();
@@ -1217,7 +1217,7 @@ class Dashboard {
                 icone: s.icon || 'fas fa-book'
             }));
         } catch (error) {
-            console.error('Erro ao carregar matÃƒÂ©rias', error);
+            console.error('Erro ao carregar mat\u00e9rias', error);
         }
     }
 
@@ -1238,13 +1238,13 @@ class Dashboard {
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
         } catch (error) {
-            console.error('Erro ao carregar minhas matÃƒÂ©rias', error);
+            console.error('Erro ao carregar minhas mat\u00e9rias', error);
         }
     }
 
     async loadMateriasDisponiveis() {
         try {
-            // Use a fixed list of core subjects for the "Adicionar MatÃƒÂ©rias" view.
+            // Use a fixed list of core subjects for the "Adicionar Mat\u00e9rias" view.
             // We'll try to fetch available subjects from the backend and, when a
             // fixed subject name already exists server-side, replace the fixed
             // string id with the numeric id from the backend so we use the
@@ -1259,13 +1259,13 @@ class Dashboard {
             }
 
             const fixed = [
-                { id: 'fixed-portugues', nome: 'PortuguÃƒÂªs', descricao: '', horas_totais: null, cor: '#f97316', icone: 'fas fa-book-open' },
-                { id: 'fixed-matematica', nome: 'MatemÃƒÂ¡tica', descricao: '', horas_totais: null, cor: '#6366f1', icone: 'fas fa-square-root-alt' },
-                { id: 'fixed-ingles', nome: 'InglÃƒÂªs', descricao: '', horas_totais: null, cor: '#06b6d4', icone: 'fas fa-language' },
-                { id: 'fixed-historia', nome: 'HistÃƒÂ³ria', descricao: '', horas_totais: null, cor: '#ef4444', icone: 'fas fa-landmark' },
+                { id: 'fixed-portugues', nome: 'Portugu\u00eas', descricao: '', horas_totais: null, cor: '#f97316', icone: 'fas fa-book-open' },
+                { id: 'fixed-matematica', nome: 'Matem\u00e1tica', descricao: '', horas_totais: null, cor: '#6366f1', icone: 'fas fa-square-root-alt' },
+                { id: 'fixed-ingles', nome: 'Ingl\u00eas', descricao: '', horas_totais: null, cor: '#06b6d4', icone: 'fas fa-language' },
+                { id: 'fixed-historia', nome: 'Hist\u00f3ria', descricao: '', horas_totais: null, cor: '#ef4444', icone: 'fas fa-landmark' },
                 { id: 'fixed-geografia', nome: 'Geografia', descricao: '', horas_totais: null, cor: '#10b981', icone: 'fas fa-globe-americas' },
-                { id: 'fixed-ciencias', nome: 'CiÃƒÂªncias Naturais', descricao: '', horas_totais: null, cor: '#8b5cf6', icone: 'fas fa-flask' },
-                { id: 'fixed-fisica-quimica', nome: 'FÃƒÂ­sica e QuÃƒÂ­mica', descricao: '', horas_totais: null, cor: '#ef9a9a', icone: 'fas fa-atom' },
+                { id: 'fixed-ciencias', nome: 'Ci\u00eancias Naturais', descricao: '', horas_totais: null, cor: '#8b5cf6', icone: 'fas fa-flask' },
+                { id: 'fixed-fisica-quimica', nome: 'F\u00edsica e Qu\u00edmica', descricao: '', horas_totais: null, cor: '#ef9a9a', icone: 'fas fa-atom' },
                 { id: 'fixed-biologia', nome: 'Biologia', descricao: '', horas_totais: null, cor: '#22c55e', icone: 'fas fa-dna' }
             ];
 
@@ -1287,7 +1287,7 @@ class Dashboard {
 
             this.materiasDisponiveis = mapped;
         } catch (error) {
-            console.error('Erro ao carregar matÃƒÂ©rias disponÃƒÂ­veis', error);
+            console.error('Erro ao carregar mat\u00e9rias dispon\u00edveis', error);
         }
     }
 
@@ -1420,7 +1420,7 @@ class Dashboard {
         }
         try {
             await api.removerMateria(subjectId);
-            // Reload and re-render the Minhas MatÃƒÂ©rias view so the UI reflects the deletion immediately.
+            // Reload and re-render the Minhas Mat\u00e9rias view so the UI reflects the deletion immediately.
             // showView('minhas-materias') will call renderMinhasMaterias which loads fresh data.
             await this.showView('minhas-materias');
             this.showSuccess('Disciplina removida');
@@ -1429,11 +1429,11 @@ class Dashboard {
         }
     }
     
-    // Apply a global search query to Minhas MatÃƒÂ©rias view.
+    // Apply a global search query to Minhas Mat\u00e9rias view.
     async applySearch(query) {
         try {
             this.lastSearch = String(query || '').trim();
-            // If we're not on the Minhas MatÃƒÂ©rias view, navigate there first
+            // If we're not on the Minhas Mat\u00e9rias view, navigate there first
             if (this.currentView !== 'minhas-materias') {
                 await this.showView('minhas-materias');
                 // ensure DOM updated then apply filter
@@ -1470,7 +1470,7 @@ class Dashboard {
         } catch (err) { console.warn('_applySearchToGrid failed', err); }
     }
 
-    // Open a lightweight modal to add a new matÃƒÂ©ria (or select existing)
+    // Open a lightweight modal to add a new mat\u00e9ria (or select existing)
     // Accepts optional options: { preselectId, exam_date, total_hours }
     async openAddModal(options = {}) {
         try {
@@ -1494,7 +1494,7 @@ class Dashboard {
                 </div>
                 <div class="add-materia-form-grid">
                     <div>
-                        <label class="label-muted">Escolher disciplina disponÃƒÂ­vel</label>
+                        <label class="label-muted">Escolher disciplina dispon\u00edvel</label>
                             <select id="add-select-existing" class="form-input">
                             <option value="">-- Nenhuma (criar nova) --</option>
                             ${(this.materiasDisponiveis || []).map(m => `<option value="${m.id}">${m.nome}</option>`).join('')}
@@ -1565,7 +1565,7 @@ class Dashboard {
 
                 try {
                     if (existing) {
-                        // add existing by id Ã¢â‚¬â€ pass exam_date, total_hours and color so backend persists metadata
+                        // add existing by id - pass exam_date, total_hours and color so backend persists metadata
                         await this.adicionarMateria(existing, exam_date || null, typeof hours !== 'undefined' ? hours : null, color || null);
                     } else if (name) {
                         // create new via API (or offline fallback)
