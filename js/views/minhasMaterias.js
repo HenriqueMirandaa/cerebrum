@@ -53,7 +53,7 @@ async function loadAndRender() {
                     const classes = `bg-white rounded-lg shadow p-6 ${completed ? 'completed-subject' : ''}`;
                     return `
                     <div class="${classes}" data-id="${m.id}">
-                        <div class="flex items-start justify-between">
+                        <div class="subject-overview-header flex items-start justify-between">
                             <div>
                                 <h3 class="font-semibold text-lg">${escapeHtml(m.name)}</h3>
                                 <div class="text-sm text-gray-500">Prova: ${formatDate(m.exam_date || '')} • ${m.total_hours || 0}h planejadas</div>
@@ -66,7 +66,7 @@ async function loadAndRender() {
 
                         <p class="mt-4 text-sm text-gray-700">${escapeHtml(m.description || '')}</p>
 
-                        <div class="mt-4 flex items-center justify-end gap-2">
+                        <div class="mt-4 subject-overview-actions flex items-center justify-end gap-2">
                             ${ completed ? `
                                 <span class="badge-soft text-green-400">Concluído</span>
                                 <button class="btn-text text-red-500" onclick="deleteMateriaConfirm(${m.id})"><i class="fas fa-trash"></i> Excluir</button>

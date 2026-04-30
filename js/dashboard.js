@@ -139,7 +139,7 @@ function renderMateriaCard(materia, options = {}) {
 
     return `
         <div class="${cardClasses}" style="border-left-color: ${materia.cor}">
-            <div class="flex items-center justify-between mb-4">
+            <div class="subject-card-header flex items-center justify-between mb-4">
                 <div class="flex items-center">
                     <div class="w-12 h-12 rounded-lg flex items-center justify-center text-white mr-3" style="background: ${materia.cor}">
                         <i class="${materia.icone}"></i>
@@ -169,7 +169,7 @@ function renderMateriaCard(materia, options = {}) {
                 </div>
             </div>
             ${showHistory ? renderSessionHistory(materia) : ''}
-            <div class="flex gap-2">
+            <div class="subject-card-actions flex gap-2">
                 ${ completed ? `
                     <button onclick='dashboard.removerMateria(${idLiteral})' class="btn-secondary text-sm py-2 px-3">
                         <i class="fas fa-trash"></i>

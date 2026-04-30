@@ -180,6 +180,24 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     transition: opacity 0.24s ease;
 }
 
+.dashboard-main,
+main.flex-1,
+#view,
+.cronograma-root,
+.assistant-workspace,
+.assistant-grid,
+.assistant-panel,
+.assistant-actions,
+.chat-input-container,
+.chat-area,
+.subject-card,
+.stat-card,
+.card,
+.modal-card,
+.modal-container {
+    min-width: 0;
+}
+
 .hero-main {
     display: flex;
     align-items: center;
@@ -370,6 +388,10 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
         flex-wrap: wrap;
     }
 
+    .dashboard-header-right > * {
+        min-width: 0;
+    }
+
     .dashboard-search-wrap {
         flex: 1 1 100%;
         width: 100%;
@@ -387,6 +409,19 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
     .header-quick-actions,
     .header-logout-btn {
         margin-left: auto;
+    }
+
+    .modal-overlay {
+        align-items: flex-start;
+        padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
+        overflow-y: auto;
+    }
+
+    .modal-card,
+    .modal-container {
+        width: min(100%, 720px);
+        max-width: 100%;
+        margin: auto 0;
     }
 
     main.flex-1 {
@@ -428,6 +463,14 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
 }
 
 @media (max-width: 768px) {
+    body.startup-ui {
+        min-height: 100svh;
+    }
+
+    .dashboard-main {
+        min-width: 0;
+    }
+
     .dashboard-header-left .app-title {
         font-size: 1.05rem !important;
     }
@@ -440,6 +483,19 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
         min-width: 0;
         flex: 1 1 auto;
         justify-content: flex-start;
+    }
+
+    .dashboard-header-right {
+        align-items: stretch;
+    }
+
+    .dashboard-header-right .header-quick-actions,
+    .dashboard-header-right .header-logout-btn {
+        margin-left: 0;
+    }
+
+    .dashboard-header-right .header-logout-btn {
+        flex: 0 0 auto;
     }
 
     .dashboard-header-right .user-name {
@@ -455,6 +511,40 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
 
     #view .text-3xl {
         font-size: 1.6rem;
+    }
+
+    .subject-card-header,
+    .subject-overview-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+
+    .subject-card-header > *,
+    .subject-overview-header > * {
+        width: 100%;
+    }
+
+    .subject-card-actions,
+    .subject-overview-actions {
+        flex-wrap: wrap;
+    }
+
+    .subject-card-actions > *,
+    .subject-overview-actions > * {
+        flex: 1 1 100%;
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .subject-card-actions .btn-secondary,
+    .subject-overview-actions .btn-text,
+    .subject-overview-actions .badge-soft {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .cronograma-actions {
@@ -504,6 +594,48 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
         max-width: 88%;
     }
 
+    .assistant-header,
+    .assistant-panel .card-header,
+    .assistant-chat-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .assistant-chat-actions > * {
+        width: 100%;
+        justify-content: center;
+        text-align: center;
+    }
+
+    .assistant-message,
+    .assistant-message--user {
+        gap: 0.5rem;
+    }
+
+    .assistant-avatar {
+        width: 1.8rem;
+        height: 1.8rem;
+        flex: 0 0 1.8rem;
+    }
+
+    .chat-area {
+        max-height: 58vh;
+    }
+
+    .chat-input-container {
+        padding: 0.75rem;
+    }
+
+    .add-materia-modal-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .add-materia-modal-header .btn-secondary,
+    .add-materia-modal-actions .btn-primary {
+        width: 100%;
+    }
+
     #focus-overlay h1 {
         font-size: 1.75rem !important;
     }
@@ -514,5 +646,45 @@ body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
 
     #focus-overlay > div > div {
         flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 520px) {
+    header.glass {
+        padding: 0.85rem;
+    }
+
+    main.flex-1 {
+        padding: 0.75rem;
+    }
+
+    .dashboard-header-left,
+    .dashboard-header-center,
+    .dashboard-header-right {
+        gap: 0.6rem;
+    }
+
+    .dashboard-header-left .app-subtitle,
+    #calendarPeriodLabel,
+    .assistant-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .chat-bubble,
+    .assistant-message .chat-bubble {
+        max-width: 100%;
+    }
+
+    .cronograma-actions > * {
+        flex: 1 1 100%;
+    }
+
+    .cronograma-actions .btn-icon {
+        flex: 1 1 calc(50% - 0.25rem);
+    }
+
+    .modal-card,
+    .modal-container {
+        border-radius: 16px;
     }
 }
