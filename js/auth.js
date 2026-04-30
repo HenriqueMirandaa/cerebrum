@@ -153,6 +153,16 @@ document.addEventListener('DOMContentLoaded', function() {
         window.history.replaceState({}, document.title, nextUrl.toString());
     }
 
+    function persistCurrentUser(user) {
+        try {
+            if (!user) return;
+            if (user.name) localStorage.setItem('user_name', user.name);
+            if (user.email) localStorage.setItem('user_email', user.email);
+            if (typeof user.id !== 'undefined' && user.id !== null) localStorage.setItem('user_id', String(user.id));
+            window.dispatchEvent(new CustomEvent('cerebrum:user-context-changed', { detail: { user } }));
+        } catch (e) { /* ignore */ }
+    }
+
     tabBtns.forEach((btn) => {
         btn.addEventListener('click', function() {
             const targetTab = this.getAttribute('data-tab');
@@ -245,9 +255,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await api.login({ email, password });
             if (res.token) api.setToken(res.token);
-            try {
-                if (res.user?.name) localStorage.setItem('user_name', res.user.name);
-            } catch (e) { /* ignore */ }
+            persistCurrentUser(res.user);
 
             showMessage(loginMessage, 'Sessão iniciada com sucesso!', 'success');
 
@@ -283,9 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             const res = await api.register({ name, email, password });
             if (res.token) api.setToken(res.token);
-            try {
-                if (res.user?.name) localStorage.setItem('user_name', res.user.name);
-            } catch (e) { /* ignore */ }
+            persistCurrentUser(res.user);
             let welcomeSuffix = '';
             try {
                 const emailResult = await sendWelcomeEmailViaEmailJS({ name, email });

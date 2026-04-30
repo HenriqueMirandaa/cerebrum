@@ -13,6 +13,8 @@
     '#22c55e',
     '#eab308'
   ];
+  const LEGACY_ACCENT_KEY = 'cerebrum_accent';
+  const SCOPED_ACCENT_KEY_PREFIX = 'cerebrum_accent:';
 
   function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
@@ -85,7 +87,66 @@
     return rgbToHex(shifted.r, shifted.g, shifted.b);
   }
 
-  function applyAccentTheme(accent) {
+  function normalizeScope(value) {
+    return String(value || '')
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9._-]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function getCurrentUserScope() {
+    try {
+      const dashboardUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+      const rawScope =
+        dashboardUser?.id ||
+        dashboardUser?.email ||
+        dashboardUser?.username ||
+        localStorage.getItem('user_id') ||
+        localStorage.getItem('user_email') ||
+        localStorage.getItem('user_name') ||
+        '';
+
+      return normalizeScope(rawScope);
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function getScopedAccentKey(scope) {
+    return scope ? `${SCOPED_ACCENT_KEY_PREFIX}${scope}` : LEGACY_ACCENT_KEY;
+  }
+
+  function readStoredAccent(scope = getCurrentUserScope()) {
+    try {
+      if (scope) {
+        const scopedKey = getScopedAccentKey(scope);
+        const scopedValue = localStorage.getItem(scopedKey);
+        if (scopedValue) return scopedValue;
+
+        const legacyValue = localStorage.getItem(LEGACY_ACCENT_KEY);
+        if (legacyValue) {
+          localStorage.setItem(scopedKey, legacyValue);
+          localStorage.removeItem(LEGACY_ACCENT_KEY);
+          return legacyValue;
+        }
+
+        return '#7c3aed';
+      }
+
+      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#7c3aed';
+    } catch (error) {
+      return '#7c3aed';
+    }
+  }
+
+  function storeAccent(accent, scope = getCurrentUserScope()) {
+    try {
+      localStorage.setItem(getScopedAccentKey(scope), accent);
+    } catch (error) {}
+  }
+
+  function applyAccentTheme(accent, scope = getCurrentUserScope()) {
     const root = document.documentElement;
     const { r, g, b } = hexToRgb(accent);
     const secondary = shiftTone(accent, -0.08, 0.04);
@@ -100,9 +161,7 @@
     root.style.setProperty('--primary-dark', dark);
     root.style.setProperty('--brand-rgb', `${r}, ${g}, ${b}`);
 
-    try {
-      localStorage.setItem('cerebrum_accent', accent);
-    } catch (error) {}
+    storeAccent(accent, scope);
 
     try {
       if (window.ThreeParticles && typeof window.ThreeParticles.setColorScheme === 'function') {
@@ -117,7 +176,8 @@
   }
 
   function AccentControls(){
-    const [accent, setAccent] = React.useState(localStorage.getItem('cerebrum_accent') || '#7c3aed');
+    const [userScope, setUserScope] = React.useState(getCurrentUserScope());
+    const [accent, setAccent] = React.useState(() => readStoredAccent(getCurrentUserScope()));
     const [open, setOpen] = React.useState(false);
     const buttonRef = React.useRef(null);
     const popoverRef = React.useRef(null);
@@ -125,8 +185,21 @@
     const rgb = hexToRgb(accent);
 
     React.useEffect(() => {
-      applyAccentTheme(accent);
-    }, [accent]);
+      applyAccentTheme(accent, userScope);
+    }, [accent, userScope]);
+
+    React.useEffect(() => {
+      const syncAccentWithUserContext = () => {
+        const nextScope = getCurrentUserScope();
+        setUserScope(nextScope);
+        setAccent(readStoredAccent(nextScope));
+      };
+
+      window.addEventListener('cerebrum:user-context-changed', syncAccentWithUserContext);
+      return () => {
+        window.removeEventListener('cerebrum:user-context-changed', syncAccentWithUserContext);
+      };
+    }, []);
 
     React.useEffect(() => {
       if (!open || !buttonRef.current) return;

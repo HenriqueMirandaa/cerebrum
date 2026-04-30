@@ -457,6 +457,15 @@ class Dashboard {
         const displayName = userObj.name || userObj.nome || 'Utilizador';
         const username = userObj.username || userObj.email || '';
 
+        try {
+            if (userObj && Object.keys(userObj).length > 0) {
+                if (displayName) localStorage.setItem('user_name', displayName);
+                if (userObj.email) localStorage.setItem('user_email', userObj.email);
+                if (typeof userObj.id !== 'undefined' && userObj.id !== null) localStorage.setItem('user_id', String(userObj.id));
+                window.dispatchEvent(new CustomEvent('cerebrum:user-context-changed', { detail: { user: userObj } }));
+            }
+        } catch (error) { /* ignore */ }
+
         const elWelcome = document.getElementById('userWelcome');
         if (elWelcome) elWelcome.textContent = `Ol\u00e1, ${displayName}`;
 
