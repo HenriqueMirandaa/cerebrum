@@ -187,74 +187,181 @@
 /* Make sure the small accent picker buttons remain visible */
 #react-enhance-root .w-8.h-8, #react-enhance-root .w-8, #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(2,6,23,0.12); border: 1px solid rgba(0,0,0,0.08); }
 .dark #react-enhance-root .w-8.h-8, .dark #react-enhance-root .w-8, .dark #react-enhance-root .h-8 { box-shadow: 0 6px 18px rgba(124,58,237,0.12); border: 1px solid rgba(255,255,255,0.04); }
+#react-enhance-root .accent-trigger-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.72), rgba(30, 19, 56, 0.84)) !important;
+  border: 1px solid rgba(var(--brand-rgb), 0.24) !important;
+  box-shadow: 0 14px 30px rgba(2, 6, 23, 0.2);
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+#react-enhance-root .accent-trigger-btn:hover,
+#react-enhance-root .accent-trigger-btn.is-open {
+  transform: translateY(-1px);
+  border-color: rgba(var(--brand-rgb), 0.42) !important;
+  box-shadow: 0 18px 34px rgba(var(--brand-rgb), 0.18);
+}
+#react-enhance-root .accent-trigger-btn i {
+  font-size: 1rem;
+  color: #f3edff !important;
+}
+#react-enhance-root .accent-trigger-dot {
+  position: absolute;
+  right: 7px;
+  bottom: 7px;
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  border: 2px solid rgba(12, 10, 24, 0.92);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.22);
+}
 #react-enhance-root .accent-popover {
   position: fixed;
   z-index: 9999;
-  min-width: 264px;
+  width: 248px;
   padding: 14px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(11,15,28,0.96), rgba(18,12,35,0.96));
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(11, 15, 28, 0.97), rgba(18, 12, 35, 0.97));
   border: 1px solid rgba(var(--brand-rgb), 0.34);
-  box-shadow: 0 24px 60px rgba(2,6,23,0.48), 0 0 0 1px rgba(255,255,255,0.03) inset;
+  box-shadow: 0 26px 64px rgba(2, 6, 23, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   animation: accentPopoverIn 220ms cubic-bezier(0.2, 0.9, 0.2, 1);
   transform-origin: top right;
 }
 #react-enhance-root .accent-popover * { color: #efe9ff !important; }
-#react-enhance-root .accent-popover-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
-#react-enhance-root .accent-popover-title { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.02em; }
-#react-enhance-root .accent-popover-subtitle { font-size: 0.74rem; color: rgba(239,233,255,0.68) !important; margin-bottom: 12px; }
-#react-enhance-root .accent-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
-#react-enhance-root .accent-swatch {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  padding: 10px 8px;
-  border-radius: 16px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
-}
-#react-enhance-root .accent-swatch:hover {
-  transform: translateY(-2px) scale(1.02);
-  border-color: rgba(var(--brand-rgb), 0.4);
-  box-shadow: 0 12px 24px rgba(2,6,23,0.3);
-  background: rgba(255,255,255,0.06);
-}
-#react-enhance-root .accent-swatch.is-active {
-  border-color: rgba(var(--brand-rgb), 0.65);
-  box-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.28) inset, 0 14px 28px rgba(var(--brand-rgb), 0.22);
-  background: rgba(var(--brand-rgb), 0.08);
-}
-#react-enhance-root .accent-dot {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 2px solid rgba(255,255,255,0.92);
-  box-shadow: 0 10px 22px rgba(0,0,0,0.26);
-}
-#react-enhance-root .accent-label { font-size: 0.75rem; font-weight: 600; }
-#react-enhance-root .accent-custom {
+#react-enhance-root .accent-popover-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(255,255,255,0.08);
+  gap: 12px;
+  margin-bottom: 14px;
 }
-#react-enhance-root .accent-custom-label { font-size: 0.78rem; color: rgba(239,233,255,0.76) !important; }
-#react-enhance-root .accent-custom input[type="color"] {
-  width: 44px;
-  height: 44px;
+#react-enhance-root .accent-popover-title-group { display: grid; gap: 3px; }
+#react-enhance-root .accent-popover-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+#react-enhance-root .accent-popover-caption {
+  font-size: 0.72rem;
+  color: rgba(239, 233, 255, 0.62) !important;
+}
+#react-enhance-root .accent-current-chip {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   border-radius: 12px;
-  overflow: hidden;
-  border: 1px solid rgba(var(--brand-rgb), 0.35) !important;
-  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+#react-enhance-root .accent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+#react-enhance-root .accent-swatch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1;
   padding: 0;
-  cursor: pointer;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+#react-enhance-root .accent-swatch:hover {
+  transform: translateY(-2px) scale(1.03);
+  border-color: rgba(var(--brand-rgb), 0.4);
+  box-shadow: 0 14px 28px rgba(2, 6, 23, 0.32);
+  background: rgba(255, 255, 255, 0.06);
+}
+#react-enhance-root .accent-swatch.is-active {
+  border-color: rgba(var(--brand-rgb), 0.7);
+  box-shadow: 0 0 0 1px rgba(var(--brand-rgb), 0.28) inset, 0 16px 30px rgba(var(--brand-rgb), 0.22);
+  background: rgba(var(--brand-rgb), 0.08);
+}
+#react-enhance-root .accent-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+}
+#react-enhance-root .accent-check {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+#react-enhance-root .accent-custom {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+#react-enhance-root .accent-custom-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+}
+#react-enhance-root .accent-custom-trigger:hover,
+#react-enhance-root .accent-custom-trigger.is-active {
+  transform: translateY(-1px);
+  border-color: rgba(var(--brand-rgb), 0.42);
+  background: rgba(var(--brand-rgb), 0.08);
+  box-shadow: 0 14px 28px rgba(2, 6, 23, 0.22);
+}
+#react-enhance-root .accent-custom-copy {
+  display: grid;
+  gap: 3px;
+  text-align: left;
+}
+#react-enhance-root .accent-custom-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+#react-enhance-root .accent-custom-subtitle {
+  font-size: 0.7rem;
+  color: rgba(239, 233, 255, 0.6) !important;
+}
+#react-enhance-root .accent-custom-preview-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+#react-enhance-root .accent-custom-preview {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+}
+#react-enhance-root .accent-custom-icon {
+  font-size: 0.82rem;
+  color: rgba(239, 233, 255, 0.78) !important;
+}
+#react-enhance-root .accent-custom-input {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 @keyframes accentPopoverIn {
   from { opacity: 0; transform: translateY(-8px) scale(0.96); }

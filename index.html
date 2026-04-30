@@ -492,9 +492,9 @@
             min-height: 60px;
             padding: 6px 12px;
             border-radius: 18px;
-            background: linear-gradient(180deg, rgba(10, 8, 18, 0.92), rgba(7, 6, 14, 0.98));
-            border: 1px solid rgba(var(--brand-rgb), 0.14);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+            background: linear-gradient(180deg, rgba(8, 6, 16, 0.98), rgba(13, 8, 24, 0.98));
+            border: 1px solid rgba(var(--brand-rgb), 0.18);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 24px rgba(4, 2, 12, 0.18);
             transition: box-shadow 0.18s ease, border-color 0.18s ease, transform 0.12s ease, background-color 0.18s ease;
             box-sizing: border-box;
         }
@@ -533,23 +533,36 @@
             background: transparent;
             border: none;
             outline: none;
-            color: #f5efff;
+            color: #caa8ff;
             font-size: 0.98rem;
             font-family: Inter, system-ui, sans-serif;
+            caret-color: #b87cff;
         }
 
         .form-input::placeholder,
         input::placeholder,
         select::placeholder {
-            color: #8e82af;
-            opacity: 0.92;
+            color: #8f69c6;
+            opacity: 1;
+        }
+
+        .form-input:-webkit-autofill,
+        .form-input:-webkit-autofill:hover,
+        .form-input:-webkit-autofill:focus,
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #caa8ff;
+            -webkit-box-shadow: 0 0 0 1000px rgba(12, 8, 22, 0.98) inset;
+            box-shadow: 0 0 0 1000px rgba(12, 8, 22, 0.98) inset;
+            transition: background-color 9999s ease-out 0s;
         }
 
         .input-group:focus-within {
             box-shadow: 0 18px 38px rgba(var(--brand-rgb), 0.18), 0 0 0 5px rgba(var(--brand-rgb), 0.09);
             border-color: rgba(var(--brand-rgb), 0.54);
             transform: translateY(-1px);
-            background: linear-gradient(180deg, rgba(14, 10, 24, 0.96), rgba(8, 6, 16, 0.99));
+            background: linear-gradient(180deg, rgba(12, 8, 22, 0.99), rgba(17, 10, 30, 0.99));
         }
 
         .password-toggle {
@@ -616,12 +629,23 @@
 
         .auth-info .info-item {
             display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            padding: 10px;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 16px 14px;
+            min-height: 148px;
             border-radius: 16px;
             background: rgba(255, 255, 255, 0.03);
             color: #cbd5e1;
+        }
+
+        .auth-info .info-item > div {
+            display: grid;
+            gap: 4px;
+            justify-items: center;
+            text-align: center;
         }
 
         .auth-info .info-item i {

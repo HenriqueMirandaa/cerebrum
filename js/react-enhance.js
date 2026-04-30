@@ -6,12 +6,12 @@
 
   const e = React.createElement;
   const PRESET_COLORS = [
-    { value: '#7c3aed', label: 'Violeta' },
-    { value: '#06b6d4', label: 'Ciano' },
-    { value: '#f97316', label: 'Laranja' },
-    { value: '#ec4899', label: 'Rosa' },
-    { value: '#22c55e', label: 'Verde' },
-    { value: '#eab308', label: 'Dourado' }
+    '#7c3aed',
+    '#06b6d4',
+    '#f97316',
+    '#ec4899',
+    '#22c55e',
+    '#eab308'
   ];
 
   function clamp(value, min, max) {
@@ -121,7 +121,9 @@
     const [open, setOpen] = React.useState(false);
     const buttonRef = React.useRef(null);
     const popoverRef = React.useRef(null);
+    const customInputRef = React.useRef(null);
     const [position, setPosition] = React.useState({ top: 0, left: 0 });
+    const isPresetAccent = PRESET_COLORS.some((color) => color.toLowerCase() === accent.toLowerCase());
 
     React.useEffect(() => {
       applyAccentTheme(accent);
@@ -131,8 +133,8 @@
       if (!open || !buttonRef.current) return;
       const updatePosition = () => {
         const rect = buttonRef.current.getBoundingClientRect();
-        const top = rect.bottom + 10;
-        const left = Math.max(12, rect.right - 220);
+        const top = clamp(rect.bottom + 12, 12, Math.max(12, window.innerHeight - 220));
+        const left = clamp(rect.right - 248, 12, Math.max(12, window.innerWidth - 260));
         setPosition({ top, left });
       };
 
@@ -161,31 +163,61 @@
         style: { top: `${position.top}px`, left: `${position.left}px` }
       },
         e('div', { className: 'accent-popover-header' },
-          e('div', { className: 'accent-popover-title' }, 'Tema do site')
+          e('div', { className: 'accent-popover-title-group' },
+            e('div', { className: 'accent-popover-title' }, 'Paleta'),
+            e('div', { className: 'accent-popover-caption' }, 'Escolhe o tom')
+          ),
+          e('span', {
+            className: 'accent-current-chip',
+            style: { background: `linear-gradient(135deg, ${accent}, ${shiftTone(accent, -0.1, 0.08)})` },
+            'aria-hidden': 'true'
+          })
         ),
-        e('div', { className: 'accent-popover-subtitle' }, 'Escolhe uma cor e o menu, detalhes e fundo seguem juntos.'),
         e('div', { className: 'accent-grid' },
-          ...PRESET_COLORS.map((color) => e('button', {
-            key: color.value,
+          ...PRESET_COLORS.map((color, index) => e('button', {
+            key: color,
             type: 'button',
-            className: `accent-swatch${accent.toLowerCase() === color.value.toLowerCase() ? ' is-active' : ''}`,
+            className: `accent-swatch${accent.toLowerCase() === color.toLowerCase() ? ' is-active' : ''}`,
             onClick: () => {
-              setAccent(color.value);
+              setAccent(color);
               setOpen(false);
             },
-            title: color.label,
-            'aria-label': color.label
+            title: `Aplicar paleta ${index + 1}`,
+            'aria-label': `Aplicar paleta ${index + 1}`
           },
-            e('span', { className: 'accent-dot', style: { background: color.value } }),
-            e('span', { className: 'accent-label' }, color.label)
+            e('span', { className: 'accent-dot', style: { background: color } }),
+            accent.toLowerCase() === color.toLowerCase()
+              ? e('i', { className: 'fas fa-check accent-check', 'aria-hidden': 'true' })
+              : null
           ))
         ),
-        e('label', { className: 'accent-custom' },
-          e('span', { className: 'accent-custom-label' }, 'Cor personalizada'),
+        e('div', { className: 'accent-custom' },
+          e('button', {
+            type: 'button',
+            className: `accent-custom-trigger${!isPresetAccent ? ' is-active' : ''}`,
+            onClick: () => {
+              if (customInputRef.current) customInputRef.current.click();
+            },
+            'aria-label': 'Escolher cor personalizada'
+          },
+            e('span', { className: 'accent-custom-copy' },
+              e('span', { className: 'accent-custom-title' }, 'Personalizar'),
+              e('span', { className: 'accent-custom-subtitle' }, 'Escolher cor manualmente')
+            ),
+            e('span', { className: 'accent-custom-preview-wrap' },
+              e('span', { className: 'accent-custom-preview', style: { background: accent } }),
+              e('i', { className: 'fas fa-sliders-h accent-custom-icon', 'aria-hidden': 'true' })
+            )
+          ),
           e('input', {
+            ref: customInputRef,
+            className: 'accent-custom-input',
             type: 'color',
             value: accent,
-            onChange: (event) => setAccent(event.target.value),
+            onChange: (event) => {
+              setAccent(event.target.value);
+              setOpen(false);
+            },
             'aria-label': 'Escolher cor personalizada'
           })
         )
@@ -198,13 +230,20 @@
         e('button', {
           ref: buttonRef,
           type: 'button',
-          title: 'Tema',
-          className: 'p-2 rounded-md',
-          style: { background: 'linear-gradient(90deg,var(--primary),var(--secondary))', color: '#fff' },
+          title: 'Mudar paleta',
+          className: `accent-trigger-btn${open ? ' is-open' : ''}`,
           onClick: () => setOpen(v => !v),
+          'aria-label': 'Mudar paleta do site',
           'aria-haspopup': 'true',
           'aria-expanded': open
-        }, e('i', { className: 'fas fa-fill-drip' })),
+        },
+          e('i', { className: 'fas fa-fill-drip', 'aria-hidden': 'true' }),
+          e('span', {
+            className: 'accent-trigger-dot',
+            style: { background: accent },
+            'aria-hidden': 'true'
+          })
+        ),
         popover
       )
     );
