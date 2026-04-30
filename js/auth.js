@@ -1,4 +1,4 @@
-import '../public/js/i18n.js';
+import './i18n.js';
 import api from './api.js';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
     const resetPasswordBtn = document.getElementById('resetPasswordBtn');
     const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabsContainer = document.querySelector('.auth-tabs');
     const passwordToggles = document.querySelectorAll('.password-toggle');
 
     const loginMessage = document.getElementById('loginMessage');
@@ -83,32 +84,64 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!response.ok) {
             const text = await response.text();
-            throw new Error(text || 'Falha ao enviar email de boas-vindas via EmailJS');
+            throw new Error(text || 'Falha ao enviar e-mail de boas-vindas via EmailJS');
         }
 
         return { skipped: false };
     }
 
+    function getTabIndex(tabName) {
+        return Array.from(tabBtns).findIndex((btn) => btn.getAttribute('data-tab') === tabName);
+    }
+
     function setActiveTab(tabName) {
+        let activeIndex = 0;
         tabBtns.forEach((btn) => {
             const active = btn.getAttribute('data-tab') === tabName;
             btn.classList.toggle('active', active);
             btn.setAttribute('aria-selected', active ? 'true' : 'false');
+            if (active) activeIndex = getTabIndex(tabName);
         });
+        if (tabsContainer) {
+            tabsContainer.classList.remove('is-inactive');
+            tabsContainer.style.setProperty('--auth-tab-index', String(Math.max(activeIndex, 0)));
+        }
     }
 
-    function switchForm(formId, tabName = null) {
+    function switchForm(formId, tabName = null, options = {}) {
+        const currentForm = authForms.find((form) => form.classList.contains('active')) || null;
+        const nextForm = document.getElementById(formId);
+        const currentTab = Array.from(tabBtns).find((btn) => btn.classList.contains('active'))?.getAttribute('data-tab') || null;
+
         authForms.forEach((form) => {
             const active = form && form.id === formId;
+            form.classList.remove('is-animating-left', 'is-animating-right');
             form.classList.toggle('active', active);
             form.setAttribute('aria-hidden', active ? 'false' : 'true');
         });
 
-        if (tabName) setActiveTab(tabName);
-        else tabBtns.forEach((btn) => {
-            btn.classList.remove('active');
-            btn.setAttribute('aria-selected', 'false');
-        });
+        if (tabName) {
+            setActiveTab(tabName);
+        } else {
+            tabBtns.forEach((btn) => {
+                btn.classList.remove('active');
+                btn.setAttribute('aria-selected', 'false');
+            });
+            if (tabsContainer) tabsContainer.classList.add('is-inactive');
+        }
+
+        if (!options.skipAnimation && nextForm && currentForm !== nextForm) {
+            const currentIndex = currentTab ? getTabIndex(currentTab) : -1;
+            const nextIndex = tabName ? getTabIndex(tabName) : currentIndex;
+            const directionClass = nextIndex !== -1 && currentIndex !== -1 && nextIndex < currentIndex
+                ? 'is-animating-left'
+                : 'is-animating-right';
+
+            void nextForm.offsetWidth;
+            requestAnimationFrame(() => {
+                nextForm.classList.add(directionClass);
+            });
+        }
 
         clearMessages();
     }
@@ -137,11 +170,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
                 this.setAttribute('aria-pressed', 'true');
+                this.setAttribute('aria-label', 'Ocultar palavra-passe');
             } else {
                 input.type = 'password';
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
                 this.setAttribute('aria-pressed', 'false');
+                this.setAttribute('aria-label', 'Mostrar palavra-passe');
             }
         });
     });
@@ -214,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (res.user?.name) localStorage.setItem('user_name', res.user.name);
             } catch (e) { /* ignore */ }
 
-            showMessage(loginMessage, 'Login realizado com sucesso!', 'success');
+            showMessage(loginMessage, 'Sessão iniciada com sucesso!', 'success');
 
             const role = res.user?.role || 'user';
             const target = (role === 'admin' || role === 'administrator') ? 'admin.html' : 'dashboard.html';
@@ -254,12 +289,12 @@ document.addEventListener('DOMContentLoaded', function() {
             let welcomeSuffix = '';
             try {
                 const emailResult = await sendWelcomeEmailViaEmailJS({ name, email });
-                welcomeSuffix = emailResult.skipped ? '' : ' Email de boas-vindas enviado.';
+                welcomeSuffix = emailResult.skipped ? '' : ' E-mail de boas-vindas enviado.';
             } catch (emailError) {
                 console.warn('[Auth] welcome email via EmailJS failed', emailError);
-                welcomeSuffix = ' Conta criada, mas o email de boas-vindas nao foi enviado.';
+                welcomeSuffix = ' Conta criada, mas o e-mail de boas-vindas não foi enviado.';
             }
-            showMessage(registerMessage, `${res.message || 'Registo realizado com sucesso!'}${welcomeSuffix}`, 'success');
+            showMessage(registerMessage, `${res.message || 'Registo efetuado com sucesso!'}${welcomeSuffix}`, 'success');
             setTimeout(() => {
                 switchForm('loginForm', 'login');
                 registerForm.reset();
@@ -283,12 +318,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const res = await api.forgotPassword(email);
             showMessage(
                 forgotPasswordMessage,
-                res.message || 'Se existir uma conta com este email, enviamos um link para redefinir a senha.',
+                res.message || 'Se existir uma conta com este e-mail, enviamos uma ligação para redefinir a palavra-passe.',
                 'success'
             );
         } catch (error) {
             console.error('[Auth] handleForgotPassword error', error);
-            showMessage(forgotPasswordMessage, error.message || 'Erro ao pedir redefinicao de senha', 'error');
+            showMessage(forgotPasswordMessage, error.message || 'Erro ao pedir a redefinição da palavra-passe', 'error');
         } finally {
             hideLoading(forgotPasswordBtn);
         }
@@ -302,17 +337,17 @@ document.addEventListener('DOMContentLoaded', function() {
         clearMessages();
 
         if (!token) {
-            showMessage(resetPasswordMessage, 'Link de redefinicao invalido.', 'error');
+            showMessage(resetPasswordMessage, 'Ligação de redefinição inválida.', 'error');
             return;
         }
 
         if (!validatePassword(password)) {
-            showMessage(resetPasswordMessage, 'A nova senha deve ter pelo menos 6 caracteres.', 'error');
+            showMessage(resetPasswordMessage, 'A nova palavra-passe deve ter pelo menos 6 caracteres.', 'error');
             return;
         }
 
         if (password !== confirmPassword) {
-            showMessage(resetPasswordMessage, 'As senhas nao coincidem.', 'error');
+            showMessage(resetPasswordMessage, 'As palavras-passe não coincidem.', 'error');
             return;
         }
 
@@ -320,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             const res = await api.resetPassword(token, password);
-            showMessage(resetPasswordMessage, res.message || 'Senha redefinida com sucesso.', 'success');
+            showMessage(resetPasswordMessage, res.message || 'Palavra-passe redefinida com sucesso.', 'success');
             clearResetQuery();
             setTimeout(() => {
                 if (resetToken) resetToken.value = '';
@@ -330,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }, 1400);
         } catch (error) {
             console.error('[Auth] handleResetPassword error', error);
-            showMessage(resetPasswordMessage, error.message || 'Erro ao redefinir senha', 'error');
+            showMessage(resetPasswordMessage, error.message || 'Erro ao redefinir a palavra-passe', 'error');
         } finally {
             hideLoading(resetPasswordBtn);
         }
@@ -379,12 +414,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (resetMode && resetTokenFromUrl) {
         if (resetToken) resetToken.value = resetTokenFromUrl;
-        switchForm('resetPasswordForm');
+        switchForm('resetPasswordForm', null, { skipAnimation: true });
     } else {
-        switchForm('loginForm', 'login');
+        switchForm('loginForm', 'login', { skipAnimation: true });
     }
 
     getPublicConfig();
     updateLoginButtonState();
-    console.log('[Auth] Sistema de autenticacao inicializado');
+    console.log('[Auth] Sistema de autenticação inicializado');
 });

@@ -71,7 +71,8 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: 28px;
             background:
                 radial-gradient(circle at top left, rgba(var(--brand-rgb), 0.32), transparent 34%),
                 radial-gradient(circle at 84% 18%, rgba(var(--brand-rgb), 0.16), transparent 22%),
@@ -302,9 +303,13 @@
             color: #aa9fc5;
             font-size: 0.98rem;
             line-height: 1.5;
+            max-width: 34ch;
         }
 
         .auth-tabs {
+            --auth-tab-index: 0;
+            position: relative;
+            isolation: isolate;
             display: flex;
             gap: 8px;
             padding: 8px;
@@ -316,6 +321,27 @@
             box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
         }
 
+        .auth-tabs::before {
+            content: "";
+            position: absolute;
+            top: 8px;
+            bottom: 8px;
+            left: 8px;
+            width: calc(50% - 12px);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.24), rgba(var(--brand-rgb), 0.12));
+            border: 1px solid rgba(var(--brand-rgb), 0.24);
+            box-shadow: 0 12px 26px rgba(var(--brand-rgb), 0.16);
+            transform: translateX(calc(var(--auth-tab-index) * (100% + 8px)));
+            transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.22s ease, opacity 0.22s ease;
+            z-index: 0;
+        }
+
+        .auth-tabs.is-inactive::before {
+            opacity: 0;
+            box-shadow: none;
+        }
+
         .tab-btn {
             flex: 1;
             padding: 12px 14px;
@@ -325,13 +351,14 @@
             color: #bfa1ff;
             font-weight: 700;
             transition: all 0.2s ease;
+            position: relative;
+            z-index: 1;
         }
 
         .tab-btn.active {
-            background: linear-gradient(135deg, rgba(var(--brand-rgb), 0.24), rgba(var(--brand-rgb), 0.12));
             color: #f5efff;
-            border-color: rgba(var(--brand-rgb), 0.24);
-            box-shadow: 0 12px 26px rgba(var(--brand-rgb), 0.16);
+            border-color: transparent;
+            box-shadow: none;
         }
 
         .tab-btn:not(.active):hover {
@@ -340,8 +367,48 @@
         }
 
         .auth-form {
+            display: none;
             margin-top: 6px;
             padding: 8px 2px 0;
+            transform-origin: top center;
+        }
+
+        .auth-form.active {
+            display: block;
+        }
+
+        .auth-form.is-animating-right {
+            animation: authFormFlowRight 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .auth-form.is-animating-left {
+            animation: authFormFlowLeft 0.42s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        @keyframes authFormFlowRight {
+            from {
+                opacity: 0;
+                transform: translate3d(28px, 16px, 0) scale(0.985);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @keyframes authFormFlowLeft {
+            from {
+                opacity: 0;
+                transform: translate3d(-28px, 16px, 0) scale(0.985);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
+            }
         }
 
         .form-actions {
@@ -356,10 +423,20 @@
 
         .auth-inline-row {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             justify-content: space-between;
             gap: 12px;
             margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .auth-inline-row .auth-form-note {
+            margin-top: 0;
+            flex: 1 1 280px;
+        }
+
+        .auth-inline-row .auth-text-link {
+            margin-left: auto;
         }
 
         .auth-text-link {
@@ -411,9 +488,9 @@
             position: relative;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             min-height: 60px;
-            padding: 6px 14px;
+            padding: 6px 12px;
             border-radius: 18px;
             background: linear-gradient(180deg, rgba(10, 8, 18, 0.92), rgba(7, 6, 14, 0.98));
             border: 1px solid rgba(var(--brand-rgb), 0.14);
@@ -424,6 +501,9 @@
 
         .input-group > .input-icon,
         .input-icon {
+            position: static;
+            left: auto;
+            top: auto;
             width: 40px;
             height: 40px;
             display: inline-flex;
@@ -435,6 +515,7 @@
             color: #e9ddff;
             font-size: 0.98rem;
             pointer-events: none;
+            z-index: 0;
         }
 
         .form-input,
@@ -444,9 +525,11 @@
         input[type="email"],
         input[type="password"],
         input[type="text"] {
+            flex: 1 1 auto;
             width: 100%;
+            min-width: 0;
             min-height: 46px;
-            padding: 12px 2px;
+            padding: 12px 0;
             background: transparent;
             border: none;
             outline: none;
@@ -470,12 +553,16 @@
         }
 
         .password-toggle {
+            position: static;
+            right: auto;
             width: 38px;
             height: 38px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             padding: 0;
+            margin-left: 4px;
+            flex: 0 0 38px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.06);
             background: rgba(255, 255, 255, 0.04);
@@ -629,6 +716,10 @@
             .auth-info {
                 grid-template-columns: 1fr;
             }
+
+            .auth-inline-row .auth-text-link {
+                margin-left: 0;
+            }
         }
     </style>
 </head>
@@ -636,21 +727,21 @@
     <canvas id="login-bg-canvas" aria-hidden="true"></canvas>
 
     <div class="auth-container" id="login-auth-container">
-        <div class="auth-card" id="login-auth-card" role="region" aria-label="Area de autenticacao">
+        <div class="auth-card" id="login-auth-card" role="region" aria-label="Área de autenticação">
             <section class="auth-showcase" aria-hidden="true">
                 <div>
                     <div class="showcase-badge"><i class="fas fa-sparkles"></i><span>Ambiente de foco</span></div>
                     <h2 class="showcase-title">Estuda com mais <span>clareza</span> todos os dias.</h2>
-                    <p class="showcase-copy">Planeia disciplinas, regista sessoes, acompanha horas estudadas e mantem o teu progresso sempre visivel num espaco mais elegante e calmo.</p>
+                    <p class="showcase-copy">Planeia disciplinas, regista sessões, acompanha horas estudadas e mantém o teu progresso sempre visível num espaço mais elegante e calmo.</p>
 
                     <div class="showcase-grid">
                         <div class="showcase-stat">
                             <strong>+120h</strong>
-                            <span>sessoes organizadas com historico detalhado</span>
+                            <span>sessões organizadas com histórico detalhado</span>
                         </div>
                         <div class="showcase-stat">
                             <strong>24/7</strong>
-                            <span>assistente disponivel para apoiar o estudo</span>
+                            <span>assistente disponível para apoiar o estudo</span>
                         </div>
                         <div class="showcase-stat">
                             <strong>1 lugar</strong>
@@ -663,33 +754,17 @@
                             <i class="fas fa-layer-group"></i>
                             <div>
                                 <strong>Planeamento visual</strong>
-                                <span>Organiza materias e cronogramas com uma interface mais limpa e memoravel.</span>
+                                <span>Organiza matérias e cronogramas com uma interface mais limpa e memorável.</span>
                             </div>
                         </div>
                         <div class="showcase-card">
                             <i class="fas fa-wave-square"></i>
                             <div>
                                 <strong>Progresso real</strong>
-                                <span>Guarda sessoes, topicos estudados e acompanha evolucao sem perder contexto.</span>
-                            </div>
-                        </div>
-                        <div class="showcase-card">
-                            <i class="fas fa-stars"></i>
-                            <div>
-                                <strong>Experiencia premium</strong>
-                                <span>Um login com mais presenca, contraste e profundidade para combinar com o resto do site.</span>
+                                <span>Guarda sessões, tópicos estudados e acompanha a evolução sem perder contexto.</span>
                             </div>
                         </div>
                     </div>
-                </div>
-
-                <div class="showcase-footer">
-                    <div class="showcase-avatars">
-                        <span>AI</span>
-                        <span>PT</span>
-                        <span>UX</span>
-                    </div>
-                    <div>Feito para estudo consistente, com foco e identidade visual forte.</div>
                 </div>
             </section>
 
@@ -701,13 +776,13 @@
                         </div>
                         <div class="brand-text">
                             <h1 class="auth-title" data-i18n="brand.title">Cerebrum</h1>
-                            <p class="auth-subtitle" data-i18n="brand.subtitle">Entra na tua area de estudos com tudo sincronizado.</p>
+                            <p class="auth-subtitle" data-i18n="brand.subtitle">Entra na tua área de estudo com tudo sincronizado.</p>
                         </div>
                     </div>
                 </header>
 
                 <nav class="auth-tabs" role="tablist" aria-label="Login e registo">
-                    <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true" aria-controls="loginForm" data-i18n="tab.login">Entrar</button>
+                    <button class="tab-btn active" data-tab="login" role="tab" aria-selected="true" aria-controls="loginForm" data-i18n="tab.login">Iniciar sessão</button>
                     <button class="tab-btn" data-tab="register" role="tab" aria-selected="false" aria-controls="registerForm" data-i18n="tab.register">Registar</button>
                 </nav>
 
@@ -716,31 +791,31 @@
                         <label for="loginEmail" class="form-label" data-i18n="label.email">E-mail</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                            <input type="email" id="loginEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required aria-required="true" aria-describedby="loginEmailHelp">
+                            <input type="email" id="loginEmail" class="form-input" placeholder="nome@exemplo.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required aria-required="true" aria-describedby="loginEmailHelp">
                         </div>
                         <div id="loginEmailHelp" class="field-help" aria-hidden="true"></div>
                     </div>
 
                     <div class="form-group">
-                        <label for="loginPassword" class="form-label" data-i18n="label.password">Senha</label>
+                        <label for="loginPassword" class="form-label" data-i18n="label.password">Palavra-passe</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="loginPassword" class="form-input" placeholder="Sua senha" data-i18n-attr="placeholder" data-i18n="placeholder.password" required aria-required="true" aria-describedby="loginPasswordHelp">
-                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                            <input type="password" id="loginPassword" class="form-input" placeholder="A tua palavra-passe" data-i18n-attr="placeholder" data-i18n="placeholder.loginPassword" required aria-required="true" aria-describedby="loginPasswordHelp">
+                            <button type="button" class="password-toggle" aria-label="Mostrar palavra-passe" aria-pressed="false"><i class="fas fa-eye"></i></button>
                         </div>
                         <div id="loginPasswordHelp" class="field-help" aria-hidden="true"></div>
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="auth-btn" id="loginBtn" aria-live="polite">
-                            <span class="btn-text" data-i18n="btn.login">Entrar</span>
+                            <span class="btn-text" data-i18n="btn.login">Iniciar sessão</span>
                             <span class="btn-loading hidden" aria-hidden="true"><i class="fas fa-spinner fa-spin"></i></span>
                         </button>
                     </div>
 
                     <div class="auth-inline-row">
-                        <span class="auth-form-note">Acede com o email da tua conta para continuar de onde paraste.</span>
-                        <button type="button" class="auth-text-link" id="showForgotPasswordBtn">Esqueci a senha</button>
+                        <span class="auth-form-note">Acede com o e-mail da tua conta para continuares de onde paraste.</span>
+                        <button type="button" class="auth-text-link" id="showForgotPasswordBtn">Esqueci-me da palavra-passe</button>
                     </div>
 
                     <div id="loginMessage" class="auth-message" role="status" aria-live="polite"></div>
@@ -748,10 +823,10 @@
 
                 <form id="registerForm" class="auth-form" novalidate aria-hidden="true">
                     <div class="form-group">
-                        <label for="registerName" class="form-label" data-i18n="label.name">Nome Completo</label>
+                        <label for="registerName" class="form-label" data-i18n="label.name">Nome completo</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-user"></i></span>
-                            <input type="text" id="registerName" class="form-input" placeholder="Seu nome completo" data-i18n-attr="placeholder" data-i18n="placeholder.name" required>
+                            <input type="text" id="registerName" class="form-input" placeholder="O teu nome completo" data-i18n-attr="placeholder" data-i18n="placeholder.name" required>
                         </div>
                     </div>
 
@@ -759,22 +834,22 @@
                         <label for="registerEmail" class="form-label" data-i18n="label.email">E-mail</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                            <input type="email" id="registerEmail" class="form-input" placeholder="seu@email.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required>
+                            <input type="email" id="registerEmail" class="form-input" placeholder="nome@exemplo.com" data-i18n-attr="placeholder" data-i18n="placeholder.email" required>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="registerPassword" class="form-label" data-i18n="label.password">Senha</label>
+                        <label for="registerPassword" class="form-label" data-i18n="label.password">Palavra-passe</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="registerPassword" class="form-input" placeholder="Minimo 6 caracteres" data-i18n-attr="placeholder" data-i18n="placeholder.password" required>
-                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                            <input type="password" id="registerPassword" class="form-input" placeholder="Mínimo de 6 caracteres" data-i18n-attr="placeholder" data-i18n="placeholder.registerPassword" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar palavra-passe" aria-pressed="false"><i class="fas fa-eye"></i></button>
                         </div>
                     </div>
 
                     <div class="form-actions">
                         <button type="submit" class="auth-btn" id="registerBtn">
-                            <span class="btn-text" data-i18n="btn.create">Criar Conta</span>
+                            <span class="btn-text" data-i18n="btn.create">Criar conta</span>
                             <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
                         </button>
                     </div>
@@ -784,53 +859,53 @@
 
                 <form id="forgotPasswordForm" class="auth-form" novalidate aria-hidden="true">
                     <div class="auth-form-title">Recuperar acesso</div>
-                    <p class="auth-form-note">Indica o teu email e, se existir conta associada, enviamos um link para redefinir a senha.</p>
+                    <p class="auth-form-note">Indica o teu e-mail e, se existir uma conta associada, enviamos uma ligação para redefinir a palavra-passe.</p>
 
                     <div class="form-group">
                         <label for="forgotEmail" class="form-label">E-mail</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-envelope"></i></span>
-                            <input type="email" id="forgotEmail" class="form-input" placeholder="seu@email.com" required>
+                            <input type="email" id="forgotEmail" class="form-input" placeholder="nome@exemplo.com" required>
                         </div>
                     </div>
 
                     <div class="form-actions wrap">
                         <button type="submit" class="auth-btn" id="forgotPasswordBtn">
-                            <span class="btn-text">Enviar link</span>
+                            <span class="btn-text">Enviar ligação</span>
                             <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
                         </button>
-                        <button type="button" class="auth-text-link" id="backToLoginBtn">Voltar para login</button>
+                        <button type="button" class="auth-text-link" id="backToLoginBtn">Voltar ao início de sessão</button>
                     </div>
 
                     <div id="forgotPasswordMessage" class="auth-message" role="status" aria-live="polite"></div>
                 </form>
 
                 <form id="resetPasswordForm" class="auth-form" novalidate aria-hidden="true">
-                    <div class="auth-form-title">Definir nova senha</div>
-                    <p class="auth-form-note">Escolhe uma nova senha para a tua conta. O link do email so pode ser usado uma vez.</p>
+                    <div class="auth-form-title">Definir nova palavra-passe</div>
+                    <p class="auth-form-note">Escolhe uma nova palavra-passe para a tua conta. A ligação do e-mail só pode ser usada uma vez.</p>
                     <input type="hidden" id="resetToken">
 
                     <div class="form-group">
-                        <label for="resetPassword" class="form-label">Nova senha</label>
+                        <label for="resetPassword" class="form-label">Nova palavra-passe</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="resetPassword" class="form-input" placeholder="Minimo 6 caracteres" required>
-                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                            <input type="password" id="resetPassword" class="form-input" placeholder="Mínimo de 6 caracteres" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar palavra-passe" aria-pressed="false"><i class="fas fa-eye"></i></button>
                         </div>
                     </div>
 
                     <div class="form-group">
-                        <label for="resetPasswordConfirm" class="form-label">Confirmar senha</label>
+                        <label for="resetPasswordConfirm" class="form-label">Confirmar palavra-passe</label>
                         <div class="input-group">
                             <span class="input-icon" aria-hidden="true"><i class="fas fa-lock"></i></span>
-                            <input type="password" id="resetPasswordConfirm" class="form-input" placeholder="Repete a nova senha" required>
-                            <button type="button" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><i class="fas fa-eye"></i></button>
+                            <input type="password" id="resetPasswordConfirm" class="form-input" placeholder="Repete a nova palavra-passe" required>
+                            <button type="button" class="password-toggle" aria-label="Mostrar palavra-passe" aria-pressed="false"><i class="fas fa-eye"></i></button>
                         </div>
                     </div>
 
                     <div class="form-actions wrap">
                         <button type="submit" class="auth-btn" id="resetPasswordBtn">
-                            <span class="btn-text">Guardar nova senha</span>
+                            <span class="btn-text">Guardar nova palavra-passe</span>
                             <span class="btn-loading hidden"><i class="fas fa-spinner fa-spin"></i></span>
                         </button>
                         <button type="button" class="auth-text-link" id="cancelResetBtn">Cancelar</button>
@@ -844,14 +919,14 @@
                         <i class="fas fa-graduation-cap" aria-hidden="true"></i>
                         <div>
                             <strong>Organiza estudos</strong>
-                            <span>Reune disciplinas, tempos e historico num unico fluxo.</span>
+                            <span>Reúne disciplinas, tempos e histórico num único fluxo.</span>
                         </div>
                     </div>
                     <div class="info-item">
                         <i class="fas fa-chart-line" aria-hidden="true"></i>
                         <div>
                             <strong>Acompanha progresso</strong>
-                            <span>Visualiza o que ja estudaste e o que ainda falta atacar.</span>
+                            <span>Visualiza o que já estudaste e o que ainda falta atacar.</span>
                         </div>
                     </div>
                     <div class="info-item">
@@ -862,8 +937,6 @@
                         </div>
                     </div>
                 </aside>
-
-                <div class="auth-footnote">Design renovado para combinar com a paleta e a atmosfera do restante site.</div>
             </section>
         </div>
     </div>
@@ -894,7 +967,7 @@
                 try {
                     const banner = document.createElement('div');
                     banner.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#fffbeb;color:#92400e;padding:12px 16px;z-index:9999;border-bottom:1px solid #fef3c7;font-family:Inter,system-ui,sans-serif;';
-                    banner.innerHTML = '<strong>Atencao:</strong> voce abriu este arquivo localmente (file://). Para que modulos e requisicoes funcionem corretamente, sirva o projeto via HTTP (ex: http://localhost/pap2326/). Abra o XAMPP/Apache ou execute um servidor estatico (ex: <code>npx http-server -p 8080</code>).';
+                    banner.innerHTML = '<strong>Atenção:</strong> abriste este ficheiro localmente (file://). Para que módulos e requisições funcionem corretamente, serve o projeto via HTTP (ex.: http://localhost/pap2326/). Abre o XAMPP/Apache ou executa um servidor estático (ex.: <code>npx http-server -p 8080</code>).';
                     document.addEventListener('DOMContentLoaded', function () { document.body.prepend(banner); });
                 } catch (e) {}
             }
