@@ -5,7 +5,7 @@
   }
 
   const e = React.createElement;
-  const PRESET_COLORS = [
+  const PRESET_COLORS = window.DarkColorPicker?.PRESET_COLORS || [
     '#7c3aed',
     '#06b6d4',
     '#f97316',
@@ -121,9 +121,8 @@
     const [open, setOpen] = React.useState(false);
     const buttonRef = React.useRef(null);
     const popoverRef = React.useRef(null);
-    const customInputRef = React.useRef(null);
     const [position, setPosition] = React.useState({ top: 0, left: 0 });
-    const isPresetAccent = PRESET_COLORS.some((color) => color.toLowerCase() === accent.toLowerCase());
+    const rgb = hexToRgb(accent);
 
     React.useEffect(() => {
       applyAccentTheme(accent);
@@ -133,8 +132,8 @@
       if (!open || !buttonRef.current) return;
       const updatePosition = () => {
         const rect = buttonRef.current.getBoundingClientRect();
-        const top = clamp(rect.bottom + 12, 12, Math.max(12, window.innerHeight - 220));
-        const left = clamp(rect.right - 248, 12, Math.max(12, window.innerWidth - 260));
+        const top = clamp(rect.bottom + 12, 12, Math.max(12, window.innerHeight - 360));
+        const left = clamp(rect.right - 292, 12, Math.max(12, window.innerWidth - 304));
         setPosition({ top, left });
       };
 
@@ -142,19 +141,30 @@
       window.addEventListener('resize', updatePosition);
       window.addEventListener('scroll', updatePosition, true);
 
+      const handleEscape = (event) => {
+        if (event.key === 'Escape') setOpen(false);
+      };
+
       const handleClickAway = (event) => {
         if (buttonRef.current && buttonRef.current.contains(event.target)) return;
         if (popoverRef.current && popoverRef.current.contains(event.target)) return;
         setOpen(false);
       };
 
+      document.addEventListener('keydown', handleEscape);
       document.addEventListener('mousedown', handleClickAway);
       return () => {
         window.removeEventListener('resize', updatePosition);
         window.removeEventListener('scroll', updatePosition, true);
+        document.removeEventListener('keydown', handleEscape);
         document.removeEventListener('mousedown', handleClickAway);
       };
     }, [open]);
+
+    const updateRgbChannel = (channel, value) => {
+      const nextRgb = { ...rgb, [channel]: clamp(Number(value) || 0, 0, 255) };
+      setAccent(rgbToHex(nextRgb.r, nextRgb.g, nextRgb.b));
+    };
 
     const popover = open ? ReactDOM.createPortal(
       e('div', {
@@ -163,25 +173,33 @@
         style: { top: `${position.top}px`, left: `${position.left}px` }
       },
         e('div', { className: 'accent-popover-header' },
-          e('div', { className: 'accent-popover-title-group' },
-            e('div', { className: 'accent-popover-title' }, 'Paleta'),
-            e('div', { className: 'accent-popover-caption' }, 'Escolhe o tom')
+          e('span', { className: 'accent-popover-side' }),
+          e('div', { className: 'accent-popover-title-wrap' },
+            e('div', { className: 'accent-popover-title' }, 'Paleta do site'),
+            e('div', { className: 'accent-popover-caption' }, 'Escolhe o tom principal')
           ),
+          e('button', {
+            type: 'button',
+            className: 'accent-popover-close',
+            onClick: () => setOpen(false),
+            'aria-label': 'Fechar paleta'
+          }, e('i', { className: 'fas fa-times', 'aria-hidden': 'true' }))
+        ),
+        e('div', { className: 'accent-current-preview' },
           e('span', {
-            className: 'accent-current-chip',
+            className: 'accent-current-chip accent-current-chip--large',
             style: { background: `linear-gradient(135deg, ${accent}, ${shiftTone(accent, -0.1, 0.08)})` },
             'aria-hidden': 'true'
-          })
+          }),
+          e('span', { className: 'accent-current-value' }, accent.toUpperCase())
         ),
+        e('div', { className: 'accent-section-title' }, 'Cores r\u00E1pidas'),
         e('div', { className: 'accent-grid' },
           ...PRESET_COLORS.map((color, index) => e('button', {
             key: color,
             type: 'button',
             className: `accent-swatch${accent.toLowerCase() === color.toLowerCase() ? ' is-active' : ''}`,
-            onClick: () => {
-              setAccent(color);
-              setOpen(false);
-            },
+            onClick: () => setAccent(color),
             title: `Aplicar paleta ${index + 1}`,
             'aria-label': `Aplicar paleta ${index + 1}`
           },
@@ -191,35 +209,34 @@
               : null
           ))
         ),
-        e('div', { className: 'accent-custom' },
-          e('button', {
-            type: 'button',
-            className: `accent-custom-trigger${!isPresetAccent ? ' is-active' : ''}`,
-            onClick: () => {
-              if (customInputRef.current) customInputRef.current.click();
+        e('div', { className: 'accent-custom accent-custom--panel' },
+          e('div', { className: 'accent-section-title accent-section-title--spaced' }, 'Cor personalizada'),
+          e('div', { className: 'accent-rgb-grid' },
+            ...['r', 'g', 'b'].map((channel) => e('div', {
+              key: channel,
+              className: 'accent-rgb-row'
             },
-            'aria-label': 'Escolher cor personalizada'
-          },
-            e('span', { className: 'accent-custom-copy' },
-              e('span', { className: 'accent-custom-title' }, 'Personalizar'),
-              e('span', { className: 'accent-custom-subtitle' }, 'Escolher cor manualmente')
-            ),
-            e('span', { className: 'accent-custom-preview-wrap' },
-              e('span', { className: 'accent-custom-preview', style: { background: accent } }),
-              e('i', { className: 'fas fa-sliders-h accent-custom-icon', 'aria-hidden': 'true' })
-            )
-          ),
-          e('input', {
-            ref: customInputRef,
-            className: 'accent-custom-input',
-            type: 'color',
-            value: accent,
-            onChange: (event) => {
-              setAccent(event.target.value);
-              setOpen(false);
-            },
-            'aria-label': 'Escolher cor personalizada'
-          })
+              e('span', { className: 'accent-rgb-label' }, channel.toUpperCase()),
+              e('input', {
+                className: 'accent-rgb-range',
+                type: 'range',
+                min: '0',
+                max: '255',
+                value: rgb[channel],
+                onInput: (event) => updateRgbChannel(channel, event.target.value),
+                'aria-label': `Canal ${channel.toUpperCase()}`
+              }),
+              e('input', {
+                className: 'accent-rgb-number',
+                type: 'number',
+                min: '0',
+                max: '255',
+                value: rgb[channel],
+                onInput: (event) => updateRgbChannel(channel, event.target.value),
+                'aria-label': `Valor ${channel.toUpperCase()}`
+              })
+            ))
+          )
         )
       ),
       document.body
