@@ -48,7 +48,7 @@ function createApiService() {
         };
 
         // Apply request timeout so UI falls back promptly when backend is slow/unreachable
-        const timeoutMs = (window.API_TIMEOUT && Number(window.API_TIMEOUT)) || 3000;
+        const timeoutMs = Number(options.timeoutMs || window.API_TIMEOUT || 3000);
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
         config.signal = controller.signal;

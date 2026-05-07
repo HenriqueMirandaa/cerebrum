@@ -1,4 +1,8 @@
+import api from '../api.js';
 import aiLocal from '../ai-local.js';
+
+const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
 
 function toHumanError(error) {
     if (!error) return 'Ocorreu um erro inesperado.';
@@ -16,62 +20,145 @@ async function withMinimumDelay(task, minMs = 320) {
     return result;
 }
 
+function normalizeQuizScope(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9._-]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+}
+
+function getGeneratedQuizStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_QUIZ_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
+function persistGeneratedQuiz(quiz) {
+    try {
+        const current = JSON.parse(localStorage.getItem(getGeneratedQuizStorageKey()) || '[]');
+        const list = Array.isArray(current) ? current : [];
+        list.unshift(quiz);
+        localStorage.setItem(getGeneratedQuizStorageKey(), JSON.stringify(list.slice(0, 20)));
+        window.dispatchEvent(new CustomEvent(QUIZ_CREATED_EVENT, { detail: { quiz } }));
+    } catch (error) {
+        console.warn('Falha ao guardar quiz gerado', error);
+    }
+}
+
+async function requestAi(endpoint, body = {}) {
+    return api.request(endpoint, {
+        method: 'POST',
+        timeoutMs: 30000,
+        body: JSON.stringify(body)
+    });
+}
+
 export function createAssistantService() {
     return {
         async ask(message) {
             try {
-                const response = await withMinimumDelay(() => aiLocal.chatResponder(message));
-                return { ok: true, text: response };
+                const response = await withMinimumDelay(() => requestAi('/ai/assistant', { message }));
+                return { ok: true, text: response.answer || 'Sem resposta.' };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.chatResponder(message));
+                    return { ok: true, text: fallback };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
         async analyzeProgress() {
             try {
-                const response = await withMinimumDelay(() => aiLocal.analyzeProgress());
+                const response = await withMinimumDelay(() => requestAi('/ai/analyze'));
                 return { ok: true, text: `${response.message}\n\n${response.plan}\n\n${response.next}` };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.analyzeProgress());
+                    return { ok: true, text: `${fallback.message}\n\n${fallback.plan}\n\n${fallback.next}` };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
         async getRecommendations(options = {}) {
             try {
-                const response = await withMinimumDelay(() => aiLocal.getRecommendations(options));
-                const text = response.map((item) => `${item.title}: ${item.message}`).join('\n\n');
-                return { ok: true, text };
+                const response = await withMinimumDelay(() => requestAi('/ai/recommendations', options));
+                const items = Array.isArray(response.recommendations) ? response.recommendations : [];
+                const text = items.map((item) => `${item.title}: ${item.message}`).join('\n\n');
+                return { ok: true, text: text || 'Sem recomendacoes disponiveis.' };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.getRecommendations(options));
+                    const text = fallback.map((item) => `${item.title}: ${item.message}`).join('\n\n');
+                    return { ok: true, text };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
         async generateQuiz() {
             try {
-                const response = await withMinimumDelay(() => aiLocal.generateQuiz());
-                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
+                const response = await withMinimumDelay(() => requestAi('/ai/quiz'));
+                const quiz = response.quiz;
+                if (quiz) persistGeneratedQuiz(quiz);
+                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
                 return { ok: true, text };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.generateQuiz());
+                    return { ok: true, text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.` };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
         async generateQuizWithOptions(options = {}) {
             try {
-                const response = await withMinimumDelay(() => aiLocal.generateQuiz(options));
-                const text = `Criei um quiz de ${response.questionCount || 5} perguntas de ${response.subject || 'Geral'} sobre ${response.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
-                return { ok: true, text, quiz: response };
+                const response = await withMinimumDelay(() => requestAi('/ai/quiz', options));
+                const quiz = response.quiz;
+                if (quiz) persistGeneratedQuiz(quiz);
+                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                return { ok: true, text, quiz };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.generateQuiz(options));
+                    return {
+                        ok: true,
+                        text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`,
+                        quiz: fallback
+                    };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
         async getQuizSubjects() {
             try {
-                const response = await withMinimumDelay(() => aiLocal.getQuizSubjects(), 120);
-                return { ok: true, subjects: response };
+                const response = await withMinimumDelay(() => api.getMinhasMaterias(), 120);
+                const subjects = Array.isArray(response)
+                    ? response.map((subject) => ({ id: subject.id, name: subject.name })).filter((subject) => subject.name)
+                    : [];
+                return { ok: true, subjects };
             } catch (error) {
-                return { ok: false, text: toHumanError(error), subjects: [] };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.getQuizSubjects(), 120);
+                    return { ok: true, subjects: fallback };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error), subjects: [] };
+                }
             }
         },
 
@@ -84,15 +171,15 @@ export function createAssistantService() {
         },
 
         async showHelp() {
-            return this.ask('comandos');
+            return this.ask('ajuda');
         },
 
         async addSubjectFromPrompts() {
             try {
-                const name = prompt('Nome da matéria (ex: Cálculo)');
-                if (!name) return { ok: false, cancelled: true, text: 'Operação cancelada.' };
+                const name = prompt('Nome da materia (ex: Calculo)');
+                if (!name) return { ok: false, cancelled: true, text: 'Operacao cancelada.' };
 
-                const hoursRaw = prompt('Horas totais planejadas (ex: 40)');
+                const hoursRaw = prompt('Horas totais planeadas (ex: 40)');
                 const hours = hoursRaw ? Number(hoursRaw.replace(',', '.')) : 0;
 
                 const examDate = prompt('Data do exame (AAAA-MM-DD) ou deixe em branco');
@@ -100,7 +187,7 @@ export function createAssistantService() {
                     aiLocal.addSubject({ name, total_hours: hours, exam_date: examDate || null })
                 );
 
-                return { ok: true, text: `Matéria adicionada: ${created.name} (ID: ${created.id})` };
+                return { ok: true, text: `Materia adicionada: ${created.name} (ID: ${created.id})` };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
             }

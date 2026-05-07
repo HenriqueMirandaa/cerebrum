@@ -24,7 +24,7 @@ function renderAssistantLayout() {
         <section class="assistant-workspace">
             <div class="assistant-header">
                 <h2 class="assistant-title">Assistente IA</h2>
-                <p class="assistant-subtitle">Assistente local (client-side) para apoio ao estudo diário.</p>
+                <p class="assistant-subtitle">Assistente com IA remota para apoio ao estudo diário.</p>
             </div>
             <div class="assistant-grid">
                 <article class="card assistant-panel">

@@ -3,13 +3,22 @@ let multer;
 let multerAvailable = true;
 try {
   multer = require('multer');
-} catch (e) {
+} catch (error) {
   console.warn('multer not available; upload endpoint will be disabled until you run `npm install multer`');
   multerAvailable = false;
 }
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch');
 const pool = require('../config/database');
+const auth = require('../middleware/auth');
+const {
+  askForTextReply,
+  generateQuiz,
+  generateRecommendations,
+  analyzeProgress,
+  callHuggingFaceChat
+} = require('../services/aiAssistantService');
 
 const uploadDir = path.join(__dirname, '..', '..', 'backend_uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -18,83 +27,130 @@ let upload = null;
 if (multerAvailable) {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
   });
-  upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
+  upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 }
 
 const router = express.Router();
 
-// POST /api/ai/upload
-router.post('/upload', (req, res, next) => {
-  if (!multerAvailable) return res.status(503).json({ error: 'Upload unavailable: multer not installed. Run `npm install multer` in backend.' });
-  // delegate to multer handler
-  return upload.single('file')(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: String(err) });
+router.post('/assistant', auth, async (req, res) => {
+  try {
+    const message = String(req.body?.message || '').trim();
+    if (!message) return res.status(400).json({ error: 'Mensagem obrigatoria.' });
+
+    const answer = await askForTextReply({
+      userId: req.user.id,
+      message,
+      extraInstruction: 'Responde como tutor do Cerebrum. Se o utilizador pedir um plano de estudo, organiza a resposta por prioridade, carga e proximo passo.'
+    });
+
+    res.json({ answer });
+  } catch (error) {
+    console.error('/api/ai/assistant error', error);
+    res.status(500).json({ error: 'Erro ao gerar resposta do assistente.', details: String(error.message || error) });
+  }
+});
+
+router.post('/recommendations', auth, async (req, res) => {
+  try {
+    const focus = String(req.body?.focus || 'today').trim().toLowerCase();
+    const recommendations = await generateRecommendations({ userId: req.user.id, focus });
+    res.json({ recommendations });
+  } catch (error) {
+    console.error('/api/ai/recommendations error', error);
+    res.status(500).json({ error: 'Erro ao gerar recomendacoes.', details: String(error.message || error) });
+  }
+});
+
+router.post('/analyze', auth, async (req, res) => {
+  try {
+    const analysis = await analyzeProgress({ userId: req.user.id });
+    res.json(analysis);
+  } catch (error) {
+    console.error('/api/ai/analyze error', error);
+    res.status(500).json({ error: 'Erro ao analisar progresso.', details: String(error.message || error) });
+  }
+});
+
+router.post('/quiz', auth, async (req, res) => {
+  try {
+    const quiz = await generateQuiz({ userId: req.user.id, options: req.body || {} });
+    res.json({ quiz });
+  } catch (error) {
+    console.error('/api/ai/quiz error', error);
+    res.status(500).json({ error: 'Erro ao gerar quiz.', details: String(error.message || error) });
+  }
+});
+
+router.post('/upload', (req, res) => {
+  if (!multerAvailable) {
+    return res.status(503).json({ error: 'Upload unavailable: multer not installed. Run `npm install multer` in backend.' });
+  }
+
+  return upload.single('file')(req, res, async (error) => {
+    if (error) return res.status(400).json({ error: String(error) });
     try {
-      if (!req.file) return res.status(400).json({ error: 'Arquivo não enviado' });
-      const userId = req.user ? req.user.id : null; // auth middleware optional
+      if (!req.file) return res.status(400).json({ error: 'Arquivo nao enviado.' });
+      const userId = req.user ? req.user.id : null;
       const [result] = await pool.execute(
         'INSERT INTO ai_documents (user_id, filename, path, status, created_at) VALUES (?, ?, ?, ?, NOW())',
         [userId, req.file.originalname, req.file.path, 'pending']
       );
-      const docId = result.insertId;
-      res.json({ ok: true, documentId: docId, filename: req.file.originalname });
-    } catch (err2) {
-      console.error('Erro em /api/ai/upload', err2);
-      res.status(500).json({ error: 'Erro ao salvar arquivo' });
+      res.json({ ok: true, documentId: result.insertId, filename: req.file.originalname });
+    } catch (saveError) {
+      console.error('Erro em /api/ai/upload', saveError);
+      res.status(500).json({ error: 'Erro ao salvar arquivo.' });
     }
   });
 });
 
-// POST /api/ai/chat
 router.post('/chat', async (req, res) => {
   try {
-    const { question, top_k = 5 } = req.body;
-    if (!question) return res.status(400).json({ error: 'Pergunta obrigatória' });
+    const { question, top_k = 5 } = req.body || {};
+    if (!question) return res.status(400).json({ error: 'Pergunta obrigatoria.' });
 
-    // Call local Python service for search + generation
     const pyBase = process.env.PY_SERVICE_URL || 'http://127.0.0.1:5000';
-    const fetch = require('node-fetch');
-
-    // 1) search
     const searchResp = await fetch(`${pyBase}/search`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: question, k: top_k })
     });
+
     if (!searchResp.ok) {
       const txt = await searchResp.text();
-      throw new Error('Busca falhou: ' + txt);
+      throw new Error(`Busca falhou: ${txt}`);
     }
+
     const searchData = await searchResp.json();
+    const contexts = (searchData.results || [])
+      .map((item) => `Source: ${item?.meta?.source || 'documento'}\n${item.text}`)
+      .join('\n\n');
 
-    // 2) build prompt with retrieved contexts
-    const contexts = (searchData.results || []).map(r => `Source: ${r.meta.source}\n${r.text}`).join('\n\n');
-    const system = 'Você é um assistente didático que responde com clareza e exemplos. Baseie-se apenas nos trechos do material fornecido quando relevante.';
-    const prompt = `${system}\n\nContextos:\n${contexts}\n\nPergunta: ${question}\nResposta:`;
+    const answer = await callHuggingFaceChat([
+      {
+        role: 'system',
+        content: 'Voce e um assistente didatico. Usa os contextos fornecidos quando forem relevantes e deixa isso claro na resposta.'
+      },
+      {
+        role: 'user',
+        content: `Contextos:\n${contexts || 'Sem contexto recuperado.'}\n\nPergunta: ${question}`
+      }
+    ], { maxTokens: 700, temperature: 0.2 });
 
-    // 3) generate
-    const genResp = await fetch(`${pyBase}/generate`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, max_tokens: 512 })
-    });
-    if (!genResp.ok) {
-      const txt = await genResp.text();
-      throw new Error('Geração falhou: ' + txt);
-    }
-    const genData = await genResp.json();
-
-    // save chat to DB
     try {
-      await pool.execute('INSERT INTO ai_chats (user_id, question, answer, created_at) VALUES (?, ?, ?, NOW())', [req.user ? req.user.id : null, question, genData.text]);
-    } catch (e) { console.warn('Não foi possível salvar chat', e); }
+      await pool.execute(
+        'INSERT INTO ai_chats (user_id, question, answer, created_at) VALUES (?, ?, ?, NOW())',
+        [req.user ? req.user.id : null, question, answer]
+      );
+    } catch (dbError) {
+      console.warn('Nao foi possivel salvar chat', dbError);
+    }
 
-    res.json({ answer: genData.text, sources: searchData.results });
-  } catch (err) {
-    console.error('/api/ai/chat error', err);
-    res.status(500).json({ error: 'Erro ao processar pergunta', details: String(err) });
+    res.json({ answer, sources: searchData.results || [] });
+  } catch (error) {
+    console.error('/api/ai/chat error', error);
+    res.status(500).json({ error: 'Erro ao processar pergunta', details: String(error.message || error) });
   }
 });
 
