@@ -5,6 +5,8 @@ const HF_API_URL = 'https://router.huggingface.co/v1/chat/completions';
 const DEFAULT_MODEL = process.env.HF_MODEL || 'openai/gpt-oss-120b:cheapest';
 const DEFAULT_MAX_TOKENS = Number(process.env.HF_MAX_TOKENS || 900);
 const DEFAULT_TEMPERATURE = Number(process.env.HF_TEMPERATURE || 0.2);
+const PROVIDER_STATUS_TTL_MS = 5 * 60 * 1000;
+let providerStatusCache = null;
 
 function normalizeText(value) {
     return String(value || '').trim();
@@ -111,6 +113,60 @@ async function callHuggingFaceChat(messages, options = {}) {
     }
 
     return text;
+}
+
+async function getProviderStatus({ forceRefresh = false } = {}) {
+    const now = Date.now();
+    if (!forceRefresh && providerStatusCache && (now - providerStatusCache.cachedAt) < PROVIDER_STATUS_TTL_MS) {
+        return providerStatusCache.payload;
+    }
+
+    const token = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.HUGGINGFACEHUB_API_TOKEN;
+    if (!token) {
+        const payload = {
+            available: false,
+            provider: 'huggingface',
+            model: DEFAULT_MODEL,
+            checked_at: new Date().toISOString(),
+            reason: 'HF_TOKEN ausente'
+        };
+        providerStatusCache = { cachedAt: now, payload };
+        return payload;
+    }
+
+    const startedAt = Date.now();
+    try {
+        const reply = await callHuggingFaceChat([
+            { role: 'system', content: 'Answer with exactly one word: ok' },
+            { role: 'user', content: 'ping' }
+        ], {
+            maxTokens: 8,
+            temperature: 0,
+            model: DEFAULT_MODEL
+        });
+
+        const payload = {
+            available: true,
+            provider: 'huggingface',
+            model: DEFAULT_MODEL,
+            checked_at: new Date().toISOString(),
+            latency_ms: Date.now() - startedAt,
+            response_preview: truncate(reply, 40)
+        };
+        providerStatusCache = { cachedAt: now, payload };
+        return payload;
+    } catch (error) {
+        const payload = {
+            available: false,
+            provider: 'huggingface',
+            model: DEFAULT_MODEL,
+            checked_at: new Date().toISOString(),
+            latency_ms: Date.now() - startedAt,
+            reason: String(error.message || error)
+        };
+        providerStatusCache = { cachedAt: now, payload };
+        return payload;
+    }
 }
 
 async function getUserStudyContext(userId) {
@@ -436,6 +492,7 @@ async function analyzeProgress({ userId }) {
 
 module.exports = {
     callHuggingFaceChat,
+    getProviderStatus,
     getUserStudyContext,
     askForTextReply,
     generateQuiz,

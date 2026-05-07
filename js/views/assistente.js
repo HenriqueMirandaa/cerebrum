@@ -24,6 +24,7 @@ function renderAssistantLayout() {
         <section class="assistant-workspace">
             <div class="assistant-header">
                 <h2 class="assistant-title">Assistente IA</h2>
+                <div id="assistantProviderBadge" class="hidden mt-3 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm text-emerald-700"></div>
                 <p class="assistant-subtitle">Assistente com IA remota para apoio ao estudo diário.</p>
             </div>
             <div class="assistant-grid">
@@ -169,8 +170,29 @@ function getInitialState() {
         quizSubjects: [],
         quizTopics: [],
         quizPanelOpen: false,
-        suggestPanelOpen: false
+        suggestPanelOpen: false,
+        providerStatus: null
     };
+}
+
+function renderProviderBadge(status) {
+    const badge = document.getElementById('assistantProviderBadge');
+    if (!badge) return;
+
+    if (!status || !status.available || !status.provider || !status.model) {
+        badge.classList.add('hidden');
+        badge.textContent = '';
+        return;
+    }
+
+    badge.innerHTML = `<i class="fas fa-circle text-[10px]"></i><span>IA ativa: ${escapeHtml(status.provider)} - ${escapeHtml(status.model)}</span>`;
+    badge.classList.remove('hidden');
+}
+
+async function loadProviderBadge(state) {
+    const result = await assistantService.getProviderStatus();
+    state.providerStatus = result.ok ? result.status : { available: false };
+    renderProviderBadge(state.providerStatus);
 }
 
 function normalizeHistoryScope(value) {
@@ -736,6 +758,7 @@ async function renderAssistente() {
 
     target.innerHTML = renderAssistantLayout();
     const state = getInitialState();
+    loadProviderBadge(state).catch((error) => console.warn('Failed to load provider badge', error));
     mountHistory();
     bindEvents(state);
 }

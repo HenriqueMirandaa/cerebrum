@@ -17,7 +17,8 @@ const {
   generateQuiz,
   generateRecommendations,
   analyzeProgress,
-  callHuggingFaceChat
+  callHuggingFaceChat,
+  getProviderStatus
 } = require('../services/aiAssistantService');
 
 const uploadDir = path.join(__dirname, '..', '..', 'backend_uploads');
@@ -33,6 +34,17 @@ if (multerAvailable) {
 }
 
 const router = express.Router();
+
+router.get('/provider-status', auth, async (req, res) => {
+  try {
+    const forceRefresh = String(req.query?.refresh || '').toLowerCase() === 'true';
+    const status = await getProviderStatus({ forceRefresh });
+    res.json(status);
+  } catch (error) {
+    console.error('/api/ai/provider-status error', error);
+    res.status(500).json({ available: false, provider: 'huggingface', model: process.env.HF_MODEL || 'unknown', reason: String(error.message || error) });
+  }
+});
 
 router.post('/assistant', auth, async (req, res) => {
   try {

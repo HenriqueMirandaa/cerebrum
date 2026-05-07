@@ -62,6 +62,18 @@ async function requestAi(endpoint, body = {}) {
 
 export function createAssistantService() {
     return {
+        async getProviderStatus(forceRefresh = false) {
+            try {
+                const response = await withMinimumDelay(
+                    () => api.request(`/ai/provider-status${forceRefresh ? '?refresh=true' : ''}`, { method: 'GET', timeoutMs: 12000 }),
+                    120
+                );
+                return { ok: true, status: response };
+            } catch (error) {
+                return { ok: false, text: toHumanError(error), status: { available: false } };
+            }
+        },
+
         async ask(message) {
             try {
                 const response = await withMinimumDelay(() => requestAi('/ai/assistant', { message }));
