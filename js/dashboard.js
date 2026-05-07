@@ -7,8 +7,10 @@ import { startConfetti } from './confetti.js'; // <-- novo import
 import { setRegionLoading, showToast as showUiToast } from './services/ui-service.js';
 
 const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const GENERATED_EXERCISE_STORAGE_KEY = 'cerebrum_generated_exercises';
 const FERRAMENTAS_TAB_KEY = 'cerebrum_ferramentas_active_tab';
 const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
+const EXERCISE_CREATED_EVENT = 'cerebrum:exercise-created';
 
 function normalizeQuizScope(value) {
     return String(value || '')
@@ -49,13 +51,36 @@ function getStoredGeneratedQuizzes() {
     }
 }
 
+function getGeneratedExerciseStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_EXERCISE_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
+function getStoredGeneratedExercises() {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(getGeneratedExerciseStorageKey()) || '[]');
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+        console.warn('[Dashboard] failed to parse generated exercises', error);
+        return [];
+    }
+}
+
 function getFerramentasActiveTab() {
     const tab = localStorage.getItem(FERRAMENTAS_TAB_KEY);
-    return tab === 'quizzes' ? 'quizzes' : 'focus';
+    return tab === 'quizzes' || tab === 'exercises' ? tab : 'focus';
 }
 
 function setFerramentasActiveTab(tab) {
-    localStorage.setItem(FERRAMENTAS_TAB_KEY, tab === 'quizzes' ? 'quizzes' : 'focus');
+    const safeTab = tab === 'quizzes' || tab === 'exercises' ? tab : 'focus';
+    localStorage.setItem(FERRAMENTAS_TAB_KEY, safeTab);
 }
 
 function formatQuizCreatedAt(isoDate) {
@@ -236,6 +261,60 @@ function renderQuizLibrary(quizzes) {
     `;
 }
 
+function renderExerciseLibrary(exerciseSets) {
+    if (!exerciseSets.length) {
+        return `
+            <div class="card p-6">
+                <h3 class="text-xl font-semibold mb-3">Exercícios Gerados pela IA</h3>
+                <p class="text-gray-500">Ainda não existem exercícios nesta biblioteca.</p>
+                <p class="text-sm text-gray-400 mt-2">Peça no assistente algo como: "gera exercícios de matemática sobre derivadas com 6 perguntas".</p>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="space-y-4">
+            ${exerciseSets.map((set) => `
+                <article class="card p-6" data-exercise-set data-exercise-id="${escapeHtml(set.id || '')}">
+                    <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-4">
+                        <div>
+                            <h3 class="text-xl font-semibold">${escapeHtml(set.title || `Exercícios de ${set.subject || 'Estudos Gerais'}`)}</h3>
+                            <p class="text-sm text-gray-500 mt-1">${escapeHtml(set.subject || 'Geral')} - ${escapeHtml(set.topic || 'Revisão geral')} - ${set.questionCount || (set.exercises || []).length || 0} exercícios</p>
+                        </div>
+                        <div class="text-sm text-gray-400">Criado em ${formatQuizCreatedAt(set.createdAt)}</div>
+                    </div>
+                    <form class="space-y-4" data-exercise-form data-exercise-form-id="${escapeHtml(set.id || '')}">
+                        ${(set.exercises || []).map((exercise, index) => `
+                            <section class="rounded-xl border border-white/10 bg-slate-950/30 p-4" data-exercise-question data-question-id="${escapeHtml(exercise.id || '')}" data-correct-index="${exercise.answerIndex}">
+                                <div class="font-medium mb-3">${index + 1}. ${escapeHtml(exercise.prompt)}</div>
+                                <div class="space-y-2">
+                                    ${(exercise.options || []).map((option, optionIndex) => `
+                                        <label class="quiz-option-row rounded-lg border border-white/10 px-3 py-2 text-sm text-gray-300 flex items-start gap-3 cursor-pointer" data-option-row data-option-index="${optionIndex}">
+                                            <input type="radio" name="exercise_${escapeHtml(set.id || 'exercise')}_${escapeHtml(exercise.id || `ex_${index}`)}" value="${optionIndex}" class="mt-1" />
+                                            <span>${String.fromCharCode(65 + optionIndex)}. ${escapeHtml(option)}</span>
+                                        </label>
+                                    `).join('')}
+                                </div>
+                                <div class="exercise-solution hidden mt-3 rounded-lg border border-emerald-400/20 bg-emerald-500/10 px-3 py-3 text-sm text-emerald-100" data-exercise-solution>
+                                    <strong class="block mb-1">Resolução</strong>
+                                    <span>${escapeHtml(exercise.solution || 'Sem resolução disponível.')}</span>
+                                </div>
+                            </section>
+                        `).join('')}
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
+                            <div class="quiz-result-summary text-sm text-gray-400" data-exercise-summary>Resolva os exercícios e, quando terminar, veja a resolução completa.</div>
+                            <div class="flex gap-3">
+                                <button type="submit" class="btn-primary" data-exercise-submit>Corrigir Exercícios</button>
+                                <button type="button" class="btn-secondary" data-exercise-reveal>Ver Resolução</button>
+                            </div>
+                        </div>
+                    </form>
+                </article>
+            `).join('')}
+        </div>
+    `;
+}
+
 class Dashboard {
     constructor() {
         this.currentView = 'inicio';
@@ -390,6 +469,21 @@ class Dashboard {
             );
             if (this.currentView === 'ferramentas') {
                 this.renderFerramentas().catch((error) => console.warn('Failed to refresh ferramentas after quiz creation', error));
+            }
+        });
+
+        window.addEventListener(EXERCISE_CREATED_EVENT, (event) => {
+            const exercises = event.detail && event.detail.exercises ? event.detail.exercises : null;
+            setFerramentasActiveTab('exercises');
+            this._showToast(
+                exercises
+                    ? `Exercícios criados: ${exercises.subject || 'Geral'} - ${exercises.topic || 'Revisão geral'}`
+                    : 'Exercícios criados com sucesso.',
+                'success',
+                4200
+            );
+            if (this.currentView === 'ferramentas') {
+                this.renderFerramentas().catch((error) => console.warn('Failed to refresh ferramentas after exercise creation', error));
             }
         });
     }
@@ -739,6 +833,7 @@ class Dashboard {
     async renderFerramentas() {
         const activeTab = getFerramentasActiveTab();
         const quizzes = getStoredGeneratedQuizzes();
+        const exerciseSets = getStoredGeneratedExercises();
         document.getElementById('view').innerHTML = `
             <div class="mb-8">
                 <h2 class="text-3xl font-bold mb-2 section-title">Ferramentas de Estudo</h2>
@@ -747,6 +842,7 @@ class Dashboard {
             <div class="flex flex-wrap gap-3 mb-6">
                 <button id="ferramentas-tab-focus" class="${activeTab === 'focus' ? 'btn-primary' : 'btn-secondary'}">Modo Foco</button>
                 <button id="ferramentas-tab-quizzes" class="${activeTab === 'quizzes' ? 'btn-primary' : 'btn-secondary'}">Quizzes</button>
+                <button id="ferramentas-tab-exercises" class="${activeTab === 'exercises' ? 'btn-primary' : 'btn-secondary'}">Exercícios</button>
             </div>
             <section id="ferramentas-panel-focus" class="${activeTab === 'focus' ? '' : 'hidden'}">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -800,21 +896,36 @@ class Dashboard {
                 </div>
                 ${renderQuizLibrary(quizzes)}
             </section>
+            <section id="ferramentas-panel-exercises" class="${activeTab === 'exercises' ? '' : 'hidden'}">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="text-2xl font-semibold">Biblioteca de Exercícios</h3>
+                        <p class="text-sm text-gray-500">Os exercícios criados pela IA aparecem aqui automaticamente.</p>
+                    </div>
+                    ${exerciseSets.length ? '<button id="clear-generated-exercises-btn" class="btn-secondary">Limpar Exercícios</button>' : ''}
+                </div>
+                ${renderExerciseLibrary(exerciseSets)}
+            </section>
         `;
         const focusPanel = document.getElementById('ferramentas-panel-focus');
         const quizzesPanel = document.getElementById('ferramentas-panel-quizzes');
+        const exercisesPanel = document.getElementById('ferramentas-panel-exercises');
         const focusTabBtn = document.getElementById('ferramentas-tab-focus');
         const quizzesTabBtn = document.getElementById('ferramentas-tab-quizzes');
+        const exercisesTabBtn = document.getElementById('ferramentas-tab-exercises');
         const applyFerramentasTabState = (tab) => {
-            const safeTab = tab === 'quizzes' ? 'quizzes' : 'focus';
+            const safeTab = tab === 'quizzes' || tab === 'exercises' ? tab : 'focus';
             setFerramentasActiveTab(safeTab);
             if (focusPanel) focusPanel.classList.toggle('hidden', safeTab !== 'focus');
             if (quizzesPanel) quizzesPanel.classList.toggle('hidden', safeTab !== 'quizzes');
+            if (exercisesPanel) exercisesPanel.classList.toggle('hidden', safeTab !== 'exercises');
             if (focusTabBtn) focusTabBtn.className = safeTab === 'focus' ? 'btn-primary' : 'btn-secondary';
             if (quizzesTabBtn) quizzesTabBtn.className = safeTab === 'quizzes' ? 'btn-primary' : 'btn-secondary';
+            if (exercisesTabBtn) exercisesTabBtn.className = safeTab === 'exercises' ? 'btn-primary' : 'btn-secondary';
         };
         if (focusTabBtn) focusTabBtn.addEventListener('click', () => applyFerramentasTabState('focus'));
         if (quizzesTabBtn) quizzesTabBtn.addEventListener('click', () => applyFerramentasTabState('quizzes'));
+        if (exercisesTabBtn) exercisesTabBtn.addEventListener('click', () => applyFerramentasTabState('exercises'));
 
         const clearQuizzesBtn = document.getElementById('clear-generated-quizzes-btn');
         if (clearQuizzesBtn) {
@@ -823,6 +934,16 @@ class Dashboard {
                 setFerramentasActiveTab('quizzes');
                 this._showToast('Biblioteca de quizzes limpa.', 'info');
                 this.renderFerramentas().catch((error) => console.warn('Failed to rerender ferramentas after clearing quizzes', error));
+            });
+        }
+
+        const clearExercisesBtn = document.getElementById('clear-generated-exercises-btn');
+        if (clearExercisesBtn) {
+            clearExercisesBtn.addEventListener('click', () => {
+                localStorage.removeItem(getGeneratedExerciseStorageKey());
+                setFerramentasActiveTab('exercises');
+                this._showToast('Biblioteca de exercícios limpa.', 'info');
+                this.renderFerramentas().catch((error) => console.warn('Failed to rerender ferramentas after clearing exercises', error));
             });
         }
 
@@ -880,6 +1001,76 @@ class Dashboard {
                     submitBtn.textContent = 'Quiz Finalizado';
                 }
             });
+        });
+
+        document.querySelectorAll('[data-exercise-form]').forEach((form) => {
+            form.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const questionEls = Array.from(form.querySelectorAll('[data-exercise-question]'));
+                const unanswered = questionEls.filter((questionEl) => !questionEl.querySelector('input[type="radio"]:checked'));
+                if (unanswered.length) {
+                    this._showToast('Responda todos os exercícios antes de corrigir.', 'info');
+                    return;
+                }
+
+                let correctCount = 0;
+                questionEls.forEach((questionEl) => {
+                    const correctIndex = Number(questionEl.dataset.correctIndex || 0);
+                    const checked = questionEl.querySelector('input[type="radio"]:checked');
+                    const selectedIndex = Number(checked ? checked.value : -1);
+                    const optionRows = Array.from(questionEl.querySelectorAll('[data-option-row]'));
+
+                    optionRows.forEach((row) => {
+                        const optionIndex = Number(row.dataset.optionIndex || -1);
+                        row.classList.remove('bg-emerald-500/10', 'text-emerald-200', 'border-emerald-400/30', 'bg-red-500/10', 'text-red-200', 'border-red-400/30');
+                        if (optionIndex === correctIndex) row.classList.add('bg-emerald-500/10', 'text-emerald-200', 'border-emerald-400/30');
+                        else if (optionIndex === selectedIndex) row.classList.add('bg-red-500/10', 'text-red-200', 'border-red-400/30');
+                        const input = row.querySelector('input');
+                        if (input) input.disabled = true;
+                    });
+
+                    if (selectedIndex === correctIndex) correctCount += 1;
+                });
+
+                const summaryEl = form.querySelector('[data-exercise-summary]');
+                if (summaryEl) {
+                    summaryEl.classList.remove('text-gray-400');
+                    summaryEl.classList.add(correctCount === questionEls.length ? 'text-emerald-300' : 'text-gray-200');
+                    summaryEl.textContent = `Resultado final: ${correctCount}/${questionEls.length} exercícios corretos. Clique em "Ver Resolução" para rever cada resposta.`;
+                }
+
+                const submitBtn = form.querySelector('[data-exercise-submit]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Exercícios Corrigidos';
+                }
+            });
+
+            const revealBtn = form.querySelector('[data-exercise-reveal]');
+            if (revealBtn) {
+                revealBtn.addEventListener('click', () => {
+                    const questionEls = Array.from(form.querySelectorAll('[data-exercise-question]'));
+                    questionEls.forEach((questionEl) => {
+                        const correctIndex = Number(questionEl.dataset.correctIndex || 0);
+                        const optionRows = Array.from(questionEl.querySelectorAll('[data-option-row]'));
+                        optionRows.forEach((row) => {
+                            const optionIndex = Number(row.dataset.optionIndex || -1);
+                            if (optionIndex === correctIndex) {
+                                row.classList.add('bg-emerald-500/10', 'text-emerald-200', 'border-emerald-400/30');
+                            }
+                        });
+                        const solution = questionEl.querySelector('[data-exercise-solution]');
+                        if (solution) solution.classList.remove('hidden');
+                    });
+
+                    const summaryEl = form.querySelector('[data-exercise-summary]');
+                    if (summaryEl) {
+                        summaryEl.classList.remove('text-gray-400');
+                        summaryEl.classList.add('text-emerald-200');
+                        summaryEl.textContent = 'Resolução revelada. Compare as opções certas e a explicação de cada exercício.';
+                    }
+                });
+            }
         });
 
         // Wire up focus mode handlers

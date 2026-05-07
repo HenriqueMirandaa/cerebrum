@@ -15,6 +15,7 @@ const auth = require('../middleware/auth');
 const {
   askForTextReply,
   generateQuiz,
+  generateExercises,
   generateRecommendations,
   analyzeProgress,
   callHuggingFaceChat,
@@ -92,6 +93,16 @@ router.post('/quiz', auth, async (req, res) => {
   } catch (error) {
     console.error('/api/ai/quiz error', error);
     res.status(500).json({ error: 'Erro ao gerar quiz.', details: String(error.message || error) });
+  }
+});
+
+router.post('/exercises', auth, async (req, res) => {
+  try {
+    const exercises = await generateExercises({ userId: req.user.id, options: req.body || {} });
+    res.json({ exercises });
+  } catch (error) {
+    console.error('/api/ai/exercises error', error);
+    res.status(500).json({ error: 'Erro ao gerar exercicios.', details: String(error.message || error) });
   }
 });
 

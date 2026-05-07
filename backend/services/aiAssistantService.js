@@ -370,6 +370,46 @@ function sanitizeQuizPayload(payload, fallback = {}) {
     };
 }
 
+function sanitizeExercisePayload(payload, fallback = {}) {
+    const subject = normalizeText(payload?.subject || fallback.subject || 'Geral');
+    const topic = normalizeText(payload?.topic || fallback.topic || 'revisao geral');
+    const rawExercises = Array.isArray(payload?.exercises)
+        ? payload.exercises
+        : (Array.isArray(payload?.questions) ? payload.questions : []);
+
+    const sanitizedExercises = rawExercises.slice(0, 10).map((exercise, index) => {
+        const options = Array.isArray(exercise?.options)
+            ? exercise.options.map((option) => truncate(option, 180)).filter(Boolean).slice(0, 4)
+            : [];
+        while (options.length < 4) {
+            options.push(`Opcao ${options.length + 1}`);
+        }
+
+        let answerIndex = Number(exercise?.answerIndex);
+        if (!Number.isInteger(answerIndex) || answerIndex < 0 || answerIndex >= options.length) {
+            const answerText = normalizeText(exercise?.answer || '');
+            const matchedIndex = answerText ? options.findIndex((option) => normalizeText(option) === answerText) : -1;
+            answerIndex = matchedIndex >= 0 ? matchedIndex : 0;
+        }
+
+        return {
+            id: normalizeText(exercise?.id) || `ex_${index + 1}`,
+            prompt: truncate(exercise?.prompt || exercise?.question || `Exercicio ${index + 1} sobre ${topic}.`, 260),
+            options,
+            answerIndex,
+            solution: truncate(exercise?.solution || exercise?.explanation || 'Revise a regra usada nesta derivada antes de comparar com a resolucao.', 320)
+        };
+    });
+
+    return {
+        title: normalizeText(payload?.title || `Exercicios de ${subject}`),
+        subject,
+        topic,
+        questionCount: sanitizedExercises.length,
+        exercises: sanitizedExercises
+    };
+}
+
 async function generateQuiz({ userId, options = {} }) {
     const context = await getUserStudyContext(userId);
     const requestedSubject = normalizeText(options.subjectName || options.subject || '');
@@ -420,6 +460,60 @@ async function generateQuiz({ userId, options = {} }) {
         createdAt: new Date().toISOString(),
         source: 'huggingface',
         ...quiz
+    };
+}
+
+async function generateExercises({ userId, options = {} }) {
+    const context = await getUserStudyContext(userId);
+    const requestedSubject = normalizeText(options.subjectName || options.subject || '');
+    const requestedTopic = normalizeText(options.topic || '');
+    const requestedCount = Math.max(3, Math.min(10, Number(options.questionCount || options.count || 6) || 6));
+    const exerciseBrief = {
+        requestedSubject,
+        requestedTopic,
+        requestedCount
+    };
+
+    const messages = [
+        { role: 'system', content: buildAssistantSystemPrompt() },
+        {
+            role: 'user',
+            content: [
+                'Gera exercicios de escolha multipla em JSON puro.',
+                'Formato obrigatorio:',
+                '{"title":"string","subject":"string","topic":"string","exercises":[{"id":"ex_1","prompt":"string","options":["a","b","c","d"],"answerIndex":0,"solution":"string"}]}',
+                'Regras:',
+                `- exatamente ${requestedCount} exercicios`,
+                '- 4 opcoes por exercicio',
+                '- apenas uma opcao correta',
+                '- solution deve explicar de forma curta por que a resposta esta certa',
+                '- usa um nivel apropriado para estudo individual',
+                `Preferencias do pedido:\n${JSON.stringify(exerciseBrief, null, 2)}`,
+                `Contexto do utilizador:\n${JSON.stringify(context, null, 2)}`
+            ].join('\n\n')
+        }
+    ];
+
+    const raw = await callHuggingFaceChat(messages, { maxTokens: 1400, temperature: 0.25 });
+    const parsed = extractJsonBlock(raw);
+    if (!parsed) {
+        throw new Error('Nao foi possivel converter a resposta da IA em exercicios estruturados.');
+    }
+
+    const exercises = sanitizeExercisePayload(parsed, {
+        subject: requestedSubject || context.subjects[0]?.name || 'Geral',
+        topic: requestedTopic || 'revisao geral'
+    });
+
+    if (!exercises.exercises.length) {
+        throw new Error('A IA devolveu exercicios vazios.');
+    }
+
+    return {
+        id: `exercise_${Date.now()}`,
+        createdAt: new Date().toISOString(),
+        source: 'huggingface',
+        ...exercises
     };
 }
 
@@ -496,6 +590,7 @@ module.exports = {
     getUserStudyContext,
     askForTextReply,
     generateQuiz,
+    generateExercises,
     generateRecommendations,
     analyzeProgress
 };

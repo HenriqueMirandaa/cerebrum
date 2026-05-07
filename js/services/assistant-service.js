@@ -2,7 +2,9 @@ import api from '../api.js';
 import aiLocal from '../ai-local.js';
 
 const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const GENERATED_EXERCISE_STORAGE_KEY = 'cerebrum_generated_exercises';
 const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
+const EXERCISE_CREATED_EVENT = 'cerebrum:exercise-created';
 
 function toHumanError(error) {
     if (!error) return 'Ocorreu um erro inesperado.';
@@ -40,6 +42,18 @@ function getGeneratedQuizStorageKey() {
     return `${GENERATED_QUIZ_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
 }
 
+function getGeneratedExerciseStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_EXERCISE_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
 function persistGeneratedQuiz(quiz) {
     try {
         const current = JSON.parse(localStorage.getItem(getGeneratedQuizStorageKey()) || '[]');
@@ -49,6 +63,18 @@ function persistGeneratedQuiz(quiz) {
         window.dispatchEvent(new CustomEvent(QUIZ_CREATED_EVENT, { detail: { quiz } }));
     } catch (error) {
         console.warn('Falha ao guardar quiz gerado', error);
+    }
+}
+
+function persistGeneratedExercises(exercises) {
+    try {
+        const current = JSON.parse(localStorage.getItem(getGeneratedExerciseStorageKey()) || '[]');
+        const list = Array.isArray(current) ? current : [];
+        list.unshift(exercises);
+        localStorage.setItem(getGeneratedExerciseStorageKey(), JSON.stringify(list.slice(0, 20)));
+        window.dispatchEvent(new CustomEvent(EXERCISE_CREATED_EVENT, { detail: { exercises } }));
+    } catch (error) {
+        console.warn('Falha ao guardar exercicios gerados', error);
     }
 }
 
@@ -154,6 +180,18 @@ export function createAssistantService() {
                 } catch (fallbackError) {
                     return { ok: false, text: toHumanError(error) };
                 }
+            }
+        },
+
+        async generateExercisesWithOptions(options = {}) {
+            try {
+                const response = await withMinimumDelay(() => requestAi('/ai/exercises', options));
+                const exercises = response.exercises;
+                if (exercises) persistGeneratedExercises(exercises);
+                const text = `Criei uma lista de ${exercises?.questionCount || 6} exercicios de ${exercises?.subject || 'Geral'} sobre ${exercises?.topic || 'revisao geral'}. Ela ja esta disponivel em Ferramentas > Exercicios.`;
+                return { ok: true, text, exercises };
+            } catch (error) {
+                return { ok: false, text: toHumanError(error) };
             }
         },
 

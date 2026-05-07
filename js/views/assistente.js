@@ -16,6 +16,7 @@ const AI_CAPABILITIES = [
     'Faz análise de progresso geral.',
     'Mostra estado de matéria específica.',
     'Gera quiz rápido por matéria.',
+    'Gera exercícios resolúveis com gabarito na aba Ferramentas.',
     'Consulta cronograma e próxima sessão.'
 ];
 
@@ -62,6 +63,7 @@ function renderAssistantLayout() {
                     <div class="space-y-2" id="assistantQuickActions">
                         <button data-action="suggest" class="btn w-full">Sugestões de Estudo</button>
                         <button data-action="quiz" class="btn w-full">Gerar Quiz Rápido</button>
+                        <button data-action="exercise" class="btn w-full">Gerar ExercÃ­cios</button>
                         <button data-action="help" class="btn w-full">Mostrar Comandos</button>
                     </div>
                     <div class="assistant-capabilities-bubble hidden" id="capabilitiesBubble" role="dialog" aria-label="Capacidades da IA">
@@ -347,6 +349,22 @@ function setTypingIndicator(visible) {
     if (existing) existing.remove();
 }
 
+function parseExercisePrompt(text) {
+    const raw = String(text || '').trim();
+    if (!/\bexerc/i.test(raw)) return null;
+
+    const countMatch = raw.match(/(\d+)\s+perguntas?/i);
+    const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 6)));
+    const subjectMatch = raw.match(/\bexerc(?:icio|icios|ício|ícios)\s+de\s+(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+perguntas?|$)/i);
+    const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+perguntas?|$)/i);
+
+    return {
+        subjectName: subjectMatch ? subjectMatch[1].trim() : '',
+        topic: topicMatch ? topicMatch[1].trim() : '',
+        questionCount
+    };
+}
+
 async function sendMessage(text, state) {
     clearPlaceholder();
     appendChatMessage('user', text);
@@ -356,7 +374,10 @@ async function sendMessage(text, state) {
     setAssistantStatus('A processar...', true);
     setTypingIndicator(true);
 
-    const response = await assistantService.ask(text);
+    const exerciseRequest = parseExercisePrompt(text);
+    const response = exerciseRequest
+        ? await assistantService.generateExercisesWithOptions(exerciseRequest)
+        : await assistantService.ask(text);
 
     setTypingIndicator(false);
     appendChatMessage('assistant', response.ok ? response.text : `Erro: ${response.text}`);
@@ -668,6 +689,17 @@ async function handleQuickAction(action, button, state) {
                 result = { ok: false, text: quizPreferences.error };
             } else {
                 result = await assistantService.generateQuizWithOptions(quizPreferences);
+            }
+        }
+        if (action === 'exercise') {
+            const subjectName = prompt('MatÃ©ria dos exercÃ­cios (ex: MatemÃ¡tica)');
+            if (!subjectName) {
+                result = { ok: false, cancelled: true, text: 'OperaÃ§Ã£o cancelada.' };
+            } else {
+                const topic = prompt(`Tema para ${subjectName} (ex: Derivadas)`, '') || '';
+                const countRaw = prompt('Quantos exercÃ­cios queres gerar? (3 a 10)', '6');
+                const questionCount = Math.max(3, Math.min(10, Number(countRaw || 6) || 6));
+                result = await assistantService.generateExercisesWithOptions({ subjectName, topic, questionCount });
             }
         }
         if (action === 'help') result = await assistantService.showHelp();
