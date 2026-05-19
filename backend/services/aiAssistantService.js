@@ -6,6 +6,9 @@ const DEFAULT_MODEL = process.env.HF_MODEL || 'openai/gpt-oss-120b:cheapest';
 const DEFAULT_MAX_TOKENS = Number(process.env.HF_MAX_TOKENS || 900);
 const DEFAULT_TEMPERATURE = Number(process.env.HF_TEMPERATURE || 0.2);
 const PROVIDER_STATUS_TTL_MS = 5 * 60 * 1000;
+const API_TIMEOUT_MS = Number(process.env.HF_API_TIMEOUT || 60000); // 60s default
+const MAX_RETRIES = Number(process.env.HF_MAX_RETRIES || 2); // Retry failed requests
+const RETRY_DELAY_MS = 1000; // 1 second between retries
 let providerStatusCache = null;
 
 function normalizeText(value) {
@@ -26,17 +29,38 @@ function extractJsonBlock(text) {
     const raw = normalizeText(text);
     if (!raw) return null;
 
+    // Tentar com backticks JSON
     const fencedMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
     if (fencedMatch && fencedMatch[1]) {
         const parsed = safeJsonParse(fencedMatch[1].trim());
-        if (parsed) return parsed;
+        if (parsed && typeof parsed === 'object') return parsed;
     }
 
+    // Tentar com backticks sem language
+    const simpleFenced = raw.match(/```([\s\S]*?)```/);
+    if (simpleFenced && simpleFenced[1]) {
+        const parsed = safeJsonParse(simpleFenced[1].trim());
+        if (parsed && typeof parsed === 'object') return parsed;
+    }
+
+    // Procurar JSON entre chaves
     const firstBrace = raw.indexOf('{');
     const lastBrace = raw.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace > firstBrace) {
-        const parsed = safeJsonParse(raw.slice(firstBrace, lastBrace + 1));
-        if (parsed) return parsed;
+        const candidate = raw.slice(firstBrace, lastBrace + 1);
+        const parsed = safeJsonParse(candidate);
+        if (parsed && typeof parsed === 'object') return parsed;
+    }
+
+    // Procurar arrays JSON (para casos específicos)
+    const firstBracket = raw.indexOf('[');
+    const lastBracket = raw.lastIndexOf(']');
+    if (firstBracket !== -1 && lastBracket > firstBracket) {
+        const candidate = raw.slice(firstBracket, lastBracket + 1);
+        const parsed = safeJsonParse(candidate);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+            return { items: parsed }; // Envolver array em objeto
+        }
     }
 
     return null;
@@ -68,51 +92,85 @@ function asNumber(value, fallback = 0) {
     return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function callHuggingFaceChat(messages, options = {}) {
     const token = process.env.HF_TOKEN || process.env.HUGGINGFACE_API_KEY || process.env.HUGGINGFACEHUB_API_TOKEN;
     if (!token) {
         throw new Error('HF_TOKEN nao configurado no backend.');
     }
 
-    const response = await fetch(HF_API_URL, {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            model: options.model || DEFAULT_MODEL,
-            messages,
-            temperature: typeof options.temperature === 'number' ? options.temperature : DEFAULT_TEMPERATURE,
-            max_tokens: Number(options.maxTokens || DEFAULT_MAX_TOKENS),
-            stream: false
-        })
-    });
+    let lastError = null;
+    const maxRetries = options.maxRetries !== undefined ? options.maxRetries : MAX_RETRIES;
 
-    const rawText = await response.text();
-    let payload = {};
-    try {
-        payload = rawText ? JSON.parse(rawText) : {};
-    } catch (error) {
-        payload = { raw: rawText };
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+            const fetchPromise = fetch(HF_API_URL, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: options.model || DEFAULT_MODEL,
+                    messages,
+                    temperature: typeof options.temperature === 'number' ? options.temperature : DEFAULT_TEMPERATURE,
+                    max_tokens: Number(options.maxTokens || DEFAULT_MAX_TOKENS),
+                    stream: false
+                }),
+                timeout: API_TIMEOUT_MS
+            });
+
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error(`Timeout na API da IA (${API_TIMEOUT_MS}ms). Tente novamente com uma pergunta mais simples.`)), API_TIMEOUT_MS)
+            );
+
+            const response = await Promise.race([fetchPromise, timeoutPromise]);
+
+            const rawText = await response.text();
+            let payload = {};
+            try {
+                payload = rawText ? JSON.parse(rawText) : {};
+            } catch (error) {
+                payload = { raw: rawText };
+            }
+
+            if (!response.ok) {
+                const reason = payload?.error?.message || payload?.error || payload?.message || rawText || `HTTP ${response.status}`;
+                throw new Error(`Hugging Face retornou erro: ${reason}`);
+            }
+
+            const text =
+                payload?.choices?.[0]?.message?.content
+                || payload?.choices?.[0]?.text
+                || payload?.generated_text
+                || '';
+
+            if (!normalizeText(text)) {
+                throw new Error('A IA nao devolveu conteudo utilizavel.');
+            }
+
+            return text;
+        } catch (error) {
+            lastError = error;
+            console.warn(`[ai] Tentativa ${attempt + 1}/${maxRetries + 1} falhou:`, error.message);
+            
+            // Não fazer retry em erros de configuração
+            if (error.message.includes('HF_TOKEN')) {
+                throw error;
+            }
+
+            // Esperar antes de tentar novamente
+            if (attempt < maxRetries) {
+                const delayMs = RETRY_DELAY_MS * Math.pow(2, attempt); // Exponential backoff
+                await sleep(delayMs);
+            }
+        }
     }
 
-    if (!response.ok) {
-        const reason = payload?.error?.message || payload?.error || payload?.message || rawText || `HTTP ${response.status}`;
-        throw new Error(`Hugging Face retornou erro: ${reason}`);
-    }
-
-    const text =
-        payload?.choices?.[0]?.message?.content
-        || payload?.choices?.[0]?.text
-        || payload?.generated_text
-        || '';
-
-    if (!normalizeText(text)) {
-        throw new Error('A IA nao devolveu conteudo utilizavel.');
-    }
-
-    return text;
+    throw lastError || new Error('Falha ao conectar com a IA após múltiplas tentativas.');
 }
 
 async function getProviderStatus({ forceRefresh = false } = {}) {
@@ -308,18 +366,30 @@ async function getUserStudyContext(userId) {
 
 function buildAssistantSystemPrompt() {
     return [
-        'Tu es o assistente academico do Cerebrum.',
-        'Responde sempre em portugues europeu simples e natural.',
-        'Usa apenas informacao presente no contexto do utilizador e no pedido atual.',
-        'Nao inventes datas, horas, progresso ou materias inexistentes.',
-        'Se faltar informacao critica, diz exatamente o que falta.',
-        'Quando sugerires estudo, da prioridades concretas, curtas e acionaveis.',
-        'Quando o pedido for para quiz ou estrutura JSON, devolve apenas JSON valido.'
+        'Tu es o assistente academico do Cerebrum. Objetivo: ajudar o utilizador a estudar e a preparar-se para exames.',
+        'Responde sempre em portugues europeu simples, direto e sem floreados.',
+        'REGRAS ESSENCIAIS:',
+        '1. Analisa CUIDADOSAMENTE o pedido do utilizador antes de responder.',
+        '2. Se menciona datas de exame, use essas datas para contextualizar urgencia e planeamento.',
+        '3. Se pede quiz, exercicios ou json: devolve APENAS JSON valido, sem texto extra.',
+        '4. Nao repitas sempre a mesma resposta "posso ajudar com quiz ou recomendacoes".',
+        '5. Nao inventes datas, percentagens, materias ou dados inexistentes.',
+        '6. Se falta info critica, diz exatamente o que falta antes de responder.',
+        '7. Quando o pedido peca clarificacao (ex: "exame de matematica"), oferece sugestoes concretas, nao genéricas.',
+        '8. Prioriza as disciplinas mais urgentes (proximas de exame) nas sugestoes.'
     ].join(' ');
 }
 
 async function askForTextReply({ userId, message, extraInstruction = '' }) {
     const context = await getUserStudyContext(userId);
+    
+    // Detectar se o pedido menciona datas de exame
+    const examinationDateMatch = message.match(/(\d{1,2})[\/\-\.]?(\d{1,2})[\/\-\.]?(\d{2,4})/);
+    let dateHint = '';
+    if (examinationDateMatch) {
+        dateHint = `\n\nNota: O utilizador mencionou uma data de exame. Use-a para contextualizar o planeamento.`;
+    }
+
     const messages = [
         { role: 'system', content: buildAssistantSystemPrompt() },
         {
@@ -327,12 +397,13 @@ async function askForTextReply({ userId, message, extraInstruction = '' }) {
             content: [
                 extraInstruction ? `Instrucao adicional: ${extraInstruction}` : '',
                 `Contexto do utilizador:\n${JSON.stringify(context, null, 2)}`,
-                `Pedido do utilizador: ${message}`
+                `Pedido do utilizador: ${message}${dateHint}`
             ].filter(Boolean).join('\n\n')
         }
     ];
 
-    return callHuggingFaceChat(messages, { maxTokens: 750, temperature: 0.25 });
+    // Usar retry para text reply também
+    return callHuggingFaceChat(messages, { maxTokens: 800, temperature: 0.3, maxRetries: 2 });
 }
 
 function sanitizeQuizPayload(payload, fallback = {}) {
@@ -425,25 +496,30 @@ async function generateQuiz({ userId, options = {} }) {
         {
             role: 'user',
             content: [
-                'Gera um quiz pedagogico em JSON puro.',
-                'Formato obrigatorio:',
+                'TAREFA: Gera um quiz pedagogico em JSON puro. Responde APENAS com JSON valido, nada mais.',
+                'Formato obrigatorio (exato):',
                 '{"title":"string","subject":"string","topic":"string","questions":[{"id":"q_1","prompt":"string","options":["a","b","c","d"],"answerIndex":0,"explanation":"string"}]}',
-                'Regras:',
-                '- exatamente 5 perguntas',
-                '- 4 opcoes por pergunta',
-                '- apenas uma opcao correta',
-                '- explicacao curta e precisa',
-                '- usa o contexto do utilizador para escolher materia e foco',
+                '',
+                'Regras OBRIGATORIAS:',
+                '- exatamente 5 perguntas numeradas (q_1 ate q_5)',
+                '- cada pergunta tem exatamente 4 opcoes',
+                '- answerIndex e um numero entre 0-3 (a posicao correta)',
+                '- explicacao e curta e precisa (max 150 chars)',
+                '- usa o contexto do utilizador para escolher materia e topico',
+                '- sem markdown, sem backticks, sem comentarios',
+                '',
                 `Preferencias do pedido:\n${JSON.stringify(quizBrief, null, 2)}`,
                 `Contexto do utilizador:\n${JSON.stringify(context, null, 2)}`
             ].join('\n\n')
         }
     ];
 
-    const raw = await callHuggingFaceChat(messages, { maxTokens: 1200, temperature: 0.3 });
+    const raw = await callHuggingFaceChat(messages, { maxTokens: 1200, temperature: 0.2, maxRetries: 2 });
     const parsed = extractJsonBlock(raw);
+    
     if (!parsed) {
-        throw new Error('Nao foi possivel converter a resposta da IA em quiz estruturado.');
+        console.error('[generateQuiz] Resposta invalida:', raw.substring(0, 200));
+        throw new Error('Nao foi possivel converter a resposta da IA em quiz estruturado. A resposta nao era JSON valido.');
     }
 
     const quiz = sanitizeQuizPayload(parsed, {
@@ -479,25 +555,30 @@ async function generateExercises({ userId, options = {} }) {
         {
             role: 'user',
             content: [
-                'Gera exercicios de escolha multipla em JSON puro.',
-                'Formato obrigatorio:',
+                'TAREFA: Gera exercicios de escolha multipla em JSON puro. Responde APENAS com JSON valido, nada mais.',
+                'Formato obrigatorio (exato):',
                 '{"title":"string","subject":"string","topic":"string","exercises":[{"id":"ex_1","prompt":"string","options":["a","b","c","d"],"answerIndex":0,"solution":"string"}]}',
-                'Regras:',
+                '',
+                'Regras OBRIGATORIAS:',
                 `- exatamente ${requestedCount} exercicios`,
-                '- 4 opcoes por exercicio',
-                '- apenas uma opcao correta',
-                '- solution deve explicar de forma curta por que a resposta esta certa',
+                '- cada exercicio tem exatamente 4 opcoes',
+                '- answerIndex e um numero entre 0-3 (a posicao correta)',
+                '- solution explica por que a resposta esta certa (max 200 chars)',
                 '- usa um nivel apropriado para estudo individual',
+                '- sem markdown, sem backticks, sem comentarios',
+                '',
                 `Preferencias do pedido:\n${JSON.stringify(exerciseBrief, null, 2)}`,
                 `Contexto do utilizador:\n${JSON.stringify(context, null, 2)}`
             ].join('\n\n')
         }
     ];
 
-    const raw = await callHuggingFaceChat(messages, { maxTokens: 1400, temperature: 0.25 });
+    const raw = await callHuggingFaceChat(messages, { maxTokens: 1600, temperature: 0.2, maxRetries: 2 });
     const parsed = extractJsonBlock(raw);
+    
     if (!parsed) {
-        throw new Error('Nao foi possivel converter a resposta da IA em exercicios estruturados.');
+        console.error('[generateExercises] Resposta invalida:', raw.substring(0, 200));
+        throw new Error('Nao foi possivel converter a resposta da IA em exercicios estruturados. A resposta nao era JSON valido.');
     }
 
     const exercises = sanitizeExercisePayload(parsed, {
