@@ -655,7 +655,17 @@ async function analyzeProgress({ userId }) {
             sections.next = line.split(':').slice(1).join(':').trim();
             continue;
         }
-    
+
+        sections[currentKey] = normalizeText(`${sections[currentKey]} ${line}`);
+    }
+
+    return {
+        message: sections.message || text,
+        plan: sections.plan || 'Sem plano detalhado devolvido pela IA.',
+        next: sections.next || 'Sem proximo passo claro devolvido pela IA.'
+    };
+}
+
 function parseDateTimeForSQL(iso) {
     if (!iso) return null;
     const d = new Date(iso);
@@ -778,17 +788,6 @@ async function createEventFromMessage({ userId, message }) {
         console.error('[ai] Erro ao criar evento:', err.message);
         return { success: false, error: 'Erro ao salvar evento no banco de dados.' };
     }
-}
-
-    sections[currentKey] = normalizeText(`${sections[currentKey]} ${line}`);
-
-    }
-
-    return {
-        message: sections.message || text,
-        plan: sections.plan || 'Sem plano detalhado devolvido pela IA.',
-        next: sections.next || 'Sem proximo passo claro devolvido pela IA.'
-    };
 }
 
 module.exports = {
