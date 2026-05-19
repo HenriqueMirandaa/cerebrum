@@ -655,7 +655,133 @@ async function analyzeProgress({ userId }) {
             sections.next = line.split(':').slice(1).join(':').trim();
             continue;
         }
-        sections[currentKey] = normalizeText(`${sections[currentKey]} ${line}`);
+    
+function parseDateTimeForSQL(iso) {
+    if (!iso) return null;
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return null;
+    return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
+async function createEventFromMessage({ userId, message }) {
+    // Detecta padrões como:
+    // "exame de matemática B no dia 23 de junho as 9:30"
+    // "prova de física em 15/06/26 às 14:00"
+    // "reunião no dia 25 de maio às 10:00"
+    
+    const datePatterns = [
+        // DD/MM/YYYY HH:MM
+        /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i,
+        // DD de mês de YYYY HH:MM
+        /(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i,
+        // DD de mês às HH:MM (assume ano corrente/próximo)
+        /(\d{1,2})\s+de\s+(\w+)\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i,
+    ];
+
+    const months = {
+        'janeiro': 1, 'fevereiro': 2, 'março': 3, 'abril': 4, 'maio': 5, 'junho': 6,
+        'julho': 7, 'agosto': 8, 'setembro': 9, 'outubro': 10, 'novembro': 11, 'dezembro': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12,
+    };
+
+    const titleMatch = message.match(/(?:exame|prova|teste|avaliação|reunião|aula|trabalho|entrega)\s+(?:de|do|da)?\s+([^n]+?)(?:\s+no\s+dia|\s+em|\s+às|at|$)/i);
+    const title = titleMatch ? titleMatch[1].trim() : 'Evento';
+
+    let startDate = null;
+    let endDate = null;
+
+    // Tentar pattern 1: DD/MM/YYYY HH:MM
+    const match1 = message.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i);
+    if (match1) {
+        const [, day, month, year, hour, min] = match1;
+        const y = year.length === 2 ? `20${year}` : year;
+        const dateStr = `${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${min}:00Z`;
+        startDate = new Date(dateStr);
+    }
+
+    // Tentar pattern 2: DD de mês de YYYY HH:MM
+    if (!startDate) {
+        const match2 = message.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i);
+        if (match2) {
+            const [, day, monthName, year, hour, min] = match2;
+            const monthNum = months[monthName.toLowerCase()];
+            if (monthNum) {
+                const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${min}:00Z`;
+                startDate = new Date(dateStr);
+            }
+        }
+    }
+
+    // Tentar pattern 3: DD de mês às HH:MM (ano corrente)
+    if (!startDate) {
+        const match3 = message.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:às|at)?\s*(\d{1,2})[:\.](\d{2})/i);
+        if (match3) {
+            const [, day, monthName, hour, min] = match3;
+            const monthNum = months[monthName.toLowerCase()];
+            if (monthNum) {
+                const now = new Date();
+                let year = now.getFullYear();
+                // Se a data já passou este ano, assume próximo ano
+                const testDate = new Date(`${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+                if (testDate < now) year++;
+                
+                const dateStr = `${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${min}:00Z`;
+                startDate = new Date(dateStr);
+            }
+        }
+    }
+
+    if (!startDate || isNaN(startDate.getTime())) {
+        return { success: false, error: 'Não consegui extrair a data e hora da mensagem.' };
+    }
+
+    // Assumir duração de 3 horas para exames, 1 hora para outros
+    const durationHours = message.match(/exame|prova/i) ? 3 : 1;
+    endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+
+    // Detectar matéria/disciplina
+    let materiId = null;
+    try {
+        const subjectMatch = message.match(/(?:de|do|da)\s+([^n]+?)(?:\s+no\s+dia|\s+em|\s+às|$)/i);
+        if (subjectMatch) {
+            const subjectName = subjectMatch[1].trim().toLowerCase();
+            const [[row]] = await pool.execute(
+                'SELECT id FROM materias WHERE user_id = ? AND LOWER(name) LIKE ?',
+                [userId, `%${subjectName}%`]
+            );
+            if (row) materiId = row.id;
+        }
+    } catch (err) {
+        console.warn('[ai] Erro ao buscar matéria:', err.message);
+    }
+
+    // Inserir evento
+    try {
+        const startISO = parseDateTimeForSQL(startDate.toISOString());
+        const endISO = parseDateTimeForSQL(endDate.toISOString());
+
+        const [result] = await pool.execute(
+            'INSERT INTO events (user_id, title, materia_id, start_iso, end_iso, all_day, color, notes, created_at) VALUES (?, ?, ?, ?, ?, 0, NULL, NULL, NOW())',
+            [userId, title, materiId, startISO, endISO]
+        );
+
+        return {
+            success: true,
+            eventId: result.insertId,
+            title,
+            start_iso: startDate.toISOString(),
+            end_iso: endDate.toISOString(),
+            materia_id: materiId
+        };
+    } catch (err) {
+        console.error('[ai] Erro ao criar evento:', err.message);
+        return { success: false, error: 'Erro ao salvar evento no banco de dados.' };
+    }
+}
+
+    sections[currentKey] = normalizeText(`${sections[currentKey]} ${line}`);
+
     }
 
     return {
@@ -673,5 +799,6 @@ module.exports = {
     generateQuiz,
     generateExercises,
     generateRecommendations,
-    analyzeProgress
+    analyzeProgress,
+    createEventFromMessage
 };

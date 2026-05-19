@@ -19,7 +19,8 @@ const {
   generateRecommendations,
   analyzeProgress,
   callHuggingFaceChat,
-  getProviderStatus
+  getProviderStatus,
+  createEventFromMessage
 } = require('../services/aiAssistantService');
 
 const uploadDir = path.join(__dirname, '..', '..', 'backend_uploads');
@@ -52,13 +53,29 @@ router.post('/assistant', auth, async (req, res) => {
     const message = String(req.body?.message || '').trim();
     if (!message) return res.status(400).json({ error: 'Mensagem obrigatoria.' });
 
+    // Detectar se o pedido é para marcar um evento
+    const isEventRequest = /(?:marca|schedule|marca-me|agendar|exame|prova|teste|reunião)\s+(?:o\s+)?(?:exame|prova|teste|reunião|aula|trabalho)/i.test(message);
+
+    let eventResult = null;
+    if (isEventRequest) {
+      eventResult = await createEventFromMessage({ userId: req.user.id, message });
+    }
+
     const answer = await askForTextReply({
       userId: req.user.id,
       message,
       extraInstruction: 'Responde como tutor do Cerebrum. Se o utilizador pedir um plano de estudo, organiza a resposta por prioridade, carga e proximo passo.'
     });
 
-    res.json({ answer });
+    const response = { answer };
+    if (eventResult && eventResult.success) {
+      response.event = eventResult;
+      response.eventMessage = `Evento "${eventResult.title}" marcado com sucesso para ${new Date(eventResult.start_iso).toLocaleString('pt-PT')}`;
+    } else if (eventResult && !eventResult.success) {
+      response.eventError = eventResult.error;
+    }
+
+    res.json(response);
   } catch (error) {
     console.error('/api/ai/assistant error', error);
     res.status(500).json({ error: 'Erro ao gerar resposta do assistente.', details: String(error.message || error) });
@@ -134,11 +151,17 @@ router.post('/chat', async (req, res) => {
     if (!question) return res.status(400).json({ error: 'Pergunta obrigatoria.' });
 
     const pyBase = process.env.PY_SERVICE_URL || 'http://127.0.0.1:5000';
-    const searchResp = await fetch(`${pyBase}/search`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: question, k: top_k })
-    });
+    const searchResp = await Promise.race([
+      fetch(`${pyBase}/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: question, k: top_k }),
+        timeout: 30000
+      }),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout ao buscar contextos (30s). Tente novamente.')), 30000)
+      )
+    ]);
 
     if (!searchResp.ok) {
       const txt = await searchResp.text();
@@ -174,6 +197,28 @@ router.post('/chat', async (req, res) => {
   } catch (error) {
     console.error('/api/ai/chat error', error);
     res.status(500).json({ error: 'Erro ao processar pergunta', details: String(error.message || error) });
+  }
+});
+
+router.post('/create-event', auth, async (req, res) => {
+  try {
+    const { message } = req.body || {};
+    if (!message) return res.status(400).json({ error: 'Mensagem obrigatoria.' });
+
+    const result = await createEventFromMessage({ userId: req.user.id, message });
+    
+    if (!result.success) {
+      return res.status(400).json({ error: result.error });
+    }
+
+    res.json({ 
+      success: true, 
+      message: `Evento "${result.title}" marcado para ${new Date(result.start_iso).toLocaleString('pt-PT')}`,
+      event: result 
+    });
+  } catch (error) {
+    console.error('/api/ai/create-event error', error);
+    res.status(500).json({ error: 'Erro ao criar evento', details: String(error.message || error) });
   }
 });
 

@@ -151,18 +151,8 @@ Campos esperados no template do EmailJS:
 
 ### 2. Redefinicao de senha
 
-A redefinicao de senha continua no backend e usa SMTP.
 
-Variaveis necessarias:
 
-```env
-SMTP_HOST=
-SMTP_PORT=587
-SMTP_USER=
-SMTP_PASS=
-FROM_EMAIL=
-RESET_PASSWORD_TOKEN_MINUTES=60
-```
 
 ## Scripts
 
