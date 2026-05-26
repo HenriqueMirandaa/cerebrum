@@ -133,7 +133,7 @@ export function createAssistantService() {
                 const response = await withMinimumDelay(() => requestAi('/ai/recommendations', options));
                 const items = Array.isArray(response.recommendations) ? response.recommendations : [];
                 const text = items.map((item) => `${item.title}: ${item.message}`).join('\n\n');
-                return { ok: true, text: text || 'Sem recomendacoes disponiveis.' };
+                return { ok: true, text: text || 'Sem recomendações disponíveis.' };
             } catch (error) {
                 try {
                     const fallback = await withMinimumDelay(() => aiLocal.getRecommendations(options));
@@ -150,12 +150,12 @@ export function createAssistantService() {
                 const response = await withMinimumDelay(() => requestAi('/ai/quiz'));
                 const quiz = response.quiz;
                 if (quiz) persistGeneratedQuiz(quiz);
-                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
                 return { ok: true, text };
             } catch (error) {
                 try {
                     const fallback = await withMinimumDelay(() => aiLocal.generateQuiz());
-                    return { ok: true, text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.` };
+                    return { ok: true, text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.` };
                 } catch (fallbackError) {
                     return { ok: false, text: toHumanError(error) };
                 }
@@ -167,14 +167,14 @@ export function createAssistantService() {
                 const response = await withMinimumDelay(() => requestAi('/ai/quiz', options));
                 const quiz = response.quiz;
                 if (quiz) persistGeneratedQuiz(quiz);
-                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`;
+                const text = `Criei um quiz de ${quiz?.questionCount || 5} perguntas de ${quiz?.subject || 'Geral'} sobre ${quiz?.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
                 return { ok: true, text, quiz };
             } catch (error) {
                 try {
                     const fallback = await withMinimumDelay(() => aiLocal.generateQuiz(options));
                     return {
                         ok: true,
-                        text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`,
+                        text: `Criei um quiz de ${fallback.questionCount || 5} perguntas de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`,
                         quiz: fallback
                     };
                 } catch (fallbackError) {
@@ -188,7 +188,7 @@ export function createAssistantService() {
                 const response = await withMinimumDelay(() => requestAi('/ai/exercises', options));
                 const exercises = response.exercises;
                 if (exercises) persistGeneratedExercises(exercises);
-                const text = `Criei uma lista de ${exercises?.questionCount || 6} exercicios de ${exercises?.subject || 'Geral'} sobre ${exercises?.topic || 'revisao geral'}. Ela ja esta disponivel em Ferramentas > Exercicios.`;
+                const text = `Criei uma lista de ${exercises?.questionCount || 6} exercícios de ${exercises?.subject || 'Geral'} sobre ${exercises?.topic || 'revisão geral'}. Ela já está disponível em Ferramentas > Exercícios.`;
                 return { ok: true, text, exercises };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
@@ -226,8 +226,8 @@ export function createAssistantService() {
 
         async addSubjectFromPrompts() {
             try {
-                const name = prompt('Nome da materia (ex: Calculo)');
-                if (!name) return { ok: false, cancelled: true, text: 'Operacao cancelada.' };
+                const name = prompt('Nome da matéria (ex: Cálculo)');
+                if (!name) return { ok: false, cancelled: true, text: 'Operação cancelada.' };
 
                 const hoursRaw = prompt('Horas totais planeadas (ex: 40)');
                 const hours = hoursRaw ? Number(hoursRaw.replace(',', '.')) : 0;
@@ -237,7 +237,7 @@ export function createAssistantService() {
                     aiLocal.addSubject({ name, total_hours: hours, exam_date: examDate || null })
                 );
 
-                return { ok: true, text: `Materia adicionada: ${created.name} (ID: ${created.id})` };
+                return { ok: true, text: `Matéria adicionada: ${created.name} (ID: ${created.id})` };
             } catch (error) {
                 return { ok: false, text: toHumanError(error) };
             }
