@@ -319,12 +319,23 @@ main.flex-1,
 
     body.startup-ui {
         display: block;
+        overflow-x: hidden;
     }
 
     .dashboard-main {
         width: 100% !important;
         margin-left: 0 !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
         transition: none;
+    }
+
+    body > .sidebar + .dashboard-main,
+    body > .sidebar + .flex-1 {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
     }
 
     .sidebar {
@@ -359,12 +370,6 @@ main.flex-1,
     body.sidebar-open .dashboard-sidebar-overlay {
         opacity: 1;
         pointer-events: auto;
-    }
-
-    body > .sidebar + .flex-1 {
-        margin-left: 0 !important;
-        width: 100% !important;
-        min-height: 100vh;
     }
 
     .dashboard-header {
@@ -426,6 +431,20 @@ main.flex-1,
 
     main.flex-1 {
         padding: 0.875rem;
+        width: 100%;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+
+    #view {
+        width: 100%;
+        max-width: 100% !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+
+    #view > * {
+        min-width: 0;
     }
 
     .hero {
@@ -467,7 +486,22 @@ main.flex-1,
         min-height: 100svh;
     }
 
+    html,
+    body {
+        overflow-x: hidden;
+    }
+
     .dashboard-main {
+        min-width: 0;
+    }
+
+    main.flex-1,
+    #view,
+    .assistant-workspace,
+    .assistant-grid,
+    .cronograma-root {
+        width: 100%;
+        max-width: 100%;
         min-width: 0;
     }
 
@@ -626,6 +660,20 @@ main.flex-1,
         padding: 0.75rem;
     }
 
+    .card,
+    .stat-card,
+    .subject-card,
+    .assistant-panel,
+    .assistant-actions,
+    .modal-card,
+    .modal-container {
+        width: 100%;
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+        box-sizing: border-box;
+    }
+
     .add-materia-modal-header {
         flex-direction: column;
         align-items: stretch;
@@ -658,6 +706,11 @@ main.flex-1,
         padding: 0.75rem;
     }
 
+    #view {
+        padding-left: 0;
+        padding-right: 0;
+    }
+
     .dashboard-header-left,
     .dashboard-header-center,
     .dashboard-header-right {
@@ -686,5 +739,13 @@ main.flex-1,
     .modal-card,
     .modal-container {
         border-radius: 16px;
+    }
+
+    .card-header,
+    .card-body,
+    .card-footer,
+    .stat-card {
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
 }

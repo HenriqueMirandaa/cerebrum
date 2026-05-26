@@ -493,6 +493,13 @@ class Dashboard {
         const menuBtn = document.getElementById('mobileMenuBtn');
         const closeBtn = document.getElementById('mobileSidebarClose');
         const overlay = document.getElementById('dashboardSidebarOverlay');
+        const sidebar = document.querySelector('.sidebar');
+        let hoverCloseTimer = null;
+        const clearHoverCloseTimer = () => {
+            if (!hoverCloseTimer) return;
+            clearTimeout(hoverCloseTimer);
+            hoverCloseTimer = null;
+        };
         const setMenuState = (expanded) => {
             if (!menuBtn) return;
             menuBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -527,8 +534,33 @@ class Dashboard {
         setMenuState(false);
 
         if (menuBtn) menuBtn.addEventListener('click', openSidebar);
+        if (menuBtn) {
+            menuBtn.addEventListener('mouseenter', () => {
+                if (this.mobileSidebarMedia.matches) return;
+                clearHoverCloseTimer();
+                if (!body.classList.contains('sidebar-desktop-collapsed')) return;
+                openSidebar();
+            });
+            menuBtn.addEventListener('mouseleave', () => {
+                if (this.mobileSidebarMedia.matches) return;
+                clearHoverCloseTimer();
+                hoverCloseTimer = window.setTimeout(() => {
+                    const hoveringButton = menuBtn.matches(':hover');
+                    const hoveringSidebar = sidebar ? sidebar.matches(':hover') : false;
+                    if (!hoveringButton && !hoveringSidebar) closeSidebar();
+                }, 120);
+            });
+        }
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
+        if (sidebar) {
+            sidebar.addEventListener('mouseenter', clearHoverCloseTimer);
+            sidebar.addEventListener('mouseleave', () => {
+                if (this.mobileSidebarMedia.matches) return;
+                clearHoverCloseTimer();
+                closeSidebar();
+            });
+        }
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') closeSidebar();
