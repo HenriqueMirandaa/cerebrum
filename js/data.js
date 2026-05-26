@@ -89,6 +89,26 @@ async function deleteFromStore(storeName, key) {
     });
 }
 
+async function putAllToStore(storeName, items) {
+    return new Promise((resolve, reject) => {
+        const transaction = db.transaction(storeName, 'readwrite');
+        const store = transaction.objectStore(storeName);
+        store.clear();
+
+        items.forEach((item) => {
+            store.put(item);
+        });
+
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+    });
+}
+
+function subjectIdsMatch(left, right) {
+    return String(left ?? '') === String(right ?? '');
+}
+
 // Specific data operations
 export async function getSubjects() {
     return getAllFromStore('subjects');
@@ -103,7 +123,22 @@ export async function updateSubject(subject) {
 }
 
 export async function deleteSubject(id) {
-    return deleteFromStore('subjects', id);
+    const [subjects, sessions] = await Promise.all([
+        getSubjects(),
+        getSessions()
+    ]);
+
+    const remainingSubjects = subjects.filter((subject) => !subjectIdsMatch(subject.id, id));
+    const remainingSessions = sessions.filter((session) => !subjectIdsMatch(session.subject_id, id));
+    const progressKeys = [id, String(id)];
+    const numericId = Number(id);
+    if (Number.isFinite(numericId)) progressKeys.push(numericId);
+
+    await Promise.all([
+        putAllToStore('subjects', remainingSubjects),
+        putAllToStore('sessions', remainingSessions),
+        ...progressKeys.map((key) => deleteFromStore('progress', key))
+    ]);
 }
 
 export async function getSessions() {

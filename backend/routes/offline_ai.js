@@ -14,6 +14,7 @@ const pool = require('../config/database');
 const auth = require('../middleware/auth');
 const {
   askForTextReply,
+  sanitizeAssistantTextReply,
   generateQuiz,
   generateExercises,
   generateRecommendations,
@@ -56,21 +57,31 @@ router.post('/assistant', auth, async (req, res) => {
     // Detectar se o pedido é para marcar um evento
     const isEventRequest = /(?:marca|schedule|marca-me|agendar|exame|prova|teste|reunião)\s+(?:o\s+)?(?:exame|prova|teste|reunião|aula|trabalho)/i.test(message);
 
+    const shouldCreateEvent = isEventRequest
+      || /(?:marc|agend|schedule)/i.test(message.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))
+      || /(?:exame|prova|teste|reuniao|aula|trabalho|entrega)\s+(?:de|do|da)?\s+\S+/i.test(message.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+
     let eventResult = null;
-    if (isEventRequest) {
+    if (shouldCreateEvent) {
       eventResult = await createEventFromMessage({ userId: req.user.id, message });
     }
 
-    const answer = await askForTextReply({
+    const rawAnswer = await askForTextReply({
       userId: req.user.id,
       message,
       extraInstruction: 'Responde como tutor do Cerebrum. Se o utilizador pedir um plano de estudo, organiza a resposta por prioridade, carga e proximo passo.'
     });
 
+    const eventMessage = eventResult && eventResult.success
+      ? `Evento "${eventResult.title}" marcado com sucesso para ${new Date(eventResult.start_iso).toLocaleString('pt-PT')}.`
+      : '';
+
+    const cleanedAnswer = sanitizeAssistantTextReply(rawAnswer);
+    const answer = eventMessage || cleanedAnswer || (eventResult && eventResult.error) || 'Pedido processado com sucesso.';
     const response = { answer };
     if (eventResult && eventResult.success) {
       response.event = eventResult;
-      response.eventMessage = `Evento "${eventResult.title}" marcado com sucesso para ${new Date(eventResult.start_iso).toLocaleString('pt-PT')}`;
+      response.eventMessage = eventMessage;
     } else if (eventResult && !eventResult.success) {
       response.eventError = eventResult.error;
     }

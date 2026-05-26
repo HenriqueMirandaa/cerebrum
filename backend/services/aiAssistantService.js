@@ -406,6 +406,23 @@ async function askForTextReply({ userId, message, extraInstruction = '' }) {
     return callHuggingFaceChat(messages, { maxTokens: 800, temperature: 0.3, maxRetries: 2 });
 }
 
+function sanitizeAssistantTextReply(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+
+    const withoutJsonFences = raw
+        .replace(/```json[\s\S]*?```/gi, '')
+        .replace(/```[\s\S]*?```/g, '')
+        .trim();
+
+    if (withoutJsonFences) return withoutJsonFences;
+
+    const parsed = extractJsonBlock(raw);
+    if (parsed && typeof parsed === 'object') return '';
+
+    return raw;
+}
+
 function sanitizeQuizPayload(payload, fallback = {}) {
     const subject = normalizeText(payload?.subject || fallback.subject || 'Geral');
     const topic = normalizeText(payload?.topic || fallback.topic || 'revisao geral');
@@ -673,7 +690,132 @@ function parseDateTimeForSQL(iso) {
     return d.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+function normalizeMonthToken(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+}
+
 async function createEventFromMessage({ userId, message }) {
+    const monthsMap = {
+        janeiro: 1, fevereiro: 2, marco: 3, abril: 4, maio: 5, junho: 6,
+        julho: 7, agosto: 8, setembro: 9, outubro: 10, novembro: 11, dezembro: 12,
+        january: 1, february: 2, march: 3, april: 4, may: 5, june: 6,
+        july: 7, august: 8, september: 9, october: 10, november: 11, december: 12
+    };
+    const rawMessage = normalizeText(message);
+    const normalizedForDetection = rawMessage.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const isExamEvent = /(?:exame|prova|teste|avaliacao)/i.test(normalizedForDetection);
+    const titleMatchNormalized = rawMessage.match(/(?:exame|prova|teste|avalia(?:c|ç)ao|reuni(?:a|ã)o|aula|trabalho|entrega)\s+(?:de|do|da)?\s+(.+?)(?=\s+no\s+dia|\s+dia\b|\s+em\b|\s+(?:a|as|at)\b|$)/i);
+    const subjectLabelNormalized = titleMatchNormalized ? normalizeText(titleMatchNormalized[1]) : '';
+    const normalizedTitle = subjectLabelNormalized ? (isExamEvent ? `Exame de ${subjectLabelNormalized}` : subjectLabelNormalized) : (isExamEvent ? 'Exame' : 'Evento');
+
+    let parsedStartDate = null;
+    let parsedAllDay = false;
+
+    const numericWithTime = rawMessage.match(/(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\s+(?:Ã s|às|as|at)?\s*(\d{1,2})[:\.](\d{2})/i);
+    if (numericWithTime) {
+        const [, day, month, year, hour, min] = numericWithTime;
+        const fullYear = year.length === 2 ? `20${year}` : year;
+        parsedStartDate = new Date(`${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${min}:00Z`);
+    }
+
+    if (!parsedStartDate) {
+        const wordsWithTime = rawMessage.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})\s+(?:Ã s|às|as|at)?\s*(\d{1,2})[:\.](\d{2})/i);
+        if (wordsWithTime) {
+            const [, day, monthName, year, hour, min] = wordsWithTime;
+            const monthNum = monthsMap[normalizeMonthToken(monthName)];
+            if (monthNum) {
+                parsedStartDate = new Date(`${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hour).padStart(2, '0')}:${min}:00Z`);
+            }
+        }
+    }
+
+    if (!parsedStartDate) {
+        const numericDateOnly = rawMessage.match(/(?:no\s+dia|dia|em)?\s*(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})(?!\s*\d)/i);
+        if (numericDateOnly) {
+            const [, day, month, year] = numericDateOnly;
+            const fullYear = year.length === 2 ? `20${year}` : year;
+            parsedStartDate = new Date(`${fullYear}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00Z`);
+            parsedAllDay = true;
+        }
+    }
+
+    if (!parsedStartDate) {
+        const wordsDateOnly = rawMessage.match(/(\d{1,2})\s+de\s+(\w+)\s+(?:de\s+)?(\d{4})(?!\s*(?:[:\.]|\d))/i);
+        if (wordsDateOnly) {
+            const [, day, monthName, year] = wordsDateOnly;
+            const monthNum = monthsMap[normalizeMonthToken(monthName)];
+            if (monthNum) {
+                parsedStartDate = new Date(`${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00Z`);
+                parsedAllDay = true;
+            }
+        }
+    }
+
+    if (!parsedStartDate) {
+        const wordsDateCurrentYear = rawMessage.match(/(\d{1,2})\s+de\s+(\w+)(?!\s*(?:[:\.]|\d))/i);
+        if (wordsDateCurrentYear) {
+            const [, day, monthName] = wordsDateCurrentYear;
+            const monthNum = monthsMap[normalizeMonthToken(monthName)];
+            if (monthNum) {
+                const now = new Date();
+                let year = now.getFullYear();
+                const thisYearDate = new Date(`${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00Z`);
+                if (thisYearDate < now) year++;
+                parsedStartDate = new Date(`${year}-${String(monthNum).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00Z`);
+                parsedAllDay = true;
+            }
+        }
+    }
+
+    if (parsedStartDate && !isNaN(parsedStartDate.getTime())) {
+        const parsedEndDate = parsedAllDay
+            ? new Date(parsedStartDate.getTime() + (24 * 60 * 60 * 1000) - 1000)
+            : new Date(parsedStartDate.getTime() + (isExamEvent ? 3 : 1) * 60 * 60 * 1000);
+
+        let linkedMateriaId = null;
+        try {
+            if (subjectLabelNormalized) {
+                const [rows] = await pool.execute(
+                    `SELECT s.id
+                     FROM user_progress up
+                     JOIN subjects s ON s.id = up.subject_id
+                     WHERE up.user_id = ? AND LOWER(s.name) LIKE ?
+                     ORDER BY CHAR_LENGTH(s.name) ASC
+                     LIMIT 1`,
+                    [userId, `%${subjectLabelNormalized.toLowerCase()}%`]
+                );
+                if (rows?.[0]) linkedMateriaId = rows[0].id;
+            }
+        } catch (lookupError) {
+            console.warn('[ai] Erro ao buscar matéria para o evento:', lookupError.message || lookupError);
+        }
+
+        try {
+            const startSQL = parseDateTimeForSQL(parsedStartDate.toISOString());
+            const endSQL = parseDateTimeForSQL(parsedEndDate.toISOString());
+            const [insertResult] = await pool.execute(
+                'INSERT INTO events (user_id, title, materia_id, start_iso, end_iso, all_day, color, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL, NOW())',
+                [userId, normalizedTitle, linkedMateriaId, startSQL, endSQL, parsedAllDay ? 1 : 0]
+            );
+
+            return {
+                success: true,
+                eventId: insertResult.insertId,
+                title: normalizedTitle,
+                start_iso: parsedStartDate.toISOString(),
+                end_iso: parsedEndDate.toISOString(),
+                materia_id: linkedMateriaId,
+                all_day: parsedAllDay
+            };
+        } catch (insertError) {
+            console.error('[ai] Erro ao criar evento:', insertError.message || insertError);
+            return { success: false, error: 'Erro ao salvar evento no banco de dados.' };
+        }
+    }
     // Detecta padrões como:
     // "exame de matemática B no dia 23 de junho as 9:30"
     // "prova de física em 15/06/26 às 14:00"
@@ -795,6 +937,7 @@ module.exports = {
     getProviderStatus,
     getUserStudyContext,
     askForTextReply,
+    sanitizeAssistantTextReply,
     generateQuiz,
     generateExercises,
     generateRecommendations,
