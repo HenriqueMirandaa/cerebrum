@@ -494,6 +494,7 @@ class Dashboard {
         const closeBtn = document.getElementById('mobileSidebarClose');
         const overlay = document.getElementById('dashboardSidebarOverlay');
         const sidebar = document.querySelector('.sidebar');
+        const desktopHotZoneWidth = 28;
         let hoverCloseTimer = null;
         const clearHoverCloseTimer = () => {
             if (!hoverCloseTimer) return;
@@ -534,23 +535,6 @@ class Dashboard {
         setMenuState(false);
 
         if (menuBtn) menuBtn.addEventListener('click', openSidebar);
-        if (menuBtn) {
-            menuBtn.addEventListener('mouseenter', () => {
-                if (this.mobileSidebarMedia.matches) return;
-                clearHoverCloseTimer();
-                if (!body.classList.contains('sidebar-desktop-collapsed')) return;
-                openSidebar();
-            });
-            menuBtn.addEventListener('mouseleave', () => {
-                if (this.mobileSidebarMedia.matches) return;
-                clearHoverCloseTimer();
-                hoverCloseTimer = window.setTimeout(() => {
-                    const hoveringButton = menuBtn.matches(':hover');
-                    const hoveringSidebar = sidebar ? sidebar.matches(':hover') : false;
-                    if (!hoveringButton && !hoveringSidebar) closeSidebar();
-                }, 120);
-            });
-        }
         if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
         if (overlay) overlay.addEventListener('click', closeSidebar);
         if (sidebar) {
@@ -564,6 +548,14 @@ class Dashboard {
 
         window.addEventListener('keydown', (event) => {
             if (event.key === 'Escape') closeSidebar();
+        });
+
+        window.addEventListener('mousemove', (event) => {
+            if (this.mobileSidebarMedia.matches) return;
+            if (!body.classList.contains('sidebar-desktop-collapsed')) return;
+            if (event.clientX > desktopHotZoneWidth) return;
+            clearHoverCloseTimer();
+            openSidebar();
         });
 
         const handleMediaChange = (event) => {
