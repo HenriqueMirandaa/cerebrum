@@ -78,6 +78,28 @@ function persistGeneratedExercises(exercises) {
     }
 }
 
+function parseQuizPrompt(text) {
+    const raw = String(text || '').trim();
+    const normalized = raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase();
+
+    if (!/\b(quiz|quizz|questionario|teste rapido)\b/.test(normalized)) return null;
+    if (!/\b(gera|gerar|gere|cria|criar|faz|fazer|monte|monta|produz)\b/.test(normalized)) return null;
+
+    const countMatch = normalized.match(/(\d+)\s+(?:perguntas?|questoes?)/);
+    const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 5)));
+    const subjectMatch = raw.match(/\b(?:quiz|quizz|question[aá]rio|teste r[aá]pido)\s+de\s+(?:\d+\s+perguntas?\s+de\s+)?(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+perguntas?|$)/i);
+    const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+perguntas?|$)/i);
+
+    return {
+        subjectName: subjectMatch ? subjectMatch[1].trim() : '',
+        topic: topicMatch ? topicMatch[1].trim() : '',
+        questionCount
+    };
+}
+
 async function requestAi(endpoint, body = {}) {
     return api.request(endpoint, {
         method: 'POST',
@@ -101,11 +123,30 @@ export function createAssistantService() {
         },
 
         async ask(message) {
+            const quizRequest = parseQuizPrompt(message);
+            if (quizRequest) {
+                return this.generateQuizWithOptions(quizRequest);
+            }
+
             try {
                 const response = await withMinimumDelay(() => requestAi('/ai/assistant', { message }));
+                if (response.quiz) {
+                    persistGeneratedQuiz(response.quiz);
+                    const quiz = response.quiz;
+                    const text = response.answer || `Criei um quiz de ${quiz.questionCount || 5} perguntas de ${quiz.subject || 'Geral'} sobre ${quiz.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
+                    return { ok: true, text, quiz };
+                }
                 return { ok: true, text: response.answer || 'Sem resposta.' };
             } catch (error) {
                 try {
+                    if (quizRequest) {
+                        const fallbackQuiz = await withMinimumDelay(() => aiLocal.generateQuiz(quizRequest));
+                        return {
+                            ok: true,
+                            text: `Criei um quiz de ${fallbackQuiz.questionCount || 5} perguntas de ${fallbackQuiz.subject || 'Geral'} sobre ${fallbackQuiz.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`,
+                            quiz: fallbackQuiz
+                        };
+                    }
                     const fallback = await withMinimumDelay(() => aiLocal.chatResponder(message));
                     return { ok: true, text: fallback };
                 } catch (fallbackError) {

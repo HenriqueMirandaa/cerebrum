@@ -27,6 +27,32 @@ const {
 const uploadDir = path.join(__dirname, '..', '..', 'backend_uploads');
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
+function normalizeIntentText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function parseQuizPrompt(message) {
+  const raw = String(message || '').trim();
+  const normalized = normalizeIntentText(raw);
+
+  if (!/\b(quiz|quizz|questionario|teste rapido)\b/.test(normalized)) return null;
+  if (!/\b(gera|gerar|gere|cria|criar|faz|fazer|monte|monta|produz)\b/.test(normalized)) return null;
+
+  const countMatch = normalized.match(/(\d+)\s+(?:perguntas?|questoes?)/);
+  const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 5)));
+  const subjectMatch = raw.match(/\b(?:quiz|quizz|question[aá]rio|teste r[aá]pido)\s+de\s+(?:\d+\s+perguntas?\s+de\s+)?(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+perguntas?|$)/i);
+  const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+perguntas?|$)/i);
+
+  return {
+    subjectName: subjectMatch ? subjectMatch[1].trim() : '',
+    topic: topicMatch ? topicMatch[1].trim() : '',
+    questionCount
+  };
+}
+
 let upload = null;
 if (multerAvailable) {
   const storage = multer.diskStorage({
@@ -53,6 +79,15 @@ router.post('/assistant', auth, async (req, res) => {
   try {
     const message = String(req.body?.message || '').trim();
     if (!message) return res.status(400).json({ error: 'Mensagem obrigatoria.' });
+
+    const quizRequest = parseQuizPrompt(message);
+    if (quizRequest) {
+      const quiz = await generateQuiz({ userId: req.user.id, options: quizRequest });
+      return res.json({
+        answer: `Criei um quiz de ${quiz.questionCount || 5} perguntas de ${quiz.subject || 'Geral'} sobre ${quiz.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`,
+        quiz
+      });
+    }
 
     // Detectar se o pedido é para marcar um evento
     const isEventRequest = /(?:marca|schedule|marca-me|agendar|exame|prova|teste|reunião)\s+(?:o\s+)?(?:exame|prova|teste|reunião|aula|trabalho)/i.test(message);
