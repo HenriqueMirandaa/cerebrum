@@ -387,10 +387,10 @@ function parseExercisePrompt(text) {
     const raw = String(text || '').trim();
     if (!/\bexerc/i.test(raw)) return null;
 
-    const countMatch = raw.match(/(\d+)\s+perguntas?/i);
+    const countMatch = raw.match(/(\d+)\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)/i);
     const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 6)));
-    const subjectMatch = raw.match(/\bexerc(?:icio|icios|icio?s?)\s+de\s+(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+perguntas?|$)/i);
-    const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+perguntas?|$)/i);
+    const subjectMatch = raw.match(/\bexerc[ií]cios?\s+de\s+(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)|$)/i);
+    const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)|$)/i);
 
     return {
         subjectName: subjectMatch ? subjectMatch[1].trim() : '',

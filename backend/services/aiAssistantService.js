@@ -72,6 +72,98 @@ function truncate(value, max = 1200) {
     return `${text.slice(0, max - 3)}...`;
 }
 
+function pickFallbackSubject(context, requestedSubject = '') {
+    const normalizedRequest = normalizeText(requestedSubject).toLowerCase();
+    if (normalizedRequest) return requestedSubject;
+    const prioritized = Array.isArray(context?.subjects)
+        ? [...context.subjects].sort((a, b) => {
+            const aUrgency = Number.isFinite(a?.days_until_exam) ? a.days_until_exam : 9999;
+            const bUrgency = Number.isFinite(b?.days_until_exam) ? b.days_until_exam : 9999;
+            if (aUrgency !== bUrgency) return aUrgency - bUrgency;
+            return asNumber(a?.progress, 0) - asNumber(b?.progress, 0);
+        })
+        : [];
+    return normalizeText(prioritized[0]?.name || 'Geral');
+}
+
+function buildFallbackExercisePayload({ context = {}, requestedSubject = '', requestedTopic = '', requestedCount = 6 } = {}) {
+    const subject = pickFallbackSubject(context, requestedSubject);
+    const topic = normalizeText(requestedTopic || 'revisao geral');
+    const count = Math.max(3, Math.min(10, Number(requestedCount) || 6));
+    const templates = [
+        {
+            prompt: `Qual e o primeiro passo mais seguro para resolver um exercicio sobre ${topic}?`,
+            correct: 'Identificar os dados, o objetivo e a regra principal antes de calcular.',
+            wrong: [
+                'Escolher a primeira formula lembrada sem ler o enunciado completo.',
+                'Saltar diretamente para a resposta final.',
+                'Copiar um exemplo parecido sem adaptar os dados.'
+            ],
+            solution: `Em ${topic}, comecar pelos dados e pela regra evita erros de interpretacao.`
+        },
+        {
+            prompt: `Ao estudar ${topic}, qual estrategia ajuda mais a confirmar que entendeste o conceito?`,
+            correct: 'Resolver um exemplo novo e explicar cada passo por palavras proprias.',
+            wrong: [
+                'Reler apenas a definicao varias vezes.',
+                'Memorizar a resposta de um exercicio ja corrigido.',
+                'Sublinhar todo o texto sem testar aplicacao.'
+            ],
+            solution: 'Aplicar e explicar obriga a recuperar o conhecimento, nao apenas a reconhece-lo.'
+        },
+        {
+            prompt: `Num exercicio de ${subject} sobre ${topic}, o que deves verificar no fim?`,
+            correct: 'Se a resposta respeita o enunciado, as unidades e o sentido do resultado.',
+            wrong: [
+                'Apenas se o resultado parece visualmente curto.',
+                'Se usei exatamente o mesmo numero de linhas do exemplo.',
+                'Se a primeira tentativa chegou a algum valor.'
+            ],
+            solution: 'A verificacao final apanha erros de calculo, unidades e interpretacao.'
+        },
+        {
+            prompt: `Se ficares bloqueado num exercicio sobre ${topic}, qual e a melhor acao seguinte?`,
+            correct: 'Dividir o problema em passos menores e comparar com a regra estudada.',
+            wrong: [
+                'Apagar tudo e abandonar o exercicio.',
+                'Escolher uma opcao ao acaso.',
+                'Procurar a solucao sem tentar identificar a dificuldade.'
+            ],
+            solution: 'Quebrar o problema mostra exatamente onde esta a duvida.'
+        }
+    ];
+
+    const exercises = Array.from({ length: count }, (_, index) => {
+        const item = templates[index % templates.length];
+        const answerIndex = (index + topic.length) % 4;
+        const options = [];
+        let wrongCursor = 0;
+        for (let optionIndex = 0; optionIndex < 4; optionIndex += 1) {
+            if (optionIndex === answerIndex) {
+                options.push(item.correct);
+            } else {
+                options.push(item.wrong[wrongCursor % item.wrong.length]);
+                wrongCursor += 1;
+            }
+        }
+        return {
+            id: `ex_${index + 1}`,
+            prompt: item.prompt,
+            options,
+            answerIndex,
+            solution: item.solution
+        };
+    });
+
+    return {
+        title: `Exercicios de ${subject}`,
+        subject,
+        topic,
+        questionCount: exercises.length,
+        exercises
+    };
+}
+
 function formatDateOnly(dateValue) {
     if (!dateValue) return null;
     const date = new Date(dateValue);
@@ -461,11 +553,12 @@ function sanitizeQuizPayload(payload, fallback = {}) {
 function sanitizeExercisePayload(payload, fallback = {}) {
     const subject = normalizeText(payload?.subject || fallback.subject || 'Geral');
     const topic = normalizeText(payload?.topic || fallback.topic || 'revisao geral');
+    const requestedCount = Math.max(3, Math.min(10, Number(fallback.requestedCount || 6) || 6));
     const rawExercises = Array.isArray(payload?.exercises)
         ? payload.exercises
         : (Array.isArray(payload?.questions) ? payload.questions : []);
 
-    const sanitizedExercises = rawExercises.slice(0, 10).map((exercise, index) => {
+    const sanitizedExercises = rawExercises.slice(0, requestedCount).map((exercise, index) => {
         const options = Array.isArray(exercise?.options)
             ? exercise.options.map((option) => truncate(option, 180)).filter(Boolean).slice(0, 4)
             : [];
@@ -488,6 +581,15 @@ function sanitizeExercisePayload(payload, fallback = {}) {
             solution: truncate(exercise?.solution || exercise?.explanation || 'Revise a regra usada nesta derivada antes de comparar com a resolucao.', 320)
         };
     });
+
+    if (sanitizedExercises.length < requestedCount) {
+        const fallbackPayload = buildFallbackExercisePayload({
+            requestedSubject: subject,
+            requestedTopic: topic,
+            requestedCount
+        });
+        sanitizedExercises.push(...fallbackPayload.exercises.slice(sanitizedExercises.length, requestedCount));
+    }
 
     return {
         title: normalizeText(payload?.title || `Exercicios de ${subject}`),
@@ -590,17 +692,41 @@ async function generateExercises({ userId, options = {} }) {
         }
     ];
 
-    const raw = await callHuggingFaceChat(messages, { maxTokens: 1600, temperature: 0.2, maxRetries: 2 });
-    const parsed = extractJsonBlock(raw);
+    let parsed = null;
+    let fallbackReason = '';
+
+    try {
+        const raw = await callHuggingFaceChat(messages, { maxTokens: 1600, temperature: 0.2, maxRetries: 2 });
+        parsed = extractJsonBlock(raw);
+        if (!parsed) {
+            fallbackReason = 'A resposta da IA nao era JSON valido.';
+            console.error('[generateExercises] Resposta invalida:', raw.substring(0, 200));
+        }
+    } catch (error) {
+        fallbackReason = String(error.message || error);
+        console.warn('[generateExercises] A usar fallback local:', fallbackReason);
+    }
     
     if (!parsed) {
-        console.error('[generateExercises] Resposta invalida:', raw.substring(0, 200));
-        throw new Error('Nao foi possivel converter a resposta da IA em exercicios estruturados. A resposta nao era JSON valido.');
+        const fallbackExercises = buildFallbackExercisePayload({
+            context,
+            requestedSubject,
+            requestedTopic,
+            requestedCount
+        });
+        return {
+            id: `exercise_${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            source: 'fallback',
+            fallbackReason,
+            ...fallbackExercises
+        };
     }
 
     const exercises = sanitizeExercisePayload(parsed, {
         subject: requestedSubject || context.subjects[0]?.name || 'Geral',
-        topic: requestedTopic || 'revisao geral'
+        topic: requestedTopic || 'revisao geral',
+        requestedCount
     });
 
     if (!exercises.exercises.length) {

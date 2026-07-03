@@ -53,6 +53,25 @@ function parseQuizPrompt(message) {
   };
 }
 
+function parseExercisePrompt(message) {
+  const raw = String(message || '').trim();
+  const normalized = normalizeIntentText(raw);
+
+  if (!/\b(exercicio|exercicios|exercitar|pratica|praticar)\b/.test(normalized)) return null;
+  if (!/\b(gera|gerar|gere|cria|criar|faz|fazer|monte|monta|produz)\b/.test(normalized)) return null;
+
+  const countMatch = normalized.match(/(\d+)\s+(?:exercicios?|perguntas?|questoes?)/);
+  const questionCount = Math.max(3, Math.min(10, Number(countMatch?.[1] || 6)));
+  const subjectMatch = raw.match(/\b(?:exerc[ií]cios?|pr[aá]tica)\s+de\s+(?:\d+\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)\s+de\s+)?(.+?)(?=\s+sobre\s+|\s+com\s+\d+\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)|$)/i);
+  const topicMatch = raw.match(/\bsobre\s+(.+?)(?=\s+com\s+\d+\s+(?:exerc[ií]cios?|perguntas?|quest[oõ]es?)|$)/i);
+
+  return {
+    subjectName: subjectMatch ? subjectMatch[1].trim() : '',
+    topic: topicMatch ? topicMatch[1].trim() : '',
+    questionCount
+  };
+}
+
 let upload = null;
 if (multerAvailable) {
   const storage = multer.diskStorage({
@@ -86,6 +105,15 @@ router.post('/assistant', auth, async (req, res) => {
       return res.json({
         answer: `Criei um quiz de ${quiz.questionCount || 5} perguntas de ${quiz.subject || 'Geral'} sobre ${quiz.topic || 'revisao geral'}. Ele ja esta disponivel em Ferramentas > Quizzes.`,
         quiz
+      });
+    }
+
+    const exerciseRequest = parseExercisePrompt(message);
+    if (exerciseRequest) {
+      const exercises = await generateExercises({ userId: req.user.id, options: exerciseRequest });
+      return res.json({
+        answer: `Criei uma lista de ${exercises.questionCount || 6} exercicios de ${exercises.subject || 'Geral'} sobre ${exercises.topic || 'revisao geral'}. Ela ja esta disponivel em Ferramentas > Exercicios.`,
+        exercises
       });
     }
 

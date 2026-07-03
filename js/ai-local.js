@@ -11,7 +11,9 @@ const chatState = {
 };
 
 const GENERATED_QUIZ_STORAGE_KEY = 'cerebrum_generated_quizzes';
+const GENERATED_EXERCISE_STORAGE_KEY = 'cerebrum_generated_exercises';
 const QUIZ_CREATED_EVENT = 'cerebrum:quiz-created';
+const EXERCISE_CREATED_EVENT = 'cerebrum:exercise-created';
 
 function normalizeQuizScope(value) {
     return String(value || '')
@@ -33,6 +35,18 @@ function getGeneratedQuizStorageKey() {
     return `${GENERATED_QUIZ_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
 }
 
+function getGeneratedExerciseStorageKey() {
+    const currentUser = window.dashboard && window.dashboard.user ? window.dashboard.user : null;
+    const scopedUser =
+        currentUser?.id
+        || currentUser?.email
+        || currentUser?.username
+        || localStorage.getItem('user_name')
+        || 'guest';
+
+    return `${GENERATED_EXERCISE_STORAGE_KEY}:${normalizeQuizScope(scopedUser) || 'guest'}`;
+}
+
 function getStoredGeneratedQuizzes() {
     try {
         const parsed = JSON.parse(localStorage.getItem(getGeneratedQuizStorageKey()) || '[]');
@@ -49,11 +63,30 @@ function persistGeneratedQuiz(quiz) {
     localStorage.setItem(getGeneratedQuizStorageKey(), JSON.stringify(current.slice(0, 20)));
 }
 
+function persistGeneratedExercises(exercises) {
+    try {
+        const parsed = JSON.parse(localStorage.getItem(getGeneratedExerciseStorageKey()) || '[]');
+        const current = Array.isArray(parsed) ? parsed : [];
+        current.unshift(exercises);
+        localStorage.setItem(getGeneratedExerciseStorageKey(), JSON.stringify(current.slice(0, 20)));
+    } catch (error) {
+        console.warn('Falha ao guardar exercicios gerados', error);
+    }
+}
+
 function emitGeneratedQuizCreated(quiz) {
     try {
         window.dispatchEvent(new CustomEvent(QUIZ_CREATED_EVENT, { detail: { quiz } }));
     } catch (error) {
         console.warn('Falha ao emitir evento de quiz criado', error);
+    }
+}
+
+function emitGeneratedExercisesCreated(exercises) {
+    try {
+        window.dispatchEvent(new CustomEvent(EXERCISE_CREATED_EVENT, { detail: { exercises } }));
+    } catch (error) {
+        console.warn('Falha ao emitir evento de exercicios criados', error);
     }
 }
 
@@ -1185,6 +1218,44 @@ const aiLocal = {
         persistGeneratedQuiz(quiz);
         emitGeneratedQuizCreated(quiz);
         return quiz;
+    },
+
+    async generateExercises(options = {}) {
+        const subjects = await safeGetSubjects();
+        if (!subjects.length && !options?.subjectName && !options?.subject) {
+            throw new Error('Adicione pelo menos uma materia para eu gerar exercicios com contexto util.');
+        }
+
+        const fallbackSubject = subjects.length
+            ? [...subjects]
+                .map((subject) => ({ subject, priority: getSubjectPriority(subject) }))
+                .sort((a, b) => b.priority.score - a.priority.score)[0]?.subject
+            : null;
+        const subject = cleanupTopicPart(options.subjectName || options.subject || fallbackSubject?.name || 'Estudos Gerais');
+        const topicSuggestions = getSuggestedQuizTopics(subject);
+        const topic = cleanupTopicPart(options.topic || topicSuggestions[0] || 'revisao geral');
+        const questionCount = Math.max(3, Math.min(10, Number(options.questionCount || options.count || 6) || 6));
+        const questions = buildQuizQuestions(subject, topic, questionCount);
+        const exercises = {
+            id: `exercise_${Date.now()}`,
+            title: `Exercicios de ${subject}`,
+            subject,
+            topic,
+            questionCount: questions.length,
+            createdAt: new Date().toISOString(),
+            source: 'local',
+            exercises: questions.map((question, index) => ({
+                id: `ex_${Date.now()}_${index + 1}`,
+                prompt: question.prompt,
+                options: question.options,
+                answerIndex: question.answerIndex,
+                solution: question.explanation || 'Revise o conceito principal e compare com a opcao correta.'
+            }))
+        };
+
+        persistGeneratedExercises(exercises);
+        emitGeneratedExercisesCreated(exercises);
+        return exercises;
     },
 
     async getSubjectStatus(subjectNameText) {

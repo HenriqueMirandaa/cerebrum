@@ -494,25 +494,26 @@ class Dashboard {
         const closeBtn = document.getElementById('mobileSidebarClose');
         const overlay = document.getElementById('dashboardSidebarOverlay');
         const sidebar = document.querySelector('.sidebar');
-        const desktopHotZoneFallback = 320;
+        const desktopSidebarWidthFallback = 320;
+        const desktopHotZoneWidth = 24;
         let hoverCloseTimer = null;
         const clearHoverCloseTimer = () => {
             if (!hoverCloseTimer) return;
             clearTimeout(hoverCloseTimer);
             hoverCloseTimer = null;
         };
-        const getDesktopHotZoneWidth = () => {
+        const getDesktopSidebarWidth = () => {
             const configuredWidth = getComputedStyle(document.documentElement)
                 .getPropertyValue('--dashboard-sidebar-width');
             const parsedWidth = parseFloat(configuredWidth);
             return Number.isFinite(parsedWidth) && parsedWidth > 0
                 ? parsedWidth
-                : desktopHotZoneFallback;
+                : desktopSidebarWidthFallback;
         };
         const isPointerInsideSidebarArea = (event) => {
-            if (!sidebar) return event.clientX <= getDesktopHotZoneWidth();
+            if (!sidebar) return event.clientX <= desktopHotZoneWidth;
             const rect = sidebar.getBoundingClientRect();
-            const rightEdge = Math.max(rect.right, getDesktopHotZoneWidth());
+            const rightEdge = Math.max(rect.right, getDesktopSidebarWidth());
             return (
                 event.clientX >= rect.left &&
                 event.clientX <= rightEdge &&
@@ -574,7 +575,7 @@ class Dashboard {
             const isCollapsed = body.classList.contains('sidebar-desktop-collapsed');
 
             if (isCollapsed) {
-                if (event.clientX > getDesktopHotZoneWidth()) return;
+                if (event.clientX > desktopHotZoneWidth) return;
                 clearHoverCloseTimer();
                 openSidebar();
                 return;

@@ -136,6 +136,12 @@ export function createAssistantService() {
                     const text = response.answer || `Criei um quiz de ${quiz.questionCount || 5} perguntas de ${quiz.subject || 'Geral'} sobre ${quiz.topic || 'revisão geral'}. Ele já está disponível em Ferramentas > Quizzes.`;
                     return { ok: true, text, quiz };
                 }
+                if (response.exercises) {
+                    persistGeneratedExercises(response.exercises);
+                    const exercises = response.exercises;
+                    const text = response.answer || `Criei uma lista de ${exercises.questionCount || 6} exercicios de ${exercises.subject || 'Geral'} sobre ${exercises.topic || 'revisao geral'}. Ela ja esta disponivel em Ferramentas > Exercicios.`;
+                    return { ok: true, text, exercises };
+                }
                 return { ok: true, text: response.answer || 'Sem resposta.' };
             } catch (error) {
                 try {
@@ -232,7 +238,13 @@ export function createAssistantService() {
                 const text = `Criei uma lista de ${exercises?.questionCount || 6} exercícios de ${exercises?.subject || 'Geral'} sobre ${exercises?.topic || 'revisão geral'}. Ela já está disponível em Ferramentas > Exercícios.`;
                 return { ok: true, text, exercises };
             } catch (error) {
-                return { ok: false, text: toHumanError(error) };
+                try {
+                    const fallback = await withMinimumDelay(() => aiLocal.generateExercises(options));
+                    const text = `Criei uma lista de ${fallback.questionCount || 6} exercicios de ${fallback.subject || 'Geral'} sobre ${fallback.topic || 'revisao geral'}. Ela ja esta disponivel em Ferramentas > Exercicios.`;
+                    return { ok: true, text, exercises: fallback };
+                } catch (fallbackError) {
+                    return { ok: false, text: toHumanError(error) };
+                }
             }
         },
 
