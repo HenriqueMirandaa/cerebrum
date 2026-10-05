@@ -1,232 +1,133 @@
 # Cerebrum
 
-Plataforma web full-stack para organizacao de estudo, gestao de materias, cronograma, estatisticas e assistente inteligente.
+Cerebrum is a full-stack study platform for subject organization, study schedules, progress tracking, and AI-assisted learning. Its React/Vite frontend uses a Node.js and Express REST API backed by MySQL, with JWT authentication for protected user routes.
+
+**Live demo:** [cerebrum-one.vercel.app](https://cerebrum-one.vercel.app)
 
-## Visao Geral
+## Tech stack
 
-O Cerebrum junta num unico sistema:
+- **Frontend:** React, Vite, Tailwind CSS
+- **Backend:** Node.js, Express, MySQL (`mysql2`), JWT, Express sessions
+- **AI services:** Python/Flask, Sentence Transformers and FAISS for document retrieval; Hugging Face integration in the backend
+- **Deployment:** Frontend on Vercel; backend and MySQL are configured as separate services
 
-- autenticacao de utilizadores
-- painel de utilizador e painel administrativo
-- gestao de materias e progresso
-- cronograma de estudo
-- assistente IA local para apoio ao estudo
-- modo de funcionamento local/offline em partes do frontend
+## Architecture
 
-O frontend e publicado no Vercel e o backend corre em Node.js, normalmente com base de dados MySQL num servico externo como Railway.
+The browser frontend calls the Express REST API. The API handles authentication and study workflows and reads/writes relational data in MySQL. AI-assisted features use backend services; document retrieval can use the Python/FAISS service and background indexer.
 
-## Stack
+## REST API
 
-### Frontend
+Protected routes require the application's authentication middleware unless otherwise noted. Subject and user administration routes additionally require an admin account.
 
-- HTML, CSS e JavaScript
-- Vite
-- TailwindCSS
-- alguns componentes React
+### Authentication
 
-### Backend
+| Method | Endpoint | Access |
+|---|---|---|
+| POST | `/api/register` | Public |
+| POST | `/api/login` | Public |
+| POST | `/api/logout` | Public/session-aware |
+| POST | `/api/forgot-password` | Public |
+| POST | `/api/reset-password` | Public |
+| GET | `/api/profile` | Authenticated |
 
-- Node.js
-- Express
-- MySQL
-- JWT + sessoes
+### Users and subjects
 
-### Integracoes
+| Method | Endpoint | Access |
+|---|---|---|
+| GET, POST | `/api/users` | Admin |
+| PUT, DELETE | `/api/users/:id` | Admin |
+| GET | `/api/subjects/minhas` | Authenticated |
+| GET | `/api/subjects/disponiveis` | Authenticated |
+| GET | `/api/subjects/plan` | Authenticated |
+| POST | `/api/subjects/adicionar` | Authenticated |
+| POST | `/api/subjects/sugerir` | Authenticated |
+| PUT | `/api/subjects/progresso` | Authenticated |
+| DELETE | `/api/subjects/remover/:subject_id` | Authenticated |
+| GET, POST | `/api/subjects` | Admin |
+| PUT, DELETE | `/api/subjects/:id` | Admin |
+| GET | `/api/user/progress` | Authenticated |
+| GET | `/api/statistics` | Public |
 
-- EmailJS para email de boas-vindas no cadastro
-- SMTP no backend para emails de redefinicao de senha
+### Schedule
 
-## Estrutura
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/cronograma?from=<ISO>&to=<ISO>` | Authenticated |
+| POST | `/api/cronograma` | Authenticated |
+| PUT, DELETE | `/api/cronograma/:id` | Authenticated |
 
-```txt
-.
-|-- backend/                 API, autenticacao, base de dados, mailer
-|-- css/                     estilos globais e componentes
-|-- js/                      frontend principal
-|-- assets/                  recursos estaticos
-|-- public/                  ficheiros publicos
-|-- dist/                    build final do frontend
-|-- dashboard.html           dashboard do utilizador
-|-- admin.html               painel administrativo
-|-- index.html               login e registo
-|-- start-dev.bat            arranque rapido local
-|-- vercel.json              configuracao de deploy frontend
-```
+### AI and service endpoints
 
-## Arranque Local
+| Method | Endpoint | Access |
+|---|---|---|
+| GET | `/api/ai/provider-status` | Authenticated |
+| POST | `/api/ai/assistant` | Authenticated |
+| POST | `/api/ai/recommendations` | Authenticated |
+| POST | `/api/ai/analyze` | Authenticated |
+| POST | `/api/ai/quiz` | Authenticated |
+| POST | `/api/ai/exercises` | Authenticated |
+| POST | `/api/ai/upload` | No route-level auth middleware |
+| POST | `/api/ai/chat` | No route-level auth middleware |
+| POST | `/api/ai/create-event` | Authenticated |
+| GET | `/api/health` | Public |
+| GET | `/api/public-config` | Public |
+| GET | `/api/debug/session` | Public diagnostic route |
 
-### Requisitos
+## Database schema
 
-- Node.js instalado
-- MySQL disponivel
-- base de dados configurada
+The backend queries these MySQL tables:
 
-### Forma mais simples no Windows
+- `users`: account identity, email, password hash, role and status.
+- `subjects`: subject records (including name, description and creation time).
+- `user_progress`: per-user/per-subject study hours, progress and last-studied time.
+- `activity_logs`: user activity type, description, JSON metadata and timestamp.
+- `events`: user schedule entries with an optional `materia_id` (subject), time range and display metadata.
+- `password_reset_tokens`: user-linked hashed reset token, expiry, use time and creation time.
+- `ai_documents`, `ai_chats`, `ai_chunks_meta`: document uploads, assistant conversations and chunk metadata.
+- `chunks`: SQLite metadata for the Python/FAISS retrieval index, including a document ID.
 
-```bat
-start-dev.bat
-```
+The code references these relationships: `user_progress.user_id` to `users.id`, `user_progress.subject_id` to `subjects.id`, `events.user_id` to `users.id`, `events.materia_id` to `subjects.id`, and `password_reset_tokens.user_id` to `users.id`. Activity and AI records also carry user/document IDs. These are application-level relationships; do not assume database foreign-key constraints from the checked-in code.
 
-Isto inicia:
+The repository does not include the canonical DDL for the core `users`, `subjects`, `user_progress`, or `activity_logs` tables. The `events` and `password_reset_tokens` tables are created by backend code; the AI tables are defined in `backend/sql/offline_ai_schema.sql` and created by the AI migration command.
 
-- backend em `http://localhost:3001`
-- frontend em `http://localhost:5173`
+> TODO: Add or link the canonical core-table DDL and confirm which relationships are enforced with foreign keys.
 
-### Manualmente
+## Run locally
 
-Frontend:
+Requirements: Node.js, npm, and a MySQL database with the application's core tables available.
 
-```bash
-npm install
-npm run dev
-```
+1. Configure the frontend. Copy the root `.env.example` to `.env` and point the API origin to the local backend:
 
-Backend:
+   ```env
+   VITE_API_ORIGIN=http://localhost:3001
+   VITE_DEV_API_TARGET=http://localhost:3001
+   ```
 
-```bash
-cd backend
-npm install
-npm run dev
-```
+2. Install frontend dependencies and start Vite from the repository root:
 
-## Variaveis de Ambiente do Backend
+   ```bash
+   npm install
+   npm run dev
+   ```
 
-Usa [backend/.env.example](/c:/xampp/htdocs/pap2326/backend/.env.example) como base.
+3. In a second terminal, configure the backend and start it:
 
-Variaveis principais:
+   ```bash
+   cd backend
+   npm install
+   ```
 
-```env
-NODE_ENV=production
-PORT=3001
+   Copy `backend/.env.example` to `backend/.env` and set at least `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, `JWT_SECRET`, `SESSION_SECRET`, and `CORS_ALLOWED` (use `http://localhost:5173` for local frontend access).
 
-DB_HOST=
-DB_PORT=3306
-DB_USER=
-DB_PASSWORD=
-DB_NAME=cerebrum_db
+   ```bash
+   npm run migrate:ai
+   npm run dev
+   ```
 
-JWT_SECRET=
-JWT_EXPIRES_IN=7d
-SESSION_KEY=cerebrum_sid
-SESSION_SECRET=
+The frontend runs at `http://localhost:5173`; the API runs at `http://localhost:3001`. `npm run migrate:ai` creates the AI tables only. `events` and `password_reset_tokens` are created by the backend as those features are used; it does not create the core tables. Optional AI/document-retrieval features may need additional variables and the Python service configured in `backend/.env.example`.
 
-CORS_ALLOWED=https://seu-frontend.vercel.app
-FRONTEND_ORIGIN=https://seu-frontend.vercel.app
-SITE_URL=https://seu-frontend.vercel.app
+## Screenshots
 
-APP_URL=https://seu-frontend.vercel.app
-APP_NAME=Cerebrum
-```
-
-## Emails
-
-### 1. Boas-vindas no cadastro
-
-O email de boas-vindas e enviado pelo frontend via EmailJS.
-
-Variaveis necessarias no backend:
-
-```env
-EMAILJS_WELCOME_ENABLED=true
-EMAILJS_SERVICE_ID=
-EMAILJS_TEMPLATE_ID=
-EMAILJS_PUBLIC_KEY=
-```
-
-O frontend le esta configuracao pela rota:
-
-```txt
-GET /api/public-config
-```
-
-Campos esperados no template do EmailJS:
-
-```txt
-{{to_name}}
-{{user_name}}
-{{user_email}}
-{{app_name}}
-{{login_url}}
-```
-
-### 2. Redefinicao de senha
-
-
-
-
-## Scripts
-
-Frontend:
-
-```bash
-npm run dev
-npm run build
-npm run preview
-```
-
-Backend:
-
-```bash
-cd backend
-npm run dev
-npm start
-npm run worker
-npm run py-service
-npm run migrate:ai
-```
-
-## Deploy
-
-### Frontend
-
-O frontend esta preparado para Vercel.
-
-- framework: Vite
-- build: `npm run build`
-- output: `dist`
-
-O ficheiro [vercel.json](/c:/xampp/htdocs/pap2326/vercel.json) faz rewrite de `/api/*` para o backend remoto.
-
-### Backend
-
-O backend pode ser publicado em Railway ou Render, desde que as variaveis de ambiente e a base de dados estejam corretamente configuradas.
-
-## Rotas Relevantes
-
-Autenticacao:
-
-- `POST /api/register`
-- `POST /api/login`
-- `POST /api/logout`
-- `GET /api/profile`
-- `POST /api/forgot-password`
-- `POST /api/reset-password`
-
-Outras:
-
-- `GET /api/health`
-- `GET /api/public-config`
-
-## Notas
-
-- o menu da dashboard tem comportamento responsivo no mobile sem alterar a versao desktop
-- o email de boas-vindas depende do EmailJS estar configurado
-- o reset de senha depende do SMTP do backend
-- o projeto pode continuar a evoluir sem mudar a arquitetura base
-
-## Estado Atual
-
-Neste momento o projeto ja inclui:
-
-- autenticacao funcional
-- dashboard de utilizador
-- painel admin
-- materias e progresso
-- cronograma
-- assistente IA
-- fluxo de boas-vindas por EmailJS
-- fluxo de reset de senha no backend
-
-## Licenca
-
-Uso academico / projeto PAP.
+- TODO: Add the dashboard screenshot.
+- TODO: Add the subject and progress tracking screenshot.
+- TODO: Add the AI-assisted learning screenshot.
