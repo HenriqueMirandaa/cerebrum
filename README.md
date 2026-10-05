@@ -86,7 +86,14 @@ The backend queries these MySQL tables:
 - `ai_documents`, `ai_chats`, `ai_chunks_meta`: document uploads, assistant conversations and chunk metadata.
 - `chunks`: SQLite metadata for the Python/FAISS retrieval index, including a document ID.
 
-The code references these relationships: `user_progress.user_id` to `users.id`, `user_progress.subject_id` to `subjects.id`, `events.user_id` to `users.id`, `events.materia_id` to `subjects.id`, and `password_reset_tokens.user_id` to `users.id`. Activity and AI records also carry user/document IDs. These are application-level relationships; do not assume database foreign-key constraints from the checked-in code.
+The code references these relationships:
+
+- `user_progress.user_id` → `users.id`; `user_progress.subject_id` → `subjects.id`.
+- `events.user_id` → `users.id`; `events.materia_id` → `subjects.id`.
+- `password_reset_tokens.user_id`, `activity_logs.user_id`, `ai_documents.user_id`, and `ai_chats.user_id` → `users.id` (AI user IDs may be null).
+- `ai_chunks_meta.document_id` and the SQLite `chunks.document_id` identify `ai_documents.id` records.
+
+These are application-level relationships; do not assume database foreign-key constraints from the checked-in code.
 
 The repository does not include the canonical DDL for the core `users`, `subjects`, `user_progress`, or `activity_logs` tables. The `events` and `password_reset_tokens` tables are created by backend code; the AI tables are defined in `backend/sql/offline_ai_schema.sql` and created by the AI migration command.
 
