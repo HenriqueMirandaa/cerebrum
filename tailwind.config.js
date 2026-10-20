@@ -7,16 +7,16 @@ export default {
     extend: {
       colors: {
         primary: {
-          50: '#f7fce9',
-          100: '#edf8cb',
-          200: '#dcff9b',
-          300: '#c7f36b',
-          400: '#addc4e',
-          500: '#8bbd35',
-          600: '#6c9428',
-          700: '#526f22',
-          800: '#3d531f',
-          900: '#31461b',
+          50: '#eff5ff',
+          100: '#dce8ff',
+          200: '#bed5ff',
+          300: '#8ab4ff',
+          400: '#6f9dff',
+          500: '#5286ed',
+          600: '#3c68cc',
+          700: '#3454a5',
+          800: '#304881',
+          900: '#1c355b',
         },
         secondary: {
           50: '#eff5ff',
@@ -36,8 +36,8 @@ export default {
         info: '#06b6d4',
       },
       fontFamily: {
-        sans: ['DM Sans', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Sora', 'DM Sans', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Inter', 'system-ui', 'sans-serif'],
       },
       spacing: {
         128: '32rem',
@@ -51,7 +51,7 @@ export default {
         'md': '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
         'lg': '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
         'xl': '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-        'glow': '0 0 15px rgba(199, 243, 107, 0.24)',
+        'glow': '0 0 15px rgba(138, 180, 255, 0.24)',
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

@@ -6,12 +6,12 @@
 
   const e = React.createElement;
   const PRESET_COLORS = window.DarkColorPicker?.PRESET_COLORS || [
-    '#c7f36b',
-    '#76a7ff',
-    '#a3e783',
-    '#f3c77a',
-    '#f28d8d',
-    '#c4a7ff'
+    '#8ab4ff',
+    '#6f9dff',
+    '#bed5ff',
+    '#668bd6',
+    '#526fa8',
+    '#dce2ec'
   ];
   const LEGACY_ACCENT_KEY = 'cerebrum_accent';
   const SCOPED_ACCENT_KEY_PREFIX = 'cerebrum_accent:';
@@ -22,7 +22,7 @@
 
   function hexToRgb(hex) {
     const normalized = String(hex || '').replace('#', '').trim();
-    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 199, g: 243, b: 107 };
+    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 138, g: 180, b: 255 };
     const int = parseInt(normalized, 16);
     return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
   }
@@ -117,26 +117,31 @@
     return scope ? `${SCOPED_ACCENT_KEY_PREFIX}${scope}` : LEGACY_ACCENT_KEY;
   }
 
+  function migrateDefaultAccent(value) {
+    return ['#c7f36b', '#9be7b1'].includes(String(value).toLowerCase()) ? '#8ab4ff' : value;
+  }
+
   function readStoredAccent(scope = getCurrentUserScope()) {
     try {
       if (scope) {
         const scopedKey = getScopedAccentKey(scope);
         const scopedValue = localStorage.getItem(scopedKey);
-        if (scopedValue) return scopedValue;
+        if (scopedValue) return migrateDefaultAccent(scopedValue);
 
         const legacyValue = localStorage.getItem(LEGACY_ACCENT_KEY);
         if (legacyValue) {
-          localStorage.setItem(scopedKey, legacyValue);
+          const migratedValue = migrateDefaultAccent(legacyValue);
+          localStorage.setItem(scopedKey, migratedValue);
           localStorage.removeItem(LEGACY_ACCENT_KEY);
-          return legacyValue;
+          return migratedValue;
         }
 
-        return '#c7f36b';
+        return '#8ab4ff';
       }
 
-      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#c7f36b';
+      return migrateDefaultAccent(localStorage.getItem(LEGACY_ACCENT_KEY) || '#8ab4ff');
     } catch (error) {
-      return '#c7f36b';
+      return '#8ab4ff';
     }
   }
 

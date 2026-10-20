@@ -172,7 +172,7 @@ function renderMonthGrid() {
 
 function renderEventTile(ev) {
     const materia = materias.find(m => String(m.id) === String(ev.materia_id));
-    const color = ev.color || (materia ? (materia.color || materia.cor || '#c7f36b') : '#c7f36b');
+    const color = ev.color || (materia ? (materia.color || materia.cor || '#8ab4ff') : '#8ab4ff');
     const title = ev.title || '';
     const time = ev.all_day ? 'Dia todo' : `${ev.start.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} - ${ev.end.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}`;
     // store event id on data- attribute for click handling

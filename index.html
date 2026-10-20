@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#090e18">
+    <meta name="theme-color" content="#07080a">
     <title>Cerebrum - Plataforma de Estudos</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/uiverse.css">
@@ -1004,7 +1004,7 @@
     <script>
     (function(){
       const canvas = document.getElementById('login-bg-canvas');
-      if (!canvas || !canvas.getContext) return;
+      if (!canvas || !canvas.getContext || getComputedStyle(canvas).display === 'none') return;
       const ctx = canvas.getContext('2d');
       let dpr = Math.max(1, window.devicePixelRatio || 1);
       let width = 0, height = 0;
@@ -1014,7 +1014,7 @@
         speed: 0.34,
         followRadius: 260,
         followForce: 0.018,
-        colors: ['#8b5cf6','#7c3aed','#6d28d9','#a78bfa'],
+        colors: ['#8ab4ff', '#6f9dff', '#668bd6', '#bed5ff'],
       };
       const particles = [];
       const mouse = { x: -9999, y: -9999 };
