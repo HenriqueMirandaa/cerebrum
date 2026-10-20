@@ -1,11 +1,11 @@
 (function () {
     const PRESET_COLORS = [
-        '#7c3aed',
-        '#06b6d4',
-        '#f97316',
-        '#ec4899',
-        '#22c55e',
-        '#eab308'
+        '#9be7b1',
+        '#73d7bd',
+        '#8ab4ff',
+        '#f3c77a',
+        '#f28d8d',
+        '#c4a7ff'
     ];
 
     function clamp(value, min, max) {
@@ -16,7 +16,7 @@
         const raw = String(value || '').trim().replace('#', '');
         if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toLowerCase()}`;
         if (/^[0-9a-f]{3}$/i.test(raw)) return `#${raw.split('').map((char) => char + char).join('').toLowerCase()}`;
-        return '#6366f1';
+        return '#9be7b1';
     }
 
     function hexToRgb(hex) {

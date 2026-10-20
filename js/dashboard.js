@@ -1452,7 +1452,7 @@ class Dashboard {
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
                 sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
-                cor: s.color || s.cor || '#6366f1',
+                cor: s.color || s.cor || '#9be7b1',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
 
@@ -1484,7 +1484,7 @@ class Dashboard {
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
                 sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
-                cor: s.color || s.cor || '#6366f1',
+                cor: s.color || s.cor || '#9be7b1',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
         } catch (error) {
@@ -1648,7 +1648,7 @@ class Dashboard {
                 // find the fixed subject by id to get its name and metadata
                 const fixed = (this.materiasDisponiveis || []).find(m => String(m.id) === String(subjectId));
                 const name = fixed ? fixed.nome : String(subjectId);
-                const payload = { name, description: fixed ? fixed.descricao : null, exam_date: exam_date || null, total_hours: typeof total_hours !== 'undefined' ? total_hours : (fixed ? fixed.horas_totais : null), metas: [], color: color || (fixed ? fixed.cor : '#6366f1') };
+                const payload = { name, description: fixed ? fixed.descricao : null, exam_date: exam_date || null, total_hours: typeof total_hours !== 'undefined' ? total_hours : (fixed ? fixed.horas_totais : null), metas: [], color: color || (fixed ? fixed.cor : '#9be7b1') };
                 await api.request('/subjects/sugerir', { method: 'POST', body: JSON.stringify(payload) });
             }
 
@@ -1764,7 +1764,7 @@ class Dashboard {
                     </div>
                     <div>
                         <label class="label-muted">Cor (opcional)</label>
-                        <input id="add-color" type="color" value="#6366f1" class="form-input" />
+                        <input id="add-color" type="color" value="#9be7b1" class="form-input" />
                     </div>
                 </div>
                 <div class="add-materia-modal-actions">
@@ -1811,7 +1811,7 @@ class Dashboard {
                 const exam_date = overlay.querySelector('#add-exam-date').value || null;
                 const name = overlay.querySelector('#add-new-name').value && overlay.querySelector('#add-new-name').value.trim();
                 const hours = overlay.querySelector('#add-total-hours').value ? Number(overlay.querySelector('#add-total-hours').value) : null;
-                const color = overlay.querySelector('#add-color').value || '#6366f1';
+                const color = overlay.querySelector('#add-color').value || '#9be7b1';
 
                 try {
                     if (existing) {

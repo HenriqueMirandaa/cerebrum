@@ -6,12 +6,12 @@
 
   const e = React.createElement;
   const PRESET_COLORS = window.DarkColorPicker?.PRESET_COLORS || [
-    '#7c3aed',
-    '#06b6d4',
-    '#f97316',
-    '#ec4899',
-    '#22c55e',
-    '#eab308'
+    '#9be7b1',
+    '#73d7bd',
+    '#8ab4ff',
+    '#f3c77a',
+    '#f28d8d',
+    '#c4a7ff'
   ];
   const LEGACY_ACCENT_KEY = 'cerebrum_accent';
   const SCOPED_ACCENT_KEY_PREFIX = 'cerebrum_accent:';
@@ -22,7 +22,7 @@
 
   function hexToRgb(hex) {
     const normalized = String(hex || '').replace('#', '').trim();
-    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 124, g: 58, b: 237 };
+    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 155, g: 231, b: 177 };
     const int = parseInt(normalized, 16);
     return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
   }
@@ -131,12 +131,12 @@
           return legacyValue;
         }
 
-        return '#7c3aed';
+        return '#9be7b1';
       }
 
-      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#7c3aed';
+      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#9be7b1';
     } catch (error) {
-      return '#7c3aed';
+      return '#9be7b1';
     }
   }
 
