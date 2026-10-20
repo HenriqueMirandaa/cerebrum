@@ -434,6 +434,7 @@ class Dashboard {
                 document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
                 this.closeMobileSidebar();
+                if (e.detail > 0 && !this.mobileSidebarMedia.matches) item.blur();
             });
         });
 
