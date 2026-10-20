@@ -17,3 +17,4 @@ backups/
 .env.development
 
 .vercel
+.env.local
