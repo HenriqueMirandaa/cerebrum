@@ -2196,6 +2196,11 @@ html.dark .sidebar .logo-icon {
 
 /* Student app: expandable icon rail on desktop; the established drawer remains on touch. */
 @media (min-width: 1101px) {
+    html.dark .mobile-menu-btn,
+    html.dark .mobile-sidebar-close {
+        display: none !important;
+    }
+
     html.dark .sidebar,
     html.dark body.sidebar-desktop-collapsed .sidebar {
         width: 76px !important;
@@ -2232,6 +2237,18 @@ html.dark .sidebar .logo-icon {
         opacity: 0;
         white-space: nowrap;
         transition: opacity 140ms ease, width 300ms ease;
+    }
+
+    html.dark body.sidebar-desktop-collapsed .sidebar > :not(.mobile-sidebar-close) {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: none;
+    }
+
+    html.dark body.sidebar-desktop-collapsed .sidebar .nav-item i {
+        opacity: 1;
+        visibility: visible;
     }
 
     html.dark .sidebar:hover .logo-text,

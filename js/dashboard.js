@@ -320,7 +320,7 @@ class Dashboard {
         this.currentView = 'inicio';
         this.minhasDisciplinas = [];
         this.disciplinasDisponiveis = [];
-        this.mobileSidebarMedia = window.matchMedia('(max-width: 1024px)');
+        this.mobileSidebarMedia = window.matchMedia('(max-width: 1100px)');
         this.init();
     }
 
