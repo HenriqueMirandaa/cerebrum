@@ -1,8 +1,8 @@
 (function () {
     const PRESET_COLORS = [
-        '#9be7b1',
-        '#73d7bd',
-        '#8ab4ff',
+        '#c7f36b',
+        '#76a7ff',
+        '#a3e783',
         '#f3c77a',
         '#f28d8d',
         '#c4a7ff'
@@ -16,7 +16,7 @@
         const raw = String(value || '').trim().replace('#', '');
         if (/^[0-9a-f]{6}$/i.test(raw)) return `#${raw.toLowerCase()}`;
         if (/^[0-9a-f]{3}$/i.test(raw)) return `#${raw.split('').map((char) => char + char).join('').toLowerCase()}`;
-        return '#9be7b1';
+        return '#c7f36b';
     }
 
     function hexToRgb(hex) {

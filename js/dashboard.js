@@ -1452,7 +1452,7 @@ class Dashboard {
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
                 sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
-                cor: s.color || s.cor || '#9be7b1',
+                cor: s.color || s.cor || '#c7f36b',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
 
@@ -1484,7 +1484,7 @@ class Dashboard {
                 horas_totais: s.total_hours != null ? Number(s.total_hours) : (s.horas_totais != null ? Number(s.horas_totais) : null),
                 data_exame: s.exam_date || s.data_exame || null,
                 sessoes: Array.isArray(s.sessoes || s.sessions) ? (s.sessoes || s.sessions) : [],
-                cor: s.color || s.cor || '#9be7b1',
+                cor: s.color || s.cor || '#c7f36b',
                 icone: s.icon || s.icone || 'fas fa-book'
             }));
         } catch (error) {
@@ -1510,7 +1510,7 @@ class Dashboard {
 
             const fixed = [
                 { id: 'fixed-portugues', nome: 'Portugu\u00eas', descricao: '', horas_totais: null, cor: '#f97316', icone: 'fas fa-book-open' },
-                { id: 'fixed-matematica', nome: 'Matem\u00e1tica', descricao: '', horas_totais: null, cor: '#6366f1', icone: 'fas fa-square-root-alt' },
+                { id: 'fixed-matematica', nome: 'Matem\u00e1tica', descricao: '', horas_totais: null, cor: '#76a7ff', icone: 'fas fa-square-root-alt' },
                 { id: 'fixed-ingles', nome: 'Ingl\u00eas', descricao: '', horas_totais: null, cor: '#06b6d4', icone: 'fas fa-language' },
                 { id: 'fixed-historia', nome: 'Hist\u00f3ria', descricao: '', horas_totais: null, cor: '#ef4444', icone: 'fas fa-landmark' },
                 { id: 'fixed-geografia', nome: 'Geografia', descricao: '', horas_totais: null, cor: '#10b981', icone: 'fas fa-globe-americas' },
@@ -1648,7 +1648,7 @@ class Dashboard {
                 // find the fixed subject by id to get its name and metadata
                 const fixed = (this.materiasDisponiveis || []).find(m => String(m.id) === String(subjectId));
                 const name = fixed ? fixed.nome : String(subjectId);
-                const payload = { name, description: fixed ? fixed.descricao : null, exam_date: exam_date || null, total_hours: typeof total_hours !== 'undefined' ? total_hours : (fixed ? fixed.horas_totais : null), metas: [], color: color || (fixed ? fixed.cor : '#9be7b1') };
+                const payload = { name, description: fixed ? fixed.descricao : null, exam_date: exam_date || null, total_hours: typeof total_hours !== 'undefined' ? total_hours : (fixed ? fixed.horas_totais : null), metas: [], color: color || (fixed ? fixed.cor : '#c7f36b') };
                 await api.request('/subjects/sugerir', { method: 'POST', body: JSON.stringify(payload) });
             }
 
@@ -1764,7 +1764,7 @@ class Dashboard {
                     </div>
                     <div>
                         <label class="label-muted">Cor (opcional)</label>
-                        <input id="add-color" type="color" value="#9be7b1" class="form-input" />
+                        <input id="add-color" type="color" value="#c7f36b" class="form-input" />
                     </div>
                 </div>
                 <div class="add-materia-modal-actions">
@@ -1811,7 +1811,7 @@ class Dashboard {
                 const exam_date = overlay.querySelector('#add-exam-date').value || null;
                 const name = overlay.querySelector('#add-new-name').value && overlay.querySelector('#add-new-name').value.trim();
                 const hours = overlay.querySelector('#add-total-hours').value ? Number(overlay.querySelector('#add-total-hours').value) : null;
-                const color = overlay.querySelector('#add-color').value || '#9be7b1';
+                const color = overlay.querySelector('#add-color').value || '#c7f36b';
 
                 try {
                     if (existing) {

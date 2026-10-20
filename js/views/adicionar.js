@@ -115,7 +115,7 @@ async function renderAdicionar() {
                         </div>
                         <div class="form-group">
                             <label class="form-label">Cor</label>
-                            <input type="color" id="corSugestao" class="form-input h-12" value="#9be7b1" required>
+                            <input type="color" id="corSugestao" class="form-input h-12" value="#c7f36b" required>
                         </div>
                         <div class="form-group">
                             <label class="form-label">Ícone</label>

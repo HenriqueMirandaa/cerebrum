@@ -6,9 +6,9 @@
 
   const e = React.createElement;
   const PRESET_COLORS = window.DarkColorPicker?.PRESET_COLORS || [
-    '#9be7b1',
-    '#73d7bd',
-    '#8ab4ff',
+    '#c7f36b',
+    '#76a7ff',
+    '#a3e783',
     '#f3c77a',
     '#f28d8d',
     '#c4a7ff'
@@ -22,7 +22,7 @@
 
   function hexToRgb(hex) {
     const normalized = String(hex || '').replace('#', '').trim();
-    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 155, g: 231, b: 177 };
+    if (!/^[0-9a-f]{6}$/i.test(normalized)) return { r: 199, g: 243, b: 107 };
     const int = parseInt(normalized, 16);
     return { r: (int >> 16) & 255, g: (int >> 8) & 255, b: int & 255 };
   }
@@ -131,12 +131,12 @@
           return legacyValue;
         }
 
-        return '#9be7b1';
+        return '#c7f36b';
       }
 
-      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#9be7b1';
+      return localStorage.getItem(LEGACY_ACCENT_KEY) || '#c7f36b';
     } catch (error) {
-      return '#9be7b1';
+      return '#c7f36b';
     }
   }
 
