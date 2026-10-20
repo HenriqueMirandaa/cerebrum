@@ -149,24 +149,10 @@ body.sidebar-desktop-collapsed .sidebar {
     overflow: hidden;
 }
 
-body.sidebar-desktop-collapsed .sidebar > * {
-    opacity: 0;
-    pointer-events: none;
-    transform: translateX(-0.85rem);
-}
-
 body.sidebar-desktop-collapsed > .dashboard-main {
     margin-left: 0 !important;
     width: 100% !important;
     max-width: 100%;
-}
-
-body.sidebar-desktop-collapsed > .dashboard-main .mobile-menu-btn {
-    max-width: 3rem;
-    margin-right: 0.2rem;
-    opacity: 1;
-    pointer-events: auto;
-    transform: translateX(0) scale(1);
 }
 
 .dashboard-sidebar-overlay {
